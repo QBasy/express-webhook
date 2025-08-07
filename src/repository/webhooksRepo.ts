@@ -1,6 +1,6 @@
 import { IWebhook, IWebhookReceive } from "../types/webhookInterfaces";
 
-class WebhookRepository implements IWebhookReceive {
+export class WebhookRepository implements IWebhookReceive {
     Webhooks: IWebhook[] = [];
 
     addWebhook(webhookBody: any) {
