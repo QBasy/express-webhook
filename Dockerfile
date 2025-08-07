@@ -8,4 +8,4 @@ RUN npm install
 
 EXPOSE 6005
 
-CMD ["npm run start"]
+CMD ["npm", "run", "start"]
