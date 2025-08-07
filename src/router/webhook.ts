@@ -1,5 +1,5 @@
-import express, {Request, Response} from "express";
-import {webhookRepo} from "../repository/webhooksRepo";
+import express, { Request, Response } from "express";
+import { webhookRepo } from "../repository/webhooksRepo";
 
 export const router = express().router
 
