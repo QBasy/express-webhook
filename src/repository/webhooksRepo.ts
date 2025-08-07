@@ -1,13 +1,4 @@
-export interface IWebhookReceive {
-    addWebhook(webhookBody: any): void,
-    clearWebhooks(): void,
-    getWebhooks(): IWebhook[]
-}
-
-interface IWebhook {
-    receiptId: string,
-    body: any,
-}
+import {IWebhook, IWebhookReceive} from "../types/webhookInterfaces";
 
 class WebhookRepository implements IWebhookReceive {
     Webhooks: IWebhook[] = [];
