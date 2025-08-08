@@ -1,11 +1,14 @@
 import express, { Application } from 'express';
-import { router } from "./src/router/webhook";
+import {webhookRouter} from "./src/router/webhook";
+import {roomRouter} from "./src/router/room";
 
 const app: Application = express();
 const PORT = 6005;
 
 app.use(express.json());
 
-app.use(router);
+app.use(webhookRouter);
+
+app.use(roomRouter)
 
 app.listen(PORT, () => console.log(`Стартанул на порту ${PORT}`));

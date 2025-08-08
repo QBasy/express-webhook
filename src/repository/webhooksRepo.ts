@@ -8,7 +8,6 @@ export class WebhookRepository implements IWebhookReceive {
             receiptId: (this.Webhooks.length+1).toString(),
             body: webhookBody
         }
-
         this.Webhooks.push(webhook);
     }
 

@@ -1,27 +1,49 @@
 import express, { Request, Response } from "express";
-import { webhookRepo } from "../repository/webhooksRepo";
+import {roomRepository} from "../repository/roomRepo";
 
-export const router = express().router
+export const webhookRouter = express.Router();
 
-router.get("/", async (req: Request, res: Response) => {
-    const webhooks = webhookRepo.getWebhooks();
-    console.log("Вебхуки получены");
-    res.status(200);
-    res.send(webhooks);
+webhookRouter.use("/hook")
+
+webhookRouter.get("/:id", async (req: Request, res: Response) => {
+    const instanceId = req.params.id
+    try {
+        const webhooks = (await roomRepository.getRoomRepo(instanceId))?.getWebhooks();
+        console.log("Вебхуки получены");
+        res.status(200);
+        res.send(webhooks);
+    } catch (e) {
+        res.status(500);
+        res.send();
+    }
 })
 
-router.post("/", async (req: Request, res: Response) => {
+webhookRouter.post("/:id", async (req: Request, res: Response) => {
+    const instanceId = req.params.id
     const webhook = req.body;
     console.log(req.body)
-    webhookRepo.addWebhook(webhook);
-    console.log("Вебхук добавлен");
-    res.status(200);
-    res.send()
+    try {
+        (await roomRepository.getRoomRepo(instanceId))?.addWebhook(webhook);
+        console.log("Вебхук добавлен");
+    } catch (e) {
+        res.status(500);
+        res.send()
+        return
+    } finally {
+        res.status(200);
+        res.send()
+    }
 })
 
-router.delete("/", async (req: Request, res: Response) => {
-    webhookRepo.clearWebhooks();
-    console.log("Очистили очередь вебхуков");
-    res.status(200);
-    res.send()
+webhookRouter.delete("/:id", async (req: Request, res: Response) => {
+    const instanceId = req.params.id
+    try {
+        (await roomRepository.getRoomRepo(instanceId))?.clearWebhooks();
+        console.log("Очистили очередь вебхуков");
+        res.status(200);
+        res.send()
+    } catch (e) {
+        res.status(500);
+        res.send()
+    }
 })
