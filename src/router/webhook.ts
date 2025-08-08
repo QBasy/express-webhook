@@ -21,17 +21,25 @@ webhookRouter.get("/:id", async (req: Request, res: Response) => {
 webhookRouter.post("/:id", async (req: Request, res: Response) => {
     const instanceId = req.params.id
     const webhook = req.body;
-    console.log(req.body)
+
+    console.log(req.body);
+
+    if (!webhook || !webhook.typeWebhook) {
+        res.status(400);
+        res.send("Invalid webhook data");
+        return;
+    }
+
     try {
         (await roomRepository.getRoomRepo(instanceId))?.addWebhook(webhook);
-        
+
         console.log("Вебхук добавлен");
 
         res.status(200);
-        res.send()
+        res.send();
     } catch (e) {
         res.status(500);
-        res.send()
+        res.send();
     }
 })
 
@@ -43,9 +51,9 @@ webhookRouter.delete("/:id", async (req: Request, res: Response) => {
         console.log("Очистили очередь вебхуков");
 
         res.status(200);
-        res.send()
+        res.send();
     } catch (e) {
         res.status(500);
-        res.send()
+        res.send();
     }
 })

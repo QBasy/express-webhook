@@ -13,6 +13,14 @@ export class RoomTable {
         this.roomsMap.delete(idInstance);
     }
 
+    async findAllRooms(): Promise<string[]> {
+        let allRooms: string[] = []
+        this.roomsMap.forEach((value, key) => {
+            allRooms.push(key);
+        });
+        return allRooms
+    }
+
     async createRoom(idInstance: string): Promise<void> {
         if (!this.roomsMap.has(idInstance)) {
             this.roomsMap.set(idInstance, new WebhookRepository());
@@ -29,6 +37,10 @@ class RoomRepository implements RoomInterface {
 
     async getRoomRepo(idInstance: string): Promise<IWebhookReceive | null> {
         return await this.roomTable.findRoom(idInstance);
+    }
+
+    async getAllRoomIds(): Promise<string[]> {
+        return await this.roomTable.findAllRooms();
     }
 
     async closeRoom(idInstance: string): Promise<void> {

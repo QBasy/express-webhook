@@ -28,3 +28,15 @@ roomRouter.delete("/:id", async (req: Request, res: Response)=> {
         res.send(JSON.stringify({"info": "FAILED"}))
     }
 });
+
+roomRouter.get("/all", async (res: Response) => {
+    try {
+        const rooms = await roomRepository.getAllRoomIds();
+
+        res.status(200)
+        res.send(rooms)
+    } catch (e) {
+        res.status(500)
+        res.send(JSON.stringify({"info": "FAILED"}))
+    }
+})
