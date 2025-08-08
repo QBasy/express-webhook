@@ -29,7 +29,7 @@ roomRouter.delete("/:id", async (req: Request, res: Response)=> {
     }
 });
 
-roomRouter.get("/all", async (res: Response) => {
+roomRouter.get("/all", async (req: Request, res: Response) => {
     try {
         const rooms = await roomRepository.getAllRoomIds();
 
