@@ -1,9 +1,16 @@
 import express, { Application } from 'express';
+import cors from 'cors';
 import {webhookRouter} from "./src/router/webhook";
 import {roomRouter} from "./src/router/room";
 
 const app: Application = express();
 const PORT = 6005;
+
+app.use(cors({
+    origin: "*",
+    methods: ["GET", "POST", "DELETE"],
+    allowedHeaders: ["Content-Type"]
+}));
 
 app.use(express.json());
 

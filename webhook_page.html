@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Webhook Viewer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 text-gray-900">
+<div class="max-w-5xl mx-auto p-6">
+    <h1 class="text-3xl font-bold mb-6">Webhook Viewer</h1>
+
+    <!-- Room Controls -->
+    <div class="bg-white p-4 rounded-lg shadow mb-6">
+        <div class="flex gap-4 mb-4">
+            <input id="roomId" type="text" placeholder="ID комнаты" class="flex-1 p-2 border rounded">
+            <button id="createRoomBtn" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded">Создать/Зайти</button>
+            <button id="closeRoomBtn" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded">Закрыть</button>
+        </div>
+        <div id="roomStatus" class="text-sm text-gray-500"></div>
+    </div>
+
+    <!-- Webhook Actions -->
+    <div class="bg-white p-4 rounded-lg shadow mb-6">
+        <div class="flex gap-4 mb-4">
+            <button id="clearHooksBtn" class="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded">Очистить вебхуки</button>
+            <button id="sendTestHookBtn" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded">Отправить тест</button>
+        </div>
+    </div>
+
+    <!-- Webhooks List -->
+    <div class="bg-white p-4 rounded-lg shadow">
+        <h2 class="text-xl font-semibold mb-4">Вебхуки</h2>
+        <div id="webhooksContainer" class="space-y-4">
+            <p class="text-gray-500">Нет данных</p>
+        </div>
+    </div>
+</div>
+
+<script>
+    const apiBase = "http://142.93.101.58:6005";
+    let currentRoomId = null;
+    let hookInterval = null;
+
+    const roomIdInput = document.getElementById("roomId");
+    const roomStatus = document.getElementById("roomStatus");
+    const webhooksContainer = document.getElementById("webhooksContainer");
+
+    document.getElementById("createRoomBtn").addEventListener("click", async () => {
+        const id = roomIdInput.value.trim();
+        if (!id) return alert("Введите ID комнаты");
+        currentRoomId = id;
+        await fetch(`${apiBase}/room/${id}`, { method: "POST" });
+        roomStatus.textContent = `Комната ${id} активна`;
+        startFetchingHooks();
+    });
+
+    document.getElementById("closeRoomBtn").addEventListener("click", async () => {
+        if (!currentRoomId) return alert("Нет активной комнаты");
+        await fetch(`${apiBase}/room/${currentRoomId}`, { method: "DELETE" });
+        stopFetchingHooks();
+        roomStatus.textContent = `Комната ${currentRoomId} закрыта`;
+        webhooksContainer.innerHTML = "<p class='text-gray-500'>Нет данных</p>";
+        currentRoomId = null;
+    });
+
+    document.getElementById("clearHooksBtn").addEventListener("click", async () => {
+        if (!currentRoomId) return alert("Нет активной комнаты");
+        await fetch(`${apiBase}/hook/${currentRoomId}`, { method: "DELETE" });
+        webhooksContainer.innerHTML = "<p class='text-gray-500'>Нет данных</p>";
+    });
+
+    document.getElementById("sendTestHookBtn").addEventListener("click", async () => {
+        if (!currentRoomId) return alert("Нет активной комнаты");
+        const testData = { message: "Тестовый вебхук", time: new Date().toISOString() };
+        await fetch(`${apiBase}/hook/${currentRoomId}`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(testData)
+        });
+    });
+
+    function startFetchingHooks() {
+        stopFetchingHooks();
+        hookInterval = setInterval(async () => {
+            if (!currentRoomId) return;
+            const res = await fetch(`${apiBase}/hook/${currentRoomId}`);
+            const data = await res.json();
+            renderWebhooks(data);
+        }, 2000);
+    }
+
+    function stopFetchingHooks() {
+        if (hookInterval) clearInterval(hookInterval);
+    }
+
+    function renderWebhooks(hooks) {
+        if (!hooks || hooks.length === 0) {
+            webhooksContainer.innerHTML = "<p class='text-gray-500'>Нет данных</p>";
+            return;
+        }
+        webhooksContainer.innerHTML = "";
+        hooks.forEach(hook => {
+            const card = document.createElement("div");
+            card.className = "p-4 border rounded bg-gray-50";
+            card.innerHTML = `
+                <div class="text-sm text-gray-500 mb-2">ID: ${hook.receiptId}</div>
+                <pre class="bg-white p-2 rounded overflow-x-auto text-sm">${JSON.stringify(hook.body, null, 2)}</pre>
+            `;
+            webhooksContainer.appendChild(card);
+        });
+    }
+</script>
+</body>
+</html>
