@@ -8,7 +8,7 @@ roomRouter.post("/:id", async (req: Request, res: Response)=> {
     try {
         await roomRepository.createRoom(instanceId)
         res.status(200)
-        res.send(JSON.stringify({roomId: instanceId}))
+        res.send(JSON.stringify({roomId: instanceId, fullUrl: `http://142.93.101.58:6005/hook/${instanceId}`}))
     } catch (e) {
         res.status(500)
         res.send(JSON.stringify({"info": "FAILED"}))
