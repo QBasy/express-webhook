@@ -3,8 +3,6 @@ import {roomRepository} from "../repository/roomRepo";
 
 export const roomRouter = express.Router()
 
-roomRouter.use("/room")
-
 roomRouter.post("/:id", async (req: Request, res: Response)=> {
     const instanceId = req.params.id
     try {

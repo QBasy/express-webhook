@@ -3,8 +3,6 @@ import {roomRepository} from "../repository/roomRepo";
 
 export const webhookRouter = express.Router();
 
-webhookRouter.use("/hook")
-
 webhookRouter.get("/:id", async (req: Request, res: Response) => {
     const instanceId = req.params.id
     try {

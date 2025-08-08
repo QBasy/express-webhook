@@ -7,8 +7,8 @@ const PORT = 6005;
 
 app.use(express.json());
 
-app.use(webhookRouter);
+app.use("/hook", webhookRouter);
 
-app.use(roomRouter)
+app.use("/room", roomRouter)
 
 app.listen(PORT, () => console.log(`Стартанул на порту ${PORT}`));
