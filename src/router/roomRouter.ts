@@ -1,5 +1,5 @@
 import express, { Request, Response } from "express";
-import {roomRepository} from "../repository/roomRepo";
+import { roomRepository } from "../repository/roomRepo";
 
 export const roomRouter = express.Router()
 
