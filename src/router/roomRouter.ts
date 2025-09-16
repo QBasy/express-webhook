@@ -1,42 +1,23 @@
-import express, { Request, Response } from "express";
+// src/router/roomRouter.ts
+import { FastifyInstance } from "fastify";
 import { roomRepository } from "../repository/roomRepo";
 
-export const roomRouter = express.Router()
+export async function roomRoutes(fastify: FastifyInstance) {
+    fastify.post("/:id", async (request, reply) => {
+        const { id } = request.params as { id: string };
+        await roomRepository.createRoom(id);
+        return reply.status(200).send({ roomId: id, fullUrl: `${fastify.server.address()}/hook/${id}` });
+    });
 
-roomRouter.post("/:id", async (req: Request, res: Response)=> {
-    const instanceId = req.params.id
-    try {
-        await roomRepository.createRoom(instanceId)
+    fastify.delete("/:id", async (request, reply) => {
+        const { id } = request.params as { id: string };
+        await roomRepository.closeRoom(id);
 
-        res.status(200)
-        res.send(JSON.stringify({roomId: instanceId, fullUrl: `https://express-webhook-mqmg.onrender.com/hook/${instanceId}`}))
-    } catch (e) {
-        res.status(500)
-        res.send(JSON.stringify({"info": "FAILED"}))
-    }
-});
+        return reply.status(200).send({ info: `successfully closed room for ${id}`, roomId: id });
+    });
 
-roomRouter.delete("/:id", async (req: Request, res: Response)=> {
-    const instanceId = req.params.id
-    try {
-        await roomRepository.closeRoom(instanceId)
-
-        res.status(200)
-        res.send(JSON.stringify({"info": `successfully created room for ${instanceId}`, roomId: instanceId}))
-    } catch (e) {
-        res.status(500)
-        res.send(JSON.stringify({"info": "FAILED"}))
-    }
-});
-
-roomRouter.get("/all", async (req: Request, res: Response) => {
-    try {
-        const rooms = await roomRepository.getAllRoomIds();
-
-        res.status(200)
-        res.send(rooms)
-    } catch (e) {
-        res.status(500)
-        res.send(JSON.stringify({"info": "FAILED"}))
-    }
-})
+    fastify.get("/all", async (request, reply) => {
+        const ids = await roomRepository.getAllRoomIds();
+        return reply.status(200).send({ rooms: ids });
+    });
+}

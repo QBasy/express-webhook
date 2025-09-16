@@ -1,59 +1,44 @@
-import express, { Request, Response } from "express";
-import {roomRepository} from "../repository/roomRepo";
+import { FastifyInstance } from "fastify";
+import { roomRepository } from "../repository/roomRepo";
+import {logger} from "../utils/logger";
 
-export const webhookRouter = express.Router();
+export async function webhookRoutes(fastify: FastifyInstance) {
+    fastify.get("/:id", async (request, reply) => {
+        const { id } = request.params as { id: string };
+        const repo = await roomRepository.getRoomRepo(id);
+        if (!repo) {
+            logger.warn(`Attempt to access webhooks for non-existent room ${id}`);
+            return reply.status(404).send({ error: "Room not found" });
+        }
+        return reply.status(200).send(repo.getWebhooks());
+    });
 
-webhookRouter.get("/:id", async (req: Request, res: Response) => {
-    const instanceId = req.params.id
-    try {
-        const webhooks = (await roomRepository.getRoomRepo(instanceId))?.getWebhooks();
+    fastify.post("/:id", async (request, reply) => {
+        const { id } = request.params as { id: string };
+        const webhook = request.body as any;
+        if (!webhook || !webhook.typeWebhook) {
+            logger.warn(`Invalid webhook data received for room ${id}: ${JSON.stringify(webhook)}`);
+            return reply.status(400).send({error: "Invalid webhook data"});
+        }
+        const repo = await roomRepository.getRoomRepo(id);
+        if (!repo) {
+            logger.warn(`Attempt to add webhook to non-existent room ${id}`);
+            return reply.status(404).send({ error: "Room not found" });
+        }
 
-        console.log("Вебхуки получены");
+        repo.addWebhook(webhook);
+        return { status: "ok" };
+    });
 
-        res.status(200);
-        res.send(webhooks);
-    } catch (e) {
-        res.status(500);
-        res.send();
-    }
-})
+    fastify.delete("/:id", async (request, reply) => {
+        const { id } = request.params as { id: string };
+        const repo = await roomRepository.getRoomRepo(id);
+        if (!repo) {
+            logger.warn(`Attempt to clear webhooks for non-existent room ${id}`);
+            return reply.status(404).send({ error: "Room not found" });
+        }
 
-webhookRouter.post("/:id", async (req: Request, res: Response) => {
-    const instanceId = req.params.id
-    const webhook = req.body;
-
-    console.log(req.body);
-
-    if (!webhook || !webhook.typeWebhook) {
-        res.status(400);
-        res.send("Invalid webhook data");
-        return;
-    }
-
-    try {
-        (await roomRepository.getRoomRepo(instanceId))?.addWebhook(webhook);
-
-        console.log("Вебхук добавлен");
-
-        res.status(200);
-        res.send();
-    } catch (e) {
-        res.status(500);
-        res.send();
-    }
-})
-
-webhookRouter.delete("/:id", async (req: Request, res: Response) => {
-    const instanceId = req.params.id
-    try {
-        (await roomRepository.getRoomRepo(instanceId))?.clearWebhooks();
-
-        console.log("Очистили очередь вебхуков");
-
-        res.status(200);
-        res.send();
-    } catch (e) {
-        res.status(500);
-        res.send();
-    }
-})
+        repo.clearWebhooks();
+        return { status: "cleared" };
+    });
+}
