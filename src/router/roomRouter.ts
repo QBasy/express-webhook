@@ -9,7 +9,7 @@ roomRouter.post("/:id", async (req: Request, res: Response)=> {
         await roomRepository.createRoom(instanceId)
 
         res.status(200)
-        res.send(JSON.stringify({roomId: instanceId, fullUrl: `http://142.93.101.58:6005/hook/${instanceId}`}))
+        res.send(JSON.stringify({roomId: instanceId, fullUrl: `https://express-webhook-mqmg.onrender.com/hook/${instanceId}`}))
     } catch (e) {
         res.status(500)
         res.send(JSON.stringify({"info": "FAILED"}))

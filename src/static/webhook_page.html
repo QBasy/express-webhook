@@ -37,7 +37,7 @@
 </div>
 
 <script>
-    const apiBase = "http://142.93.101.58:6005";
+    const apiBase = "https://express-webhook-mqmg.onrender.com";
     let currentRoomId = null;
     let hookInterval = null;
 
@@ -50,7 +50,7 @@
         if (!id) return alert("Введите ID комнаты");
         currentRoomId = id;
         await fetch(`${apiBase}/room/${id}`, { method: "POST" });
-        roomStatus.textContent = `Комната http://142.93.101.58:6005/hook/${id} активна`;
+        roomStatus.textContent = `Комната https://express-webhook-mqmg.onrender.com/hook/${id} активна`;
         startFetchingHooks();
     });
 
