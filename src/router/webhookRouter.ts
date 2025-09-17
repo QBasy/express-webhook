@@ -16,10 +16,10 @@ export async function webhookRoutes(fastify: FastifyInstance) {
     fastify.post("/:id", async (request, reply) => {
         const { id } = request.params as { id: string };
         const webhook = request.body as any;
-        if (!webhook || !webhook.typeWebhook) {
+        /*if (!webhook || !webhook.typeWebhook) {
             logger.warn(`Invalid webhook data received for room ${id}: ${JSON.stringify(webhook)}`);
             return reply.status(400).send({error: "Invalid webhook data"});
-        }
+        }*/
         const repo = await roomRepository.getRoomRepo(id);
         if (!repo) {
             logger.warn(`Attempt to add webhook to non-existent room ${id}`);
