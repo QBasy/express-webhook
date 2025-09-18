@@ -15,4 +15,11 @@ export async function registerRoutes(fastify: FastifyInstance) {
         );
         reply.type("text/html").send(html);
     });
+
+    fastify.get("/favicon", async (request, reply) => {
+        const favicon = fs.readFileSync(
+            path.join(__dirname, "..", "static", "favicon.ico")
+        );
+        reply.type("image/x-icon").send(favicon);
+    });
 }

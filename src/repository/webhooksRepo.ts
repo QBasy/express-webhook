@@ -9,6 +9,7 @@ export interface IWebhookRepository {
     addWebhook(webhookBody: any): void;
     clearWebhooks(): void;
     getWebhooks(): IWebhook[];
+    getWebhook(id: number): IWebhook
 }
 
 export class InMemoryWebhookRepository implements IWebhookRepository {
@@ -20,12 +21,18 @@ export class InMemoryWebhookRepository implements IWebhookRepository {
         };
         this.webhooks.push(webhook);
         logger.info(`Webhook added. Total webhooks: ${this.webhooks.length}`);
-    }
+    };
+
     clearWebhooks() {
         this.webhooks = [];
         logger.info(`Webhooks cleared. Total webhooks: ${this.webhooks.length}`);
-    }
+    };
+
+    getWebhook(id: number): IWebhook {
+        return this.webhooks[id];
+    };
+
     getWebhooks(): IWebhook[] {
         return this.webhooks;
-    }
+    };
 }

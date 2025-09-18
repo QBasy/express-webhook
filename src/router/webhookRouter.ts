@@ -41,4 +41,15 @@ export async function webhookRoutes(fastify: FastifyInstance) {
         repo.clearWebhooks();
         return { status: "cleared" };
     });
+
+    fastify.delete("/:room_id/:webhook_id", async (request, reply) => {
+        const { room_id, webhook_id } = request.params as { room_id: string, webhook_id: number };
+        const repo = await roomRepository.getRoomRepo(room_id);
+        if (!repo) {
+            logger.warn(`Attempt to clear webhooks for non-existent room ${room_id}`);
+            return reply.status(404).send({ error: "Room not found" });
+        }
+
+        const webhook = await repo.getWebhook(webhook_id);
+    });
 }
