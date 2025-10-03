@@ -10,6 +10,7 @@ export interface IWebhookRepository {
     clearWebhooks(): void;
     getWebhooks(): IWebhook[];
     getWebhook(id: number): IWebhook
+    deleteWebhook(id: number): void
 }
 
 export class InMemoryWebhookRepository implements IWebhookRepository {
@@ -31,6 +32,10 @@ export class InMemoryWebhookRepository implements IWebhookRepository {
     getWebhook(id: number): IWebhook {
         return this.webhooks[id];
     };
+
+    deleteWebhook(id: number) {
+        delete this.webhooks[id];
+    }
 
     getWebhooks(): IWebhook[] {
         return this.webhooks;

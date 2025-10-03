@@ -50,6 +50,12 @@ export async function webhookRoutes(fastify: FastifyInstance) {
             return reply.status(404).send({ error: "Room not found" });
         }
 
-        const webhook = await repo.getWebhook(webhook_id);
+        const webhook = repo.getWebhook(webhook_id);
+        if (!webhook) {
+            logger.warn(`Attempt to clear non existing webhook ${webhook_id} in room ${room_id}`);
+            return reply.status(404).send({ error: "Webhook not found" });
+        }
+
+        repo.deleteWebhook(webhook_id);
     });
 }

@@ -7,24 +7,29 @@
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-gray-100 text-gray-900">
-<div class="max-w-5xl mx-auto p-6">
+<div class="max-w-6xl mx-auto p-6">
     <h1 class="text-3xl font-bold mb-6">Webhook Viewer</h1>
 
     <!-- Room Controls -->
     <div class="bg-white p-4 rounded-lg shadow mb-6">
         <div class="flex gap-4 mb-4">
-            <input id="roomId" type="text" placeholder="ID комнаты" class="flex-1 p-2 border rounded">
-            <button id="createRoomBtn" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded">Создать/Зайти</button>
-            <button id="closeRoomBtn" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded">Закрыть</button>
+            <input id="roomId" type="text" placeholder="ID комнаты" class="flex-1 p-2 border rounded focus:outline-none focus:ring-2 focus:ring-green-500">
+            <button id="createRoomBtn" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded transition">Создать/Зайти</button>
+            <button id="closeRoomBtn" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded transition">Закрыть</button>
         </div>
         <div id="roomStatus" class="text-sm text-gray-500"></div>
     </div>
 
     <!-- Webhook Actions -->
     <div class="bg-white p-4 rounded-lg shadow mb-6">
-        <div class="flex gap-4 mb-4">
-            <button id="clearHooksBtn" class="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded">Очистить вебхуки</button>
-            <button id="sendTestHookBtn" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded">Отправить тест</button>
+        <div class="flex gap-4 mb-4 flex-wrap">
+            <button id="clearHooksBtn" class="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded transition">Очистить все</button>
+            <button id="sendTestHookBtn" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded transition">Отправить тест</button>
+            <button id="exportBtn" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded transition">Экспорт JSON</button>
+            <input id="searchInput" type="text" placeholder="Поиск по содержимому..." class="flex-1 p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500">
+        </div>
+        <div class="text-sm text-gray-600">
+            Всего вебхуков: <span id="webhookCount" class="font-semibold">0</span>
         </div>
     </div>
 
@@ -41,52 +46,161 @@
     const apiBase = "https://express-webhook-mqmg.onrender.com";
     let currentRoomId = null;
     let hookInterval = null;
+    let lastIds = new Set();
+    let allHooks = [];
+    let searchTerm = "";
 
     const roomIdInput = document.getElementById("roomId");
     const roomStatus = document.getElementById("roomStatus");
     const webhooksContainer = document.getElementById("webhooksContainer");
+    const webhookCount = document.getElementById("webhookCount");
+    const searchInput = document.getElementById("searchInput");
 
+    // Создание/вход в комнату
     document.getElementById("createRoomBtn").addEventListener("click", async () => {
         const id = roomIdInput.value.trim();
-        if (!id) return alert("Введите ID комнаты");
-        currentRoomId = id;
-        await fetch(`${apiBase}/room/${id}`, { method: "POST" });
-        roomStatus.textContent = `Комната https://express-webhook-mqmg.onrender.com/hook/${id} активна`;
-        startFetchingHooks();
+        if (!id) return showAlert("Введите ID комнаты", "warning");
+
+        try {
+            currentRoomId = id;
+            lastIds.clear();
+            allHooks = [];
+
+            const res = await fetch(`${apiBase}/room/${id}`, { method: "POST" });
+            if (!res.ok) throw new Error("Ошибка создания комнаты");
+
+            const webhookUrl = `${apiBase}/hook/${id}`;
+            roomStatus.innerHTML = `
+                Комната активна:
+                <span class="font-mono bg-gray-100 px-2 py-1 rounded">${webhookUrl}</span>
+                <button onclick="copyToClipboard('${webhookUrl}')" class="ml-2 text-blue-600 hover:text-blue-800">📋 Копировать</button>
+            `;
+
+            startFetchingHooks();
+            showAlert("Комната создана успешно", "success");
+        } catch (e) {
+            showAlert("Ошибка: " + e.message, "error");
+        }
     });
 
+    // Закрытие комнаты
     document.getElementById("closeRoomBtn").addEventListener("click", async () => {
-        if (!currentRoomId) return alert("Нет активной комнаты");
-        await fetch(`${apiBase}/room/${currentRoomId}`, { method: "DELETE" });
-        stopFetchingHooks();
-        roomStatus.textContent = `Комната ${currentRoomId} закрыта`;
-        webhooksContainer.innerHTML = "<p class='text-gray-500'>Нет данных</p>";
-        currentRoomId = null;
+        if (!currentRoomId) return showAlert("Нет активной комнаты", "warning");
+
+        try {
+            await fetch(`${apiBase}/room/${currentRoomId}`, { method: "DELETE" });
+            stopFetchingHooks();
+            roomStatus.textContent = `Комната ${currentRoomId} закрыта`;
+            webhooksContainer.innerHTML = "<p class='text-gray-500'>Нет данных</p>";
+            currentRoomId = null;
+            lastIds.clear();
+            allHooks = [];
+            updateCount();
+            showAlert("Комната закрыта", "success");
+        } catch (e) {
+            showAlert("Ошибка закрытия комнаты", "error");
+        }
     });
 
+    // Очистка всех вебхуков
     document.getElementById("clearHooksBtn").addEventListener("click", async () => {
-        if (!currentRoomId) return alert("Нет активной комнаты");
-        await fetch(`${apiBase}/hook/${currentRoomId}`, { method: "DELETE" });
-        webhooksContainer.innerHTML = "<p class='text-gray-500'>Нет данных</p>";
+        if (!currentRoomId) return showAlert("Нет активной комнаты", "warning");
+
+        try {
+            await fetch(`${apiBase}/hook/${currentRoomId}`, { method: "DELETE" });
+            webhooksContainer.innerHTML = "<p class='text-gray-500'>Нет данных</p>";
+            lastIds.clear();
+            allHooks = [];
+            updateCount();
+            showAlert("Вебхуки очищены", "success");
+        } catch (e) {
+            showAlert("Ошибка очистки", "error");
+        }
     });
 
+    // Отправка тестового вебхука
     document.getElementById("sendTestHookBtn").addEventListener("click", async () => {
-        if (!currentRoomId) return alert("Нет активной комнаты");
-        const testData = { message: "Тестовый вебхук", time: new Date().toISOString() };
-        await fetch(`${apiBase}/hook/${currentRoomId}`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(testData)
-        });
+        if (!currentRoomId) return showAlert("Нет активной комнаты", "warning");
+
+        const testData = {
+            message: "Тестовый вебхук",
+            time: new Date().toISOString(),
+            randomValue: Math.random().toString(36).substring(7)
+        };
+
+        try {
+            await fetch(`${apiBase}/hook/${currentRoomId}`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(testData)
+            });
+            showAlert("Тестовый вебхук отправлен", "success");
+        } catch (e) {
+            showAlert("Ошибка отправки", "error");
+        }
     });
+
+    // Экспорт в JSON
+    document.getElementById("exportBtn").addEventListener("click", () => {
+        if (allHooks.length === 0) return showAlert("Нет данных для экспорта", "warning");
+
+        const dataStr = JSON.stringify(allHooks, null, 2);
+        const dataBlob = new Blob([dataStr], { type: "application/json" });
+        const url = URL.createObjectURL(dataBlob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = `webhooks_${currentRoomId}_${Date.now()}.json`;
+        link.click();
+        URL.revokeObjectURL(url);
+        showAlert("Экспорт завершён", "success");
+    });
+
+    // Поиск
+    searchInput.addEventListener("input", (e) => {
+        searchTerm = e.target.value.toLowerCase();
+        renderAllWebhooks();
+    });
+
+    // Копирование в буфер обмена
+    window.copyToClipboard = (text) => {
+        navigator.clipboard.writeText(text).then(() => {
+            showAlert("Скопировано в буфер обмена", "success");
+        });
+    };
+
+    // Удаление отдельного вебхука
+    window.deleteWebhook = async (webhookId) => {
+        if (!currentRoomId) return;
+
+        try {
+            await fetch(`${apiBase}/hook/${currentRoomId}/${webhookId}`, { method: "DELETE" });
+            allHooks = allHooks.filter(h => h.receiptId !== webhookId);
+            lastIds.delete(webhookId);
+            renderAllWebhooks();
+            showAlert("Вебхук удалён", "success");
+        } catch (e) {
+            showAlert("Ошибка удаления", "error");
+        }
+    };
+
+    // Копирование содержимого вебхука
+    window.copyWebhook = (body) => {
+        const text = JSON.stringify(body, null, 2);
+        copyToClipboard(text);
+    };
 
     function startFetchingHooks() {
         stopFetchingHooks();
         hookInterval = setInterval(async () => {
             if (!currentRoomId) return;
-            const res = await fetch(`${apiBase}/hook/${currentRoomId}`);
-            const data = await res.json();
-            renderWebhooks(data);
+            try {
+                const res = await fetch(`${apiBase}/hook/${currentRoomId}`);
+                if (!res.ok) throw new Error("Ошибка загрузки");
+                const data = await res.json();
+                processWebhooks(data);
+            } catch (e) {
+                console.error("Ошибка загрузки вебхуков:", e);
+            }
         }, 2000);
     }
 
@@ -94,21 +208,91 @@
         if (hookInterval) clearInterval(hookInterval);
     }
 
-    function renderWebhooks(hooks) {
-        if (!hooks || hooks.length === 0) {
+    function processWebhooks(hooks) {
+        if (!hooks || hooks.length === 0) return;
+
+        let hasNew = false;
+        hooks.forEach(hook => {
+            if (!lastIds.has(hook.receiptId)) {
+                lastIds.add(hook.receiptId);
+                allHooks.unshift(hook);
+                hasNew = true;
+            }
+        });
+
+        if (hasNew) {
+            renderAllWebhooks();
+        }
+    }
+
+    function renderAllWebhooks() {
+        const filtered = allHooks.filter(hook => {
+            if (!searchTerm) return true;
+            const bodyStr = JSON.stringify(hook.body).toLowerCase();
+            return bodyStr.includes(searchTerm) || hook.receiptId.toString().includes(searchTerm);
+        });
+
+        if (filtered.length === 0) {
             webhooksContainer.innerHTML = "<p class='text-gray-500'>Нет данных</p>";
+            updateCount();
             return;
         }
-        webhooksContainer.innerHTML = "";
-        hooks.forEach(hook => {
-            const card = document.createElement("div");
-            card.className = "p-4 border rounded bg-gray-50";
-            card.innerHTML = `
-                <div class="text-sm text-gray-500 mb-2">ID: ${hook.receiptId}</div>
-                <pre class="bg-white p-2 rounded overflow-x-auto text-sm">${JSON.stringify(hook.body, null, 2)}</pre>
-            `;
-            webhooksContainer.appendChild(card);
-        });
+
+        webhooksContainer.innerHTML = filtered.map(hook => `
+            <div class="p-4 border rounded bg-gray-50 hover:bg-gray-100 transition">
+                <div class="flex justify-between items-start mb-2">
+                    <div class="text-sm text-gray-500">
+                        ID: <span class="font-mono">${hook.receiptId}</span>
+                        <span class="ml-4">${formatTimestamp(hook.timestamp)}</span>
+                    </div>
+                    <div class="flex gap-2">
+                        <button onclick="copyWebhook(${escapeJson(hook.body)})"
+                                class="text-blue-600 hover:text-blue-800 text-sm" title="Копировать">
+                            📋
+                        </button>
+                        <button onclick="deleteWebhook(${hook.receiptId})"
+                                class="text-red-600 hover:text-red-800 text-sm" title="Удалить">
+                            🗑️
+                        </button>
+                    </div>
+                </div>
+                <pre class="bg-white p-3 rounded overflow-x-auto text-sm border">${JSON.stringify(hook.body, null, 2)}</pre>
+            </div>
+        `).join("");
+
+        updateCount();
+    }
+
+    function updateCount() {
+        webhookCount.textContent = allHooks.length;
+    }
+
+    function formatTimestamp(ts) {
+        if (!ts) return "Недавно";
+        const date = new Date(ts);
+        return date.toLocaleString("ru-RU");
+    }
+
+    function escapeJson(obj) {
+        return JSON.stringify(obj).replace(/'/g, "\\'");
+    }
+
+    function showAlert(message, type) {
+        const colors = {
+            success: "bg-green-100 text-green-800 border-green-300",
+            error: "bg-red-100 text-red-800 border-red-300",
+            warning: "bg-yellow-100 text-yellow-800 border-yellow-300"
+        };
+
+        const alert = document.createElement("div");
+        alert.className = `fixed top-4 right-4 px-4 py-3 rounded border ${colors[type]} shadow-lg transition-opacity z-50`;
+        alert.textContent = message;
+        document.body.appendChild(alert);
+
+        setTimeout(() => {
+            alert.style.opacity = "0";
+            setTimeout(() => alert.remove(), 300);
+        }, 3000);
     }
 </script>
 </body>
