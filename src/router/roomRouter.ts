@@ -23,21 +23,23 @@ export async function roomRoutes(fastify: FastifyInstance) {
 
     fastify.post("/:id/fake-error", async (request, reply) => {
         const { id } = request.params as { id: string };
-        const { enabled } = request.body as { enabled: boolean };
+        const { enabled, statusCode } = request.body as { enabled: boolean; statusCode?: number };
 
-        await roomRepository.setFakeError(id, enabled);
-        const current = await roomRepository.isFakeErrorEnabled(id);
+        await roomRepository.setFakeError(id, enabled, statusCode);
+        const current = await roomRepository.getFakeErrorStatus(id);
 
         return reply.status(200).send({
             roomId: id,
-            fakeError: current,
-            message: current ? "Fake error simulation enabled" : "Fake error disabled"
+            ...current,
+            message: current.enabled
+                ? `Fake error ${current.statusCode} enabled`
+                : "Fake error disabled",
         });
     });
 
     fastify.get("/:id/fake-error", async (request, reply) => {
         const { id } = request.params as { id: string };
-        const enabled = await roomRepository.isFakeErrorEnabled(id);
-        return reply.status(200).send({ roomId: id, fakeError: enabled });
+        const current = await roomRepository.getFakeErrorStatus(id);
+        return reply.status(200).send({ roomId: id, ...current });
     });
 }

@@ -27,11 +27,12 @@
             <button id="sendTestHookBtn" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded transition">Отправить тест</button>
             <button id="exportBtn" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded transition">Экспорт JSON</button>
 
-            <!-- ✅ Новый чекбокс -->
+            <!-- fake-error UI -->
             <label class="flex items-center gap-2 text-sm text-gray-700">
                 <input type="checkbox" id="fakeErrorToggle" class="w-4 h-4 text-red-600 border-gray-300 rounded focus:ring-red-500">
-                Симулировать 500
+                Симулировать ошибку
             </label>
+            <input id="fakeStatusInput" type="number" min="100" max="599" placeholder="код (500)" class="w-24 p-2 border rounded" value="500">
 
             <input id="searchInput" type="text" placeholder="Поиск по содержимому..." class="flex-1 p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500">
         </div>
@@ -50,7 +51,7 @@
 </div>
 
 <script>
-    const apiBase = "https://express-webhook-mqmg.onrender.com";
+    const apiBase = "https://express-webhook-mqmg.onrender.com"; // поменяй на localhost если нужно
     let currentRoomId = null;
     let hookInterval = null;
     let lastIds = new Set();
@@ -63,36 +64,71 @@
     const webhookCount = document.getElementById("webhookCount");
     const searchInput = document.getElementById("searchInput");
     const fakeErrorToggle = document.getElementById("fakeErrorToggle");
+    const fakeStatusInput = document.getElementById("fakeStatusInput");
 
+    // при загрузке — по умолчанию поле кода доступно, но чекбокс выключен
+    fakeStatusInput.disabled = false;
+    fakeErrorToggle.checked = false;
+
+    // Обработчик toggle
     fakeErrorToggle.addEventListener("change", async (e) => {
         if (!currentRoomId) {
             fakeErrorToggle.checked = false;
             return showAlert("Сначала создайте комнату", "warning");
         }
 
+        const enabled = e.target.checked;
+        // валидируем код
+        const parsed = parseInt(fakeStatusInput.value, 10);
+        const statusCode = (Number.isInteger(parsed) && parsed >= 100 && parsed <= 599) ? parsed : 500;
+
         try {
-            const enabled = e.target.checked;
-            await fetch(`${apiBase}/room/${currentRoomId}/fake-error`, {
+            const res = await fetch(`${apiBase}/room/${encodeURIComponent(currentRoomId)}/fake-error`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ enabled })
+                body: JSON.stringify({ enabled, statusCode })
             });
 
-            showAlert(enabled ? "Симуляция 500 включена" : "Симуляция 500 отключена", "success");
+            if (!res.ok) {
+                throw new Error("Не удалось обновить статус на сервере");
+            }
+
+            // блокируем/разблокируем поле кода в зависимости от enabled
+            fakeStatusInput.disabled = !enabled;
+            showAlert(enabled ? `Симуляция ${statusCode} включена` : "Симуляция отключена", "success");
         } catch (err) {
+            // откат состояния в UI если ошибка
+            fakeErrorToggle.checked = !enabled;
             showAlert("Ошибка при изменении состояния fakeError", "error");
+            console.error(err);
         }
     });
 
+    // Получаем статус с сервера и синхронизируем UI
     async function updateFakeErrorStatus() {
         if (!currentRoomId) return;
         try {
-            const res = await fetch(`${apiBase}/room/${currentRoomId}/fake-error`);
+            const res = await fetch(`${apiBase}/room/${encodeURIComponent(currentRoomId)}/fake-error`);
+            if (!res.ok) {
+                // если сервер возвращает 404 (комната не найдена) — просто отключаем UI
+                fakeErrorToggle.checked = false;
+                fakeStatusInput.disabled = false;
+                return;
+            }
             const data = await res.json();
-            fakeErrorToggle.checked = data.fakeError;
-        } catch {}
-    }
 
+            // поддерживаем разные форматы ответа: { fakeError, statusCode } или { enabled, statusCode } или { enabled, status }
+            const enabled = ('fakeError' in data) ? data.fakeError : (('enabled' in data) ? data.enabled : false);
+            const statusCode = data.statusCode ?? data.status ?? 500;
+
+            fakeErrorToggle.checked = Boolean(enabled);
+            fakeStatusInput.value = statusCode ?? 500;
+            fakeStatusInput.disabled = !enabled;
+        } catch (err) {
+            // тихо игнорируем ошибку синхронизации
+            console.warn("updateFakeErrorStatus failed", err);
+        }
+    }
 
     // Создание/вход в комнату
     document.getElementById("createRoomBtn").addEventListener("click", async () => {
@@ -104,20 +140,24 @@
             lastIds.clear();
             allHooks = [];
 
-            const res = await fetch(`${apiBase}/room/${id}`, { method: "POST" });
+            const res = await fetch(`${apiBase}/room/${encodeURIComponent(id)}`, { method: "POST" });
             if (!res.ok) throw new Error("Ошибка создания комнаты");
 
-            const webhookUrl = `${apiBase}/hook/${id}`;
+            const webhookUrl = `${apiBase}/hook/${encodeURIComponent(id)}`;
             roomStatus.innerHTML = `
                 Комната активна:
                 <span class="font-mono bg-gray-100 px-2 py-1 rounded">${webhookUrl}</span>
                 <button onclick="copyToClipboard('${webhookUrl}')" class="ml-2 text-blue-600 hover:text-blue-800">📋 Копировать</button>
             `;
 
+            // Синхронизируем состояние fake-error из сервера (теперь функция реально используется)
+            await updateFakeErrorStatus();
+
             startFetchingHooks();
             showAlert("Комната создана успешно", "success");
         } catch (e) {
             showAlert("Ошибка: " + e.message, "error");
+            console.error(e);
         }
     });
 
@@ -126,7 +166,7 @@
         if (!currentRoomId) return showAlert("Нет активной комнаты", "warning");
 
         try {
-            await fetch(`${apiBase}/room/${currentRoomId}`, { method: "DELETE" });
+            await fetch(`${apiBase}/room/${encodeURIComponent(currentRoomId)}`, { method: "DELETE" });
             stopFetchingHooks();
             roomStatus.textContent = `Комната ${currentRoomId} закрыта`;
             webhooksContainer.innerHTML = "<p class='text-gray-500'>Нет данных</p>";
@@ -134,9 +174,16 @@
             lastIds.clear();
             allHooks = [];
             updateCount();
+
+            // сброс UI fake-error
+            fakeErrorToggle.checked = false;
+            fakeStatusInput.value = "500";
+            fakeStatusInput.disabled = false;
+
             showAlert("Комната закрыта", "success");
         } catch (e) {
             showAlert("Ошибка закрытия комнаты", "error");
+            console.error(e);
         }
     });
 
@@ -145,7 +192,7 @@
         if (!currentRoomId) return showAlert("Нет активной комнаты", "warning");
 
         try {
-            await fetch(`${apiBase}/hook/${currentRoomId}`, { method: "DELETE" });
+            await fetch(`${apiBase}/hook/${encodeURIComponent(currentRoomId)}`, { method: "DELETE" });
             webhooksContainer.innerHTML = "<p class='text-gray-500'>Нет данных</p>";
             lastIds.clear();
             allHooks = [];
@@ -153,6 +200,7 @@
             showAlert("Вебхуки очищены", "success");
         } catch (e) {
             showAlert("Ошибка очистки", "error");
+            console.error(e);
         }
     });
 
@@ -167,14 +215,22 @@
         };
 
         try {
-            await fetch(`${apiBase}/hook/${currentRoomId}`, {
+            const res = await fetch(`${apiBase}/hook/${encodeURIComponent(currentRoomId)}`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(testData)
             });
-            showAlert("Тестовый вебхук отправлен", "success");
+
+            if (!res.ok) {
+                // попробуем показать тело ошибки если есть
+                const errBody = await res.json().catch(() => null);
+                showAlert("Ошибка отправки: " + (errBody?.error || res.status), "error");
+            } else {
+                showAlert("Тестовый вебхук отправлен", "success");
+            }
         } catch (e) {
             showAlert("Ошибка отправки", "error");
+            console.error(e);
         }
     });
 
@@ -187,7 +243,7 @@
         const url = URL.createObjectURL(dataBlob);
         const link = document.createElement("a");
         link.href = url;
-        link.download = `webhooks_${currentRoomId}_${Date.now()}.json`;
+        link.download = `webhooks_${currentRoomId || 'no-room'}_${Date.now()}.json`;
         link.click();
         URL.revokeObjectURL(url);
         showAlert("Экспорт завершён", "success");
@@ -211,13 +267,14 @@
         if (!currentRoomId) return;
 
         try {
-            await fetch(`${apiBase}/hook/${currentRoomId}/${webhookId}`, { method: "DELETE" });
+            await fetch(`${apiBase}/hook/${encodeURIComponent(currentRoomId)}/${encodeURIComponent(webhookId)}`, { method: "DELETE" });
             allHooks = allHooks.filter(h => h.receiptId !== webhookId);
             lastIds.delete(webhookId);
             renderAllWebhooks();
             showAlert("Вебхук удалён", "success");
         } catch (e) {
             showAlert("Ошибка удаления", "error");
+            console.error(e);
         }
     };
 
@@ -232,7 +289,7 @@
         hookInterval = setInterval(async () => {
             if (!currentRoomId) return;
             try {
-                const res = await fetch(`${apiBase}/hook/${currentRoomId}`);
+                const res = await fetch(`${apiBase}/hook/${encodeURIComponent(currentRoomId)}`);
                 if (!res.ok) throw new Error("Ошибка загрузки");
                 const data = await res.json();
                 processWebhooks(data);
@@ -260,6 +317,8 @@
 
         if (hasNew) {
             renderAllWebhooks();
+            // показываем новые сверху — можно автоскроллить при необходимости
+            // webhooksContainer.scrollTop = 0;
         }
     }
 
@@ -288,7 +347,7 @@
                                 class="text-blue-600 hover:text-blue-800 text-sm" title="Копировать">
                             📋
                         </button>
-                        <button onclick="deleteWebhook(${hook.receiptId})"
+                        <button onclick="deleteWebhook('${hook.receiptId}')"
                                 class="text-red-600 hover:text-red-800 text-sm" title="Удалить">
                             🗑️
                         </button>

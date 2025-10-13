@@ -14,21 +14,18 @@ export async function webhookRoutes(fastify: FastifyInstance) {
     });
 
     fastify.post("/:id", async (request, reply) => {
-        const { id, fakeError } = request.params as { id: string, fakeError: boolean };
+        const { id } = request.params as { id: string };
         const webhook = request.body as any;
-        /*if (!webhook || !webhook.typeWebhook) {
-            logger.warn(`Invalid webhook data received for room ${id}: ${JSON.stringify(webhook)}`);
-            return reply.status(400).send({error: "Invalid webhook data"});
-        }*/
-        if (fakeError) {
-            logger.info(`Simulating error for webhook addition in room ${id}`);
-            return reply.status(500).send({ error: "Simulated server error" });
-        }
 
         const repo = await roomRepository.getRoomRepo(id);
         if (!repo) {
             logger.warn(`Attempt to add webhook to non-existent room ${id}`);
             return reply.status(404).send({ error: "Room not found" });
+        }
+
+        const fake = await roomRepository.getFakeErrorStatus(id);
+        if (fake.enabled && fake.statusCode) {
+            return reply.status(fake.statusCode).send({ error: `Simulated ${fake.statusCode}` });
         }
 
         repo.addWebhook(webhook);
