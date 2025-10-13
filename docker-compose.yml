@@ -1,0 +1,9 @@
+services:
+  express-webhook:
+    container_name: express-webhook
+    build:
+      context: ./
+      dockerfile: Dockerfile
+    ports:
+      - "6005:6005"
+    restart: always
