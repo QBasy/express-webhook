@@ -9,8 +9,8 @@ export interface IWebhookRepository {
     addWebhook(webhookBody: any): void;
     clearWebhooks(): void;
     getWebhooks(): readonly IWebhook[];
-    getWebhook(id: number): IWebhook;
-    deleteWebhook(id: number): void;
+    getWebhook(id: string): IWebhook;
+    deleteWebhook(id: string): void;
     fakeError?: boolean;
 }
 
@@ -32,15 +32,22 @@ export class InMemoryWebhookRepository implements IWebhookRepository {
         logger.info(`Webhooks cleared.`);
     }
 
-    getWebhook(id: number): IWebhook {
-        return this.webhooks[id];
+    getWebhook(id: string): IWebhook {
+        return this.webhooks[parseInt(id)];
     }
 
-    deleteWebhook(id: number) {
-        delete this.webhooks[id];
+    deleteWebhook(receiptId: string) {
+        const index = this.webhooks.findIndex(w => w.receiptId === receiptId);
+        if (index === -1) {
+            logger.warn(`Webhook ${receiptId} not found`);
+            return;
+        }
+        this.webhooks.splice(index, 1);
+        logger.info(`Webhook ${receiptId} deleted. Remaining: ${this.webhooks.length}`);
     }
 
     getWebhooks(): readonly IWebhook[] {
         return this.webhooks;
     }
 }
+
