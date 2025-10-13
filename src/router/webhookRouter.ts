@@ -3,6 +3,7 @@ import { roomRepository } from "../repository/roomRepo";
 import {logger} from "../utils/logger";
 
 export async function webhookRoutes(fastify: FastifyInstance) {
+    let count = 0;
     fastify.get("/:id", async (request, reply) => {
         const { id } = request.params as { id: string };
         const repo = await roomRepository.getRoomRepo(id);
@@ -20,6 +21,13 @@ export async function webhookRoutes(fastify: FastifyInstance) {
             logger.warn(`Invalid webhook data received for room ${id}: ${JSON.stringify(webhook)}`);
             return reply.status(400).send({error: "Invalid webhook data"});
         }*/
+        if (count < 3) {
+            logger.info(`500 for room ${id}: ${JSON.stringify(webhook)}`);
+            count++;
+            return reply.status(500).send({ error: "Simulated server error" });
+        } else {
+            count = 0;
+        }
         const repo = await roomRepository.getRoomRepo(id);
         if (!repo) {
             logger.warn(`Attempt to add webhook to non-existent room ${id}`);
