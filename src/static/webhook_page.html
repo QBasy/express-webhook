@@ -51,7 +51,7 @@
 </div>
 
 <script>
-    const apiBase = "https://express-webhook-mqmg.onrender.com"; // поменяй на localhost если нужно
+    const apiBase = `${window.location.origin}`; // поменяй на localhost если нужно
     let currentRoomId = null;
     let hookInterval = null;
     let lastIds = new Set();
