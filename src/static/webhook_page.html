@@ -60,6 +60,30 @@
         .json-null {
             color: #6f42c1;
         }
+        .json-colon {
+            color: #333;
+            cursor: pointer;
+            transition: all 0.2s;
+            padding: 0 2px;
+        }
+        .json-key-value-pair {
+            position: relative;
+            transition: all 0.2s;
+        }
+        .json-key-value-pair:hover .json-key,
+        .json-key-value-pair:hover .json-colon,
+        .json-key-value-pair:hover .json-nested-content,
+        .json-key-value-pair:hover .json-nested-content .json-string,
+        .json-key-value-pair:hover .json-nested-content .json-number,
+        .json-key-value-pair:hover .json-nested-content .json-boolean,
+        .json-key-value-pair:hover .json-nested-content .json-null,
+        .json-key-value-pair:hover .json-nested-content .json-key {
+            background: #cdfff8 !important;
+            border-radius: 3px;
+        }
+        .json-nested-content {
+            transition: background 0.2s;
+        }
         .copy-indicator {
             position: fixed;
             background: #10b981;
@@ -184,8 +208,8 @@
                 <span>🔄</span> Сортировка
             </h3>
             <select id="sortOrder" class="w-full p-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500">
-                <option value="newest">Новые первые</option>
-                <option value="oldest">Старые первые</option>
+                <option value="newest">Сначала Новые</option>
+                <option value="oldest">Сначала Старые</option>
             </select>
         </div>
 
@@ -277,6 +301,9 @@
     let sortOrder = "newest";
     let isOnline = true;
     let reconnectAttempts = 0;
+
+    // Store original JSON objects for proper nested copying
+    let webhookJsonData = new Map();
 
     // DOM Elements
     const roomIdInput = document.getElementById("roomId");
@@ -583,6 +610,7 @@
             await fetch(`${apiBase}/hook/${encodeURIComponent(currentRoomId)}/${encodeURIComponent(webhookId)}`, { method: "DELETE" });
             allHooks = allHooks.filter(h => h.receiptId !== webhookId);
             lastIds.delete(webhookId);
+            webhookJsonData.delete(webhookId);
             renderAllWebhooks();
             showAlert("Вебхук удалён", "success");
         } catch (e) {
@@ -628,6 +656,8 @@
             if (!lastIds.has(hook.receiptId)) {
                 lastIds.add(hook.receiptId);
                 allHooks.unshift(hook);
+                // Store the original JSON data for proper nested copying
+                webhookJsonData.set(hook.receiptId, hook.body);
                 hasNew = true;
             }
         });
@@ -649,42 +679,81 @@
         return filtered;
     }
 
-    function syntaxHighlight(json) {
+    function syntaxHighlight(json, webhookId) {
         if (typeof json !== 'string') {
             json = JSON.stringify(json, null, 2);
         }
 
         json = json.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
-        return json.replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, function (match) {
-            let cls = 'json-number';
-            if (/^"/.test(match)) {
-                if (/:$/.test(match)) {
-                    cls = 'json-key';
-                    const key = match.slice(1, -2);
-                    return `<span class="${cls}" onclick="copyValue(event, '${escapeHtml(key)}')" title="Копировать ключ">${match}</span>`;
-                } else {
-                    cls = 'json-string';
-                    const val = match.slice(1, -1);
-                    return `<span class="${cls}" onclick="copyValue(event, '${escapeHtml(val)}')" title="Копировать значение">${match}</span>`;
-                }
-            } else if (/true|false/.test(match)) {
-                cls = 'json-boolean';
-            } else if (/null/.test(match)) {
-                cls = 'json-null';
-            }
-            return `<span class="${cls}">${match}</span>`;
+        // Generate unique IDs for key-value pairs
+        let pairId = 0;
+
+        // First pass: wrap key-value pairs
+        json = json.replace(/^(\s*)("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*")(\s*:\s*)([\s\S]*?)(?=,?\s*$|,?\s*\n)/gm, function(match, indent, key, _, colon, value) {
+            const currentPairId = `pair_${webhookId}_${pairId++}`;
+            const keyName = key.slice(1, -1); // Remove quotes
+
+            return `${indent}<span class="json-key-value-pair" data-pair-id="${currentPairId}" data-key="${escapeHtml(keyName)}" data-webhook-id="${webhookId}">` +
+                `<span class="json-key" onclick="copyValue(event, '${escapeHtml(keyName)}')" title="Копировать ключ">${key}</span>` +
+                `<span class="json-colon" onclick="copyKeyValuePair(event, '${currentPairId}')" title="Копировать ключ и значение">:</span>` +
+                `<span class="json-nested-content">${value}</span>` +
+                `</span>`;
         });
+
+        // Second pass: highlight individual values within the nested content
+        json = json.replace(/(<span class="json-nested-content">)([\s\S]*?)(<\/span>)/g, function(match, openTag, content, closeTag) {
+            const highlightedContent = content.replace(/(\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?|"(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*")/g, function(valueMatch) {
+                let cls = 'json-number';
+                if (/^"/.test(valueMatch)) {
+                    cls = 'json-string';
+                    const val = valueMatch.slice(1, -1);
+                    return `<span class="${cls}" onclick="copyValue(event, '${escapeHtml(val)}')" title="Копировать значение">${valueMatch}</span>`;
+                } else if (/true|false/.test(valueMatch)) {
+                    cls = 'json-boolean';
+                } else if (/null/.test(valueMatch)) {
+                    cls = 'json-null';
+                }
+                return `<span class="${cls}">${valueMatch}</span>`;
+            });
+
+            return openTag + highlightedContent + closeTag;
+        });
+
+        return json;
     }
 
     function escapeHtml(text) {
-        return text.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+        return text.replace(/'/g, "\\'").replace(/"/g, '&quot;').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
     }
 
     window.copyValue = (event, value) => {
         event.stopPropagation();
-        const decodedValue = value.replace(/&quot;/g, '"').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>');
+        const decodedValue = value.replace(/&quot;/g, '"').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/\\'/g, "'");
         copyToClipboardWithFeedback(decodedValue, event);
+    };
+
+    window.copyKeyValuePair = (event, pairId) => {
+        event.stopPropagation();
+
+        const pairElement = document.querySelector(`[data-pair-id="${pairId}"]`);
+        if (!pairElement) return;
+
+        const key = pairElement.getAttribute('data-key');
+        const webhookId = pairElement.getAttribute('data-webhook-id');
+
+        // Get the original JSON data for this webhook
+        const originalData = webhookJsonData.get(webhookId);
+        if (!originalData) return;
+
+        // Extract the value for this key from the original data
+        const decodedKey = key.replace(/&quot;/g, '"').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/\\'/g, "'");
+
+        if (originalData.hasOwnProperty(decodedKey)) {
+            const value = originalData[decodedKey];
+            const keyValuePair = `"${decodedKey}": ${JSON.stringify(value, null, 2)}`;
+            copyToClipboardWithFeedback(keyValuePair, event);
+        }
     };
 
     function renderAllWebhooks() {
@@ -732,10 +801,10 @@
                             </div>
                         </div>
                         <div class="bg-gray-50 p-4 rounded-lg overflow-x-auto border border-gray-200 hover:bg-white transition">
-                            <pre class="text-sm font-mono">${syntaxHighlight(hook.body)}</pre>
+                            <pre class="text-sm font-mono">${syntaxHighlight(hook.body, hook.receiptId)}</pre>
                         </div>
                         <div class="mt-2 text-xs text-gray-500 italic">
-                            💡 Нажмите на любой ключ или значение, чтобы скопировать
+                            💡 Нажмите на ключ или значение для копирования, на двоеточие (:) для копирования полной пары ключ-значение
                         </div>
                     </div>
                 `).join("");
@@ -855,4 +924,3 @@
     renderAllWebhooks();
 </script>
 </body>
-</html>
