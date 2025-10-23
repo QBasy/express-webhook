@@ -1,6 +1,11 @@
 // src/repository/roomRepo.ts
-import { InMemoryWebhookRepository, IWebhookRepository } from "./webhooksRepo";
+import {InMemoryWebhookRepository, IWebhookRepository} from "./webhooksRepo";
 import { logger } from "../utils/logger";
+
+interface IRoomInfo {
+    roomId: string,
+    webhooksCount: number | undefined
+}
 
 export interface IRoomRepository {
     createRoom(idInstance: string): Promise<void>;
@@ -9,6 +14,8 @@ export interface IRoomRepository {
     closeRoom(idInstance: string): Promise<void>;
     setFakeError(id: string, enabled: boolean, statusCode?: number): Promise<void>;
     getFakeErrorStatus(id: string): Promise<{ enabled: boolean; statusCode: number | null }>;
+    getRoomCount(): Promise<number>;
+    getAllRooms(): Promise<IRoomInfo[] | null>;
 }
 
 class InMemoryRoomRepository implements IRoomRepository {
@@ -53,6 +60,29 @@ class InMemoryRoomRepository implements IRoomRepository {
 
     async getFakeErrorStatus(id: string) {
         return this.fakeErrorMap.get(id) ?? { enabled: false, statusCode: null };
+    }
+
+    async getRoomCount(): Promise<number> {
+        return this.roomsMap.size
+    }
+
+    async getAllRooms(): Promise<IRoomInfo[] | null> {
+        let allRooms: IRoomInfo[] = [];
+        this.roomsMap.forEach((room, key, value) => {
+            const roomWebhooks = value.get(key);
+            if (roomWebhooks) {
+                allRooms.push({
+                    roomId: key,
+                    webhooksCount: roomWebhooks.getWebhooks().length,
+                })
+            } else {
+                allRooms.push({
+                    roomId: key,
+                    webhooksCount: 0
+                });
+            }
+        });
+        return allRooms
     }
 }
 

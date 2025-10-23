@@ -1,6 +1,7 @@
 // src/router/roomRouter.ts
 import { FastifyInstance } from "fastify";
 import { roomRepository } from "../repository/roomRepo";
+import {request} from "express";
 
 export async function roomRoutes(fastify: FastifyInstance) {
     fastify.post("/:id", async (request, reply) => {
@@ -42,4 +43,8 @@ export async function roomRoutes(fastify: FastifyInstance) {
         const current = await roomRepository.getFakeErrorStatus(id);
         return reply.status(200).send({ roomId: id, ...current });
     });
+
+    fastify.get("/allRooms", async (request, reply) => {
+        return reply.status(200).send({ rooms: await roomRepository.getAllRooms() });
+    })
 }
