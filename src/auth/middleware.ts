@@ -1,5 +1,4 @@
 import { FastifyRequest, FastifyReply } from 'fastify';
-import type { User } from '../types/fastify';
 
 export async function authenticate(
     request: FastifyRequest,
@@ -10,23 +9,32 @@ export async function authenticate(
 
         const fullUser = await request.server.authService.getUserById(decoded.userId);
 
-        if (!fullUser || !fullUser.isActive) {
-            return reply.status(401).send({ error: 'User not found or inactive' });
+        if (!fullUser) {
+            return reply.status(401).send({ error: 'User not found' });
         }
 
-        request.user = {
-            ...fullUser,
-            userId: fullUser._id.toString() // ← конвертируем ObjectId в string
-        };
+        if (fullUser.status !== 'approved') {
+            return reply.status(403).send({
+                error: 'User not approved',
+                status: fullUser.status
+            });
+        }
+
+        request.user = fullUser;
     } catch (err) {
         return reply.status(401).send({ error: 'Invalid or expired token' });
     }
 }
+
 export async function requireAdmin(
     request: FastifyRequest,
     reply: FastifyReply
 ) {
     await authenticate(request, reply);
+
+    if (reply.sent) {
+        return;
+    }
 
     if (request.user?.role !== 'admin') {
         return reply.status(403).send({ error: 'Admin access required' });

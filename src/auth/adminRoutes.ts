@@ -1,61 +1,57 @@
+// src/auth/adminRoutes.ts
 import { FastifyInstance } from 'fastify';
-import { validateAdminToken, requireAdmin } from './middleware';
+import { requireAdmin } from './middleware';
 
 export async function adminRoutes(fastify: FastifyInstance) {
-    fastify.post('/users', {
-        preHandler: validateAdminToken,
-        schema: {
-            body: {
-                type: 'object',
-                required: ['username', 'password'],
-                properties: {
-                    username: { type: 'string', minLength: 3 },
-                    password: { type: 'string', minLength: 6 },
-                    role: { type: 'string', enum: ['user', 'admin'] },
-                    webhookTTL: { type: 'number', minimum: 60 }
-                }
-            }
-        }
-    }, async (request, reply) => {
-        const { username, password, role, webhookTTL } = request.body as {
-            username: string;
-            password: string;
-            role?: 'user' | 'admin';
-            webhookTTL?: number;
-        };
-
-        try {
-            const result = await fastify.authService.createUser(
-                username,
-                password,
-                role || 'user',
-                webhookTTL || 43200
-            );
-
-            return reply.status(201).send({
-                message: 'User created successfully',
-                userId: result.userId
-            });
-        } catch (error: any) {
-            return reply.status(400).send({ error: error.message });
-        }
-    });
-
+    // Список всех пользователей (включая pending)
     fastify.get('/users', {
-        preHandler: validateAdminToken
+        preHandler: requireAdmin
     }, async (request, reply) => {
-        const users = await fastify.mongo.db.collection('users')
-            .find({}, { projection: { password: 0 } }) // Не показываем пароли
+        const users = await fastify.mongo.db?.collection('users')
+            .find({}, { projection: { password: 0 } })
             .toArray();
 
         return { users };
     });
 
-    fastify.delete('/users/:userId', {
-        preHandler: validateAdminToken
+    // Одобрить пользователя
+    fastify.post('/users/:userId/approve', {
+        preHandler: requireAdmin
     }, async (request, reply) => {
         const { userId } = request.params as { userId: string };
 
+        const result = await fastify.authService.approveUser(userId);
+
+        if (!result) {
+            return reply.status(404).send({ error: 'User not found' });
+        }
+
+        return { message: 'User approved successfully', userId };
+    });
+
+    // Отклонить пользователя
+    fastify.post('/users/:userId/reject', {
+        preHandler: requireAdmin
+    }, async (request, reply) => {
+        const { userId } = request.params as { userId: string };
+        const { reason } = request.body as { reason?: string };
+
+        const result = await fastify.authService.rejectUser(userId, reason);
+
+        if (!result) {
+            return reply.status(404).send({ error: 'User not found' });
+        }
+
+        return { message: 'User rejected', userId };
+    });
+
+    // Удалить пользователя
+    fastify.delete('/users/:userId', {
+        preHandler: requireAdmin
+    }, async (request, reply) => {
+        const { userId } = request.params as { userId: string };
+
+        // Нельзя удалить admin пользователя
         const user = await fastify.authService.getUserById(userId);
         if (user?.username === 'admin') {
             return reply.status(403).send({
@@ -63,19 +59,21 @@ export async function adminRoutes(fastify: FastifyInstance) {
             });
         }
 
-        const result = await fastify.mongo.db.collection('users').deleteOne({
-            _id: new (require('mongodb').ObjectId)(userId)
+        const ObjectId = require('mongodb').ObjectId;
+        const result = await fastify.mongo.db?.collection('users').deleteOne({
+            _id: new ObjectId(userId)
         });
 
-        if (result.deletedCount === 0) {
+        if (result?.deletedCount === 0) {
             return reply.status(404).send({ error: 'User not found' });
         }
 
         return { message: 'User deleted successfully', userId };
     });
 
+    // Обновить TTL пользователя
     fastify.patch('/users/:userId/ttl', {
-        preHandler: validateAdminToken
+        preHandler: requireAdmin
     }, async (request, reply) => {
         const { userId } = request.params as { userId: string };
         const { ttl } = request.body as { ttl: number };
@@ -88,5 +86,36 @@ export async function adminRoutes(fastify: FastifyInstance) {
 
         await fastify.authService.updateUserTTL(userId, ttl);
         return { message: 'TTL updated successfully', ttl };
+    });
+
+    // Получить статистику
+    fastify.get('/stats', {
+        preHandler: requireAdmin
+    }, async (request, reply) => {
+        const users = await fastify.mongo.db?.collection('users')
+            .aggregate([
+                {
+                    $group: {
+                        _id: '$status',
+                        count: { $sum: 1 }
+                    }
+                }
+            ])
+            .toArray();
+
+        const rooms = await fastify.mongo.db?.collection('rooms')
+            .countDocuments();
+
+        const webhooks = await fastify.mongo.db?.collection('webhooks')
+            .countDocuments();
+
+        return {
+            users: users?.reduce((acc: any, item: any) => {
+                acc[item._id] = item.count;
+                return acc;
+            }, {}),
+            rooms,
+            webhooks
+        };
     });
 }

@@ -8,11 +8,16 @@ import { WebhookRepository } from '../repository/webhookRepo';
 export interface User {
     _id: ObjectId;
     username: string;
+    email?: string;
     password: string;
     role: 'admin' | 'user';
+    status: 'pending' | 'approved' | 'rejected';
     webhookTTL: number;
+    reason?: string;
+    rejectionReason?: string;
     createdAt: Date;
-    isActive: boolean;
+    approvedAt?: Date;
+    rejectedAt?: Date;
 }
 
 declare module 'fastify' {
@@ -21,7 +26,6 @@ declare module 'fastify' {
         authService: AuthService;
         roomRepo: RoomRepository;
         webhookRepo: WebhookRepository;
-
         jwt: {
             sign: (payload: any, options?: any) => string;
             verify: (token: string, options?: any) => any;
@@ -29,8 +33,8 @@ declare module 'fastify' {
     }
 
     interface FastifyRequest {
-        user?: AuthenticatedUser;
-        jwtVerify<Decoded = { userId: string; username: string; role: string }>(): Promise<Decoded>;
+        user?: User;
+        jwtVerify<Decoded = any>(): Promise<Decoded>;
     }
 
     interface FastifyReply {
@@ -45,10 +49,6 @@ declare module '@fastify/jwt' {
             username: string;
             role: 'admin' | 'user';
         };
-        user: {
-            userId: string;
-            username: string;
-            role: 'admin' | 'user';
-        };
+        user: User;
     }
 }

@@ -1,84 +1,115 @@
 import { MongoClient, Db } from 'mongodb';
-import { logger } from '../utils/logger';
 
-let db: Db | null = null;
-let client: MongoClient | null = null;
+export async function connectMongoDB(uri?: string): Promise<Db> {
+    const mongoUri = uri || process.env.MONGODB_URI;
 
-export async function connectMongoDB(uri: string): Promise<Db> {
-    if (db) return db;
+    if (!mongoUri) {
+        throw new Error(
+            '❌ MONGODB_URI not found!\n' +
+            '💡 Please set MONGODB_URI in your .env file\n' +
+            '   Example: MONGODB_URI=mongodb+srv://user:pass@cluster.mongodb.net/dbname'
+        );
+    }
+
+    const safeUri = mongoUri.replace(/\/\/([^:]+):([^@]+)@/, '//$1:****@');
+    console.log('🔗 Attempting to connect to MongoDB...');
+    console.log(`📍 URI: ${safeUri}`);
 
     try {
-        client = new MongoClient(uri);
+        const client = new MongoClient(mongoUri, {
+            serverSelectionTimeoutMS: 10000, // 10 секунд на выбор сервера
+            connectTimeoutMS: 15000,         // 15 секунд на подключение
+            socketTimeoutMS: 45000,          // 45 секунд на операции
+
+            retryWrites: true,
+            retryReads: true,
+
+            maxPoolSize: 10,
+            minPoolSize: 2,
+        });
+
         await client.connect();
-        db = client.db();
 
-        logger.info('✅ Connected to MongoDB');
+        await client.db('admin').command({ ping: 1 });
 
-        // ✅ Создаем TTL индексы
-        await createIndexes();
+        console.log('✅ MongoDB connected successfully!');
 
-        return db;
-    } catch (error) {
-        logger.error(`❌ MongoDB connection failed: ${error}`);
-        process.exit(1);
+        const dbName = extractDbName(mongoUri);
+        console.log(`📦 Using database: ${dbName}`);
+
+        return client.db(dbName);
+
+    } catch (error: any) {
+        console.error('❌ MongoDB connection failed!');
+
+        if (error.message?.includes('ECONNREFUSED')) {
+            console.error('');
+            console.error('💡 Connection refused. Possible causes:');
+            console.error('   1. MongoDB server is not running');
+            console.error('   2. Wrong host or port in MONGODB_URI');
+            console.error('   3. Firewall blocking connection');
+            console.error('   4. For Atlas: Check Network Access settings');
+            console.error('');
+            console.error('🔍 Your URI starts with:', mongoUri.substring(0, 30) + '...');
+
+        } else if (error.message?.includes('Authentication failed')) {
+            console.error('');
+            console.error('💡 Authentication failed. Check:');
+            console.error('   1. Username is correct');
+            console.error('   2. Password is correct (special chars need URL encoding)');
+            console.error('   3. User exists in MongoDB Atlas Database Access');
+            console.error('   4. User has proper permissions');
+
+        } else if (error.message?.includes('ETIMEDOUT') || error.message?.includes('ENOTFOUND')) {
+            console.error('');
+            console.error('💡 Connection timeout. Possible causes:');
+            console.error('   1. Internet connection issues');
+            console.error('   2. MongoDB Atlas cluster is paused or deleted');
+            console.error('   3. Wrong cluster address in URI');
+            console.error('   4. Firewall/VPN blocking connection');
+
+        } else if (error.message?.includes('Invalid connection string')) {
+            console.error('');
+            console.error('💡 Invalid MongoDB URI format. Should be:');
+            console.error('   mongodb://host:port/dbname');
+            console.error('   OR');
+            console.error('   mongodb+srv://user:pass@cluster.mongodb.net/dbname');
+
+        } else {
+            console.error('');
+            console.error('💡 Unexpected error:', error.message);
+        }
+
+        throw error;
     }
 }
 
-async function createIndexes() {
-    if (!db) return;
-
+function extractDbName(uri: string): string {
     try {
-        // TTL индекс для webhooks (автоудаление через N секунд)
-        await db.collection('webhooks').createIndex(
-            { createdAt: 1 },
-            {
-                expireAfterSeconds: parseInt(process.env.DEFAULT_WEBHOOK_TTL || '43200'),
-                name: 'webhook_ttl_index'
+
+        let withoutProtocol = uri.replace(/^mongodb(\+srv)?:\/\//, '');
+
+        if (withoutProtocol.includes('@')) {
+            withoutProtocol = withoutProtocol.split('@')[1];
+        }
+
+        if (withoutProtocol.includes('/')) {
+            let dbPart = withoutProtocol.split('/')[1];
+
+            if (dbPart && dbPart.includes('?')) {
+                dbPart = dbPart.split('?')[0];
             }
-        );
-        logger.info('✅ TTL index created for webhooks');
 
-        // Индекс для быстрого поиска webhooks по roomId
-        await db.collection('webhooks').createIndex(
-            { roomId: 1, createdAt: -1 },
-            { name: 'room_created_index' }
-        );
+            if (dbPart && dbPart.trim() !== '') {
+                return dbPart.trim();
+            }
+        }
 
-        // Уникальный индекс для комнат
-        await db.collection('rooms').createIndex(
-            { roomId: 1 },
-            { unique: true, name: 'room_unique' }
-        );
+        console.warn('⚠️  Database name not found in URI, using default: webhook_viewer');
+        return 'webhook_viewer';
 
-        // Индекс для поиска комнат по userId
-        await db.collection('rooms').createIndex(
-            { userId: 1 },
-            { name: 'user_rooms_index' }
-        );
-
-        // Уникальный индекс для username
-        await db.collection('users').createIndex(
-            { username: 1 },
-            { unique: true, name: 'user_username_unique' }
-        );
-
-        logger.info('✅ All indexes created successfully');
     } catch (error) {
-        logger.error(`❌ Error creating indexes: ${error}`, );
-    }
-}
-
-export function getDB(): Db {
-    if (!db) {
-        throw new Error('Database not initialized. Call connectMongoDB() first.');
-    }
-    return db;
-}
-
-// Graceful shutdown
-export async function closeMongoDB() {
-    if (client) {
-        await client.close();
-        logger.info('✅ MongoDB connection closed');
+        console.warn('⚠️  Failed to parse database name from URI, using default: webhook_viewer');
+        return 'webhook_viewer';
     }
 }

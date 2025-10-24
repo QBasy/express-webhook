@@ -1,4 +1,3 @@
-// src/router/index.ts
 import { FastifyInstance } from "fastify";
 import { roomRoutes } from "./roomRouter";
 import { webhookRoutes } from "./webhookRouter";
@@ -12,6 +11,30 @@ export async function registerRoutes(fastify: FastifyInstance) {
     fastify.get("/", async (request, reply) => {
         const html = fs.readFileSync(
             path.join(__dirname, "..", "static", "webhook_page.html"),
+            "utf-8"
+        );
+        reply.type("text/html").send(html);
+    });
+
+    fastify.get("/login.html", async (request, reply) => {
+        const html = fs.readFileSync(
+            path.join(__dirname, "..", "static", "login.html"),
+            "utf-8"
+        );
+        reply.type("text/html").send(html);
+    });
+
+    fastify.get("/register.html", async (request, reply) => {
+        const html = fs.readFileSync(
+            path.join(__dirname, "..", "static", "register.html"),
+            "utf-8"
+        );
+        reply.type("text/html").send(html);
+    });
+
+    fastify.get("/admin.html", async (request, reply) => {
+        const html = fs.readFileSync(
+            path.join(__dirname, "..", "static", "admin.html"),
             "utf-8"
         );
         reply.type("text/html").send(html);
@@ -31,6 +54,22 @@ export async function registerRoutes(fastify: FastifyInstance) {
             "utf-8"
         );
         reply.type("text/html").send(html);
+    });
+
+    fastify.get("/tester.html", async (request, reply) => {
+        const html = fs.readFileSync(
+            path.join(__dirname, "..", "static", "tester.html"),
+            "utf-8"
+        );
+        reply.type("text/html").send(html);
+    });
+
+    fastify.get("/auth-check.js", async (request, reply) => {
+        const js = fs.readFileSync(
+            path.join(__dirname, "..", "static", "auth-check.js"),
+            "utf-8"
+        );
+        reply.type("application/javascript").send(js);
     });
 
     fastify.get("/favicon.ico", async (request, reply) => {

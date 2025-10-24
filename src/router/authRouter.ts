@@ -1,8 +1,46 @@
 import { FastifyInstance } from 'fastify';
 import { authenticate } from '../auth/middleware';
-import type { User } from '../types/fastify';
 
 export async function authRoutes(fastify: FastifyInstance) {
+    fastify.post('/register', {
+        schema: {
+            body: {
+                type: 'object',
+                required: ['username', 'email', 'password'],
+                properties: {
+                    username: { type: 'string', minLength: 3 },
+                    email: { type: 'string', format: 'email' },
+                    password: { type: 'string', minLength: 6 },
+                    reason: { type: 'string' }
+                }
+            }
+        }
+    }, async (request, reply) => {
+        const { username, email, password, reason } = request.body as {
+            username: string;
+            email: string;
+            password: string;
+            reason?: string;
+        };
+
+        try {
+            const userId = await fastify.authService.registerUser(
+                username,
+                email,
+                password,
+                reason
+            );
+
+            return reply.status(201).send({
+                message: 'Registration request submitted. Waiting for admin approval.',
+                userId
+            });
+        } catch (error: any) {
+            return reply.status(400).send({ error: error.message });
+        }
+    });
+
+    // Логин
     fastify.post('/login', {
         schema: {
             body: {
@@ -15,58 +53,73 @@ export async function authRoutes(fastify: FastifyInstance) {
             }
         }
     }, async (request, reply) => {
-        const { username, password } = request.body as { username: string; password: string };
-
-        const user = await fastify.authService.authenticate(username, password);
-
-        if (!user) {
-            return reply.status(401).send({ error: 'Invalid credentials' });
-        }
-
-        const token = fastify.jwt.sign({
-            userId: user._id.toString(),
-            username: user.username,
-            role: user.role
-        });
-
-        return {
-            token,
-            user: {
-                id: user._id.toString(),
-                username: user.username,
-                role: user.role,
-                webhookTTL: user.webhookTTL
-            }
+        const { username, password } = request.body as {
+            username: string;
+            password: string;
         };
-    });
 
-    fastify.patch('/me/ttl', {
-        preHandler: authenticate
-    }, async (request, reply) => {
-        const { ttl } = request.body as { ttl: number };
-        const user = request.user as unknown as User;
-        const userId = user._id.toString();
+        try {
+            const result = await fastify.authService.login(username, password);
 
-        if (ttl < 60 || ttl > 86400) {
-            return reply.status(400).send({
-                error: 'TTL must be between 60s and 86400s (1 day)'
+            return reply.send({
+                token: result.token,
+                user: {
+                    _id: result.user._id,
+                    username: result.user.username,
+                    email: result.user.email,
+                    role: result.user.role,
+                    status: result.user.status,
+                    webhookTTL: result.user.webhookTTL
+                }
             });
+        } catch (error: any) {
+            return reply.status(401).send({ error: error.message });
         }
-
-        await fastify.authService.updateUserTTL(userId, ttl);
-        return { message: 'TTL updated successfully', ttl };
     });
 
+    // Получить информацию о себе
     fastify.get('/me', {
         preHandler: authenticate
     }, async (request, reply) => {
-        const user = request.user as unknown as User;
-        return {
-            id: user._id.toString(),
+        const user = request.user as any;
+
+        return reply.send({
+            _id: user._id,
             username: user.username,
+            email: user.email,
             role: user.role,
+            status: user.status,
             webhookTTL: user.webhookTTL,
             createdAt: user.createdAt
-        };
+        });
+    });
+
+    // Обновить свой TTL
+    fastify.patch('/me/ttl', {
+        preHandler: authenticate,
+        schema: {
+            body: {
+                type: 'object',
+                required: ['ttl'],
+                properties: {
+                    ttl: { type: 'number', minimum: 60, maximum: 86400 }
+                }
+            }
+        }
+    }, async (request, reply) => {
+        const user = request.user as any;
+        const { ttl } = request.body as { ttl: number };
+
+        await fastify.authService.updateUserTTL(user._id.toString(), ttl);
+
+        return reply.send({
+            message: 'TTL updated successfully',
+            ttl
+        });
+    });
+
+    // Выход (удаление токена на клиенте)
+    fastify.post('/logout', async (request, reply) => {
+        return reply.send({ message: 'Logged out successfully' });
     });
 }
