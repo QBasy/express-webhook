@@ -1,50 +1,110 @@
-// src/router/roomRouter.ts
-import { FastifyInstance } from "fastify";
-import { roomRepository } from "../repository/roomRepo";
-import {request} from "express";
+import { FastifyInstance } from 'fastify';
+import { authenticate, requireAdmin } from '../auth/middleware';
+import type { User } from '../types/fastify';
 
 export async function roomRoutes(fastify: FastifyInstance) {
-    fastify.post("/:id", async (request, reply) => {
+    fastify.post('/:id', {
+        preHandler: authenticate
+    }, async (request, reply) => {
         const { id } = request.params as { id: string };
-        await roomRepository.createRoom(id);
-        return reply.status(200).send({ roomId: id, fullUrl: `${fastify.server.address()}/hook/${id}` });
+        const user = request.user as unknown as User;
+        const userId = user._id.toString();
+
+        if (user.role !== 'admin' && !id.startsWith(user.username + '_')) {
+            return reply.status(403).send({
+                error: 'Users can only create rooms with their username prefix'
+            });
+        }
+
+        await fastify.roomRepo.createRoom(id, userId, user.webhookTTL);
+
+        return reply.status(200).send({
+            roomId: id,
+            webhookUrl: `${request.protocol}://${request.hostname}/hook/${id}`,
+            webhookTTL: user.webhookTTL
+        });
     });
 
-    fastify.delete("/:id", async (request, reply) => {
+    fastify.get('/my-rooms', {
+        preHandler: authenticate
+    }, async (request, reply) => {
+        const user = request.user as unknown as User;
+        const userId = user._id.toString();
+        const isAdmin = user.role === 'admin';
+
+        const rooms = await fastify.roomRepo.getUserRooms(userId, isAdmin);
+        return { rooms };
+    });
+
+    fastify.delete('/:id', {
+        preHandler: authenticate
+    }, async (request, reply) => {
         const { id } = request.params as { id: string };
-        await roomRepository.closeRoom(id);
+        const user = request.user as unknown as User;
+        const userId = user._id.toString();
+        const isAdmin = user.role === 'admin';
 
-        return reply.status(200).send({ info: `successfully closed room for ${id}`, roomId: id });
+        const room = await fastify.roomRepo.getRoom(id);
+        if (!room) {
+            return reply.status(404).send({ error: 'Room not found' });
+        }
+
+        if (!isAdmin && room.userId !== userId) {
+            return reply.status(403).send({ error: 'Access denied' });
+        }
+
+        await fastify.roomRepo.closeRoom(id);
+        return { message: 'Room closed successfully', roomId: id };
     });
 
-    fastify.get("/all", async (request, reply) => {
-        const ids = await roomRepository.getAllRoomIds();
-        return reply.status(200).send({ rooms: ids });
+    fastify.get('/all', {
+        preHandler: requireAdmin
+    }, async (request, reply) => {
+        const rooms = await fastify.roomRepo.getAllRooms();
+        return { rooms };
     });
 
-    fastify.post("/:id/fake-error", async (request, reply) => {
+    fastify.post('/:id/fake-error', {
+        preHandler: authenticate
+    }, async (request, reply) => {
         const { id } = request.params as { id: string };
         const { enabled, statusCode } = request.body as { enabled: boolean; statusCode?: number };
+        const user = request.user as unknown as User;
 
-        await roomRepository.setFakeError(id, enabled, statusCode);
-        const current = await roomRepository.getFakeErrorStatus(id);
+        const room = await fastify.roomRepo.getRoom(id);
+        if (!room) {
+            return reply.status(404).send({ error: 'Room not found' });
+        }
+
+        if (user.role !== 'admin' && room.userId !== user._id.toString()) {
+            return reply.status(403).send({ error: 'Access denied' });
+        }
+
+        await fastify.roomRepo.setFakeError(id, enabled, statusCode);
+        const current = await fastify.roomRepo.getFakeErrorStatus(id);
 
         return reply.status(200).send({
             roomId: id,
             ...current,
             message: current.enabled
                 ? `Fake error ${current.statusCode} enabled`
-                : "Fake error disabled",
+                : 'Fake error disabled',
         });
     });
 
-    fastify.get("/:id/fake-error", async (request, reply) => {
+    fastify.get('/:id/fake-error', {
+        preHandler: authenticate
+    }, async (request, reply) => {
         const { id } = request.params as { id: string };
-        const current = await roomRepository.getFakeErrorStatus(id);
+        const current = await fastify.roomRepo.getFakeErrorStatus(id);
         return reply.status(200).send({ roomId: id, ...current });
     });
 
-    fastify.get("/allRooms", async (request, reply) => {
-        return reply.status(200).send({ rooms: await roomRepository.getAllRooms() });
-    })
+    fastify.get('/allRooms', {
+        preHandler: requireAdmin
+    }, async (request, reply) => {
+        return reply.status(200).send({
+            rooms: await fastify.roomRepo.getAllRooms()
+        });
+    });
 }

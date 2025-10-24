@@ -1,3 +1,4 @@
+// src/router/index.ts
 import { FastifyInstance } from "fastify";
 import { roomRoutes } from "./roomRouter";
 import { webhookRoutes } from "./webhookRouter";
@@ -22,12 +23,28 @@ export async function registerRoutes(fastify: FastifyInstance) {
             "utf-8"
         );
         reply.type("text/html").send(html);
-    })
+    });
 
-    fastify.get("/favicon", async (request, reply) => {
+    fastify.get("/tester", async (request, reply) => {
+        const html = fs.readFileSync(
+            path.join(__dirname, "..", "static", "tester.html"),
+            "utf-8"
+        );
+        reply.type("text/html").send(html);
+    });
+
+    fastify.get("/favicon.ico", async (request, reply) => {
         const favicon = fs.readFileSync(
             path.join(__dirname, "..", "static", "favicon.ico")
         );
         reply.type("image/x-icon").send(favicon);
+    });
+
+    fastify.get("/health", async (request, reply) => {
+        return {
+            status: "ok",
+            timestamp: new Date().toISOString(),
+            uptime: process.uptime()
+        };
     });
 }

@@ -1,61 +1,63 @@
-import { logger } from "../utils/logger";
+// src/repository/webhookRepo.ts
+import { Collection, ObjectId } from 'mongodb';
+import { logger } from '../utils/logger';
 
-export interface IWebhook {
+export interface Webhook {
+    _id?: ObjectId;
     receiptId: string;
+    roomId: string;
     body: any;
-    timestamp?: string;
+    timestamp: string;
+    createdAt: Date;
 }
 
-export interface IWebhookRepository {
-    addWebhook(webhookBody: any): void;
-    clearWebhooks(): void;
-    getWebhooks(): readonly IWebhook[];
-    getWebhook(id: string): IWebhook | undefined;
-    deleteWebhook(id: string): void;
-    fakeError?: boolean;
-}
+export class WebhookRepository {
+    constructor(private webhooksCollection: Collection) {}
 
-export class InMemoryWebhookRepository implements IWebhookRepository {
-    private webhooks: IWebhook[] = [];
-    private idCounter = 1;
-    fakeError = false;
+    async addWebhook(roomId: string, body: any): Promise<string> {
+        const receiptId = new ObjectId().toString();
 
-    addWebhook(webhookBody: any) {
-        const webhook: IWebhook = {
-            receiptId: this.idCounter.toString(),
-            body: webhookBody,
+        await this.webhooksCollection.insertOne({
+            receiptId,
+            roomId,
+            body,
             timestamp: new Date().toISOString(),
-        };
-        this.webhooks.push(webhook);
-        this.idCounter++;
-        logger.info(`Webhook added with ID ${webhook.receiptId}. Total webhooks: ${this.webhooks.length}`);
+            createdAt: new Date()
+        });
+
+        logger.info(`Webhook ${receiptId} added to room ${roomId}`);
+        return receiptId;
     }
 
-    clearWebhooks() {
-        this.webhooks = [];
-        this.idCounter = 1;
-        logger.info(`Webhooks cleared.`);
+    async getWebhooks(roomId: string): Promise<Webhook[]> {
+        return await this.webhooksCollection
+            .find({ roomId })
+            .sort({ createdAt: -1 })
+            .toArray() as Webhook[];
     }
 
-    getWebhook(id: string): IWebhook | undefined {
-        const webhook = this.webhooks.find(w => w.receiptId === id);
-        if (!webhook) {
-            logger.warn(`Webhook with ID ${id} not found`);
+    async getWebhook(roomId: string, receiptId: string): Promise<Webhook | null> {
+        return await this.webhooksCollection.findOne({
+            roomId,
+            receiptId
+        }) as Webhook | null;
+    }
+
+    async deleteWebhook(roomId: string, receiptId: string): Promise<boolean> {
+        const result = await this.webhooksCollection.deleteOne({
+            roomId,
+            receiptId
+        });
+
+        if (result.deletedCount > 0) {
+            logger.info(`Webhook ${receiptId} deleted from room ${roomId}`);
         }
-        return webhook;
+
+        return result.deletedCount > 0;
     }
 
-    deleteWebhook(receiptId: string) {
-        const index = this.webhooks.findIndex(w => w.receiptId === receiptId);
-        if (index === -1) {
-            logger.warn(`Webhook ${receiptId} not found for deletion`);
-            return;
-        }
-        this.webhooks.splice(index, 1);
-        logger.info(`Webhook ${receiptId} deleted. Remaining: ${this.webhooks.length}`);
-    }
-
-    getWebhooks(): readonly IWebhook[] {
-        return this.webhooks;
+    async clearWebhooks(roomId: string): Promise<void> {
+        await this.webhooksCollection.deleteMany({ roomId });
+        logger.info(`All webhooks cleared from room ${roomId}`);
     }
 }

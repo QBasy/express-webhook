@@ -1,89 +1,107 @@
-// src/repository/roomRepo.ts
-import {InMemoryWebhookRepository, IWebhookRepository} from "./webhooksRepo";
-import { logger } from "../utils/logger";
+import { Collection, ObjectId } from 'mongodb';
+import { logger } from '../utils/logger';
 
-interface IRoomInfo {
-    roomId: string,
-    webhooksCount: number | undefined
+export interface Room {
+    _id?: ObjectId;
+    roomId: string;
+    userId: string;
+    webhookTTL: number;
+    createdAt: Date;
+    lastActivityAt: Date;
 }
 
-export interface IRoomRepository {
-    createRoom(idInstance: string): Promise<void>;
-    getRoomRepo(idInstance: string): Promise<IWebhookRepository | null>;
-    getAllRoomIds(): Promise<string[]>;
-    closeRoom(idInstance: string): Promise<void>;
-    setFakeError(id: string, enabled: boolean, statusCode?: number): Promise<void>;
-    getFakeErrorStatus(id: string): Promise<{ enabled: boolean; statusCode: number | null }>;
-    getRoomCount(): Promise<number>;
-    getAllRooms(): Promise<IRoomInfo[] | null>;
-}
+export class RoomRepository {
+    constructor(
+        private roomsCollection: Collection,
+        private fakeErrorsCollection: Collection
+    ) {}
 
-class InMemoryRoomRepository implements IRoomRepository {
-    private roomsMap = new Map<string, IWebhookRepository>();
-    private fakeErrorMap = new Map<string, { enabled: boolean; statusCode: number | null }>();
-
-    async createRoom(idInstance: string) {
-        if (!this.roomsMap.has(idInstance)) {
-            this.roomsMap.set(idInstance, new InMemoryWebhookRepository());
-            this.fakeErrorMap.set(idInstance, { enabled: false, statusCode: null });
-            logger.info(`Room created for ID: ${idInstance}`);
-        }
+    async createRoom(roomId: string, userId: string, webhookTTL: number): Promise<void> {
+        await this.roomsCollection.updateOne(
+            { roomId },
+            {
+                $set: {
+                    roomId,
+                    userId,
+                    webhookTTL,
+                    lastActivityAt: new Date()
+                },
+                $setOnInsert: {
+                    createdAt: new Date()
+                }
+            },
+            { upsert: true }
+        );
+        logger.info(`Room ${roomId} created/updated for user ${userId}`);
     }
 
-    async getRoomRepo(idInstance: string) {
-        return this.roomsMap.get(idInstance) ?? null;
+    async getRoom(roomId: string): Promise<Room | null> {
+        return await this.roomsCollection.findOne({ roomId }) as Room | null;
     }
 
-    async getAllRoomIds() {
-        logger.info(`Current rooms: ${[...this.roomsMap.keys()]}`);
-        const rooms: string[] = [];
-        for (const [key, value] of this.roomsMap.entries()) {
-            logger.info(`Room ID: ${key}, Webhooks count: ${value.getWebhooks().length}`);
-            rooms.push(key);
-        }
-        return rooms;
+    async getUserRooms(userId: string, isAdmin: boolean): Promise<Room[]> {
+        const filter = isAdmin ? {} : { userId };
+        return await this.roomsCollection
+            .find(filter)
+            .sort({ createdAt: -1 })
+            .toArray() as Room[];
     }
 
-    async closeRoom(idInstance: string) {
-        this.roomsMap.delete(idInstance);
-        this.fakeErrorMap.delete(idInstance);
-        logger.info(`Room closed for ID: ${idInstance}`);
-    }
-
-    async setFakeError(id: string, enabled: boolean, statusCode?: number) {
-        const state = this.fakeErrorMap.get(id) || { enabled: false, statusCode: null };
-        state.enabled = enabled;
-        state.statusCode = enabled ? statusCode ?? 500 : null;
-        this.fakeErrorMap.set(id, state);
-        logger.info(`Fake error for ${id}: ${enabled ? `ON (${state.statusCode})` : "OFF"}`);
-    }
-
-    async getFakeErrorStatus(id: string) {
-        return this.fakeErrorMap.get(id) ?? { enabled: false, statusCode: null };
-    }
-
-    async getRoomCount(): Promise<number> {
-        return this.roomsMap.size
-    }
-
-    async getAllRooms(): Promise<IRoomInfo[] | null> {
-        let allRooms: IRoomInfo[] = [];
-        this.roomsMap.forEach((room, key, value) => {
-            const roomWebhooks = value.get(key);
-            if (roomWebhooks) {
-                allRooms.push({
-                    roomId: key,
-                    webhooksCount: roomWebhooks.getWebhooks().length,
-                })
-            } else {
-                allRooms.push({
-                    roomId: key,
-                    webhooksCount: 0
-                });
+    async getAllRooms(): Promise<Array<{ roomId: string; webhooksCount: number }>> {
+        const pipeline = [
+            {
+                $lookup: {
+                    from: 'webhooks',
+                    localField: 'roomId',
+                    foreignField: 'roomId',
+                    as: 'webhooks'
+                }
+            },
+            {
+                $project: {
+                    roomId: 1,
+                    webhooksCount: { $size: '$webhooks' }
+                }
             }
-        });
-        return allRooms
+        ];
+
+        return await this.roomsCollection.aggregate(pipeline).toArray() as any[];
+    }
+
+    async closeRoom(roomId: string): Promise<void> {
+        await Promise.all([
+            this.roomsCollection.deleteOne({ roomId }),
+            this.fakeErrorsCollection.deleteOne({ roomId })
+        ]);
+        logger.info(`Room ${roomId} closed`);
+    }
+
+    async updateActivity(roomId: string): Promise<void> {
+        await this.roomsCollection.updateOne(
+            { roomId },
+            { $set: { lastActivityAt: new Date() } }
+        );
+    }
+
+    async setFakeError(roomId: string, enabled: boolean, statusCode?: number): Promise<void> {
+        await this.fakeErrorsCollection.updateOne(
+            { roomId },
+            {
+                $set: {
+                    enabled,
+                    statusCode: enabled ? (statusCode || 500) : null,
+                    updatedAt: new Date()
+                }
+            },
+            { upsert: true }
+        );
+        logger.info(`Fake error for ${roomId}: ${enabled ? `ON (${statusCode || 500})` : "OFF"}`);
+    }
+
+    async getFakeErrorStatus(roomId: string): Promise<{ enabled: boolean; statusCode: number | null }> {
+        const result = await this.fakeErrorsCollection.findOne({ roomId });
+        return result
+            ? { enabled: result.enabled, statusCode: result.statusCode }
+            : { enabled: false, statusCode: null };
     }
 }
-
-export const roomRepository: IRoomRepository = new InMemoryRoomRepository();
