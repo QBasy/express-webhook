@@ -142,7 +142,6 @@
 
 <!-- Main App (скрыт до авторизации) -->
 <div id="main-app" class="hidden flex-1 flex flex-col">
-    <body class="bg-gradient-to-br from-gray-50 to-gray-100 min-h-screen flex flex-col">
     <!-- Header -->
     <header class="bg-white shadow-md border-b border-gray-200">
         <div class="max-w-7xl mx-auto px-4 py-4 sm:px-6 lg:px-8">
@@ -1051,7 +1050,74 @@
         // Initial render
         renderAllWebhooks();
     </script>
-    </body>
+
+    <!-- Include Navbar -->
+    <script>
+        // Загружаем navbar
+        fetch('/navbar.html')
+            .then(res => res.text())
+            .then(html => {
+                document.getElementById('navbar-container').innerHTML = html;
+            })
+            .catch(err => console.error('Failed to load navbar:', err));
+    </script>
+
+    <!-- Auth Check -->
+    <script>
+        // Проверка авторизации
+        const tokenRaw = localStorage.getItem('jwt_token');
+
+        async function checkAuthAndShow() {
+            if (!tokenRaw) {
+                console.log('❌ No token, redirecting to login');
+                window.location.replace('/login.html');
+                return;
+            }
+
+            try {
+                const res = await fetch(`${apiBase}/auth/me`, {
+                    headers: { 'Authorization': `Bearer ${tokenRaw}` }
+                });
+
+                console.log('📡 Auth check response:', res.status);
+
+                if (!res.ok) {
+                    console.log('❌ Token invalid');
+                    localStorage.removeItem('jwt_token');
+                    localStorage.removeItem('user');
+                    window.location.replace('/login.html');
+                    return;
+                }
+
+                const data = await res.json();
+                console.log('✅ Auth OK, user:', data.username);
+
+                if (data.status !== 'approved') {
+                    alert(`Ваш аккаунт: ${data.status}. Требуется одобрение администратора.`);
+                    localStorage.removeItem('jwt_token');
+                    localStorage.removeItem('user');
+                    window.location.replace('/login.html');
+                    return;
+                }
+
+                // Сохраняем данные
+                localStorage.setItem('user', JSON.stringify(data));
+
+                // Показываем приложение
+                document.getElementById('auth-loading').classList.add('hidden');
+                document.getElementById('main-app').classList.remove('hidden');
+
+            } catch (error) {
+                console.error('❌ Auth check error:', error);
+                localStorage.removeItem('jwt_token');
+                localStorage.removeItem('user');
+                window.location.replace('/login.html');
+            }
+        }
+
+        // Запускаем проверку
+        checkAuthAndShow();
+    </script>
 </div>
 </body>
 </html>

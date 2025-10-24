@@ -1,64 +1,86 @@
+// auth-check.js - Проверка авторизации БЕЗ бесконечной проверки
 (function() {
     const apiBase = window.location.origin;
     const token = localStorage.getItem('jwt_token');
     const currentPage = window.location.pathname;
 
+    console.log('🔍 Auth check started');
+    console.log('📍 Current page:', currentPage);
+    console.log('🔑 Has token:', !!token);
+
     // Страницы, которые доступны без авторизации
-    const publicPages = ['/login.html', '/register.html'];
-    const isPublicPage = publicPages.includes(currentPage);
+    const publicPages = ['/login.html', '/login', '/register.html', '/register', '/health'];
+    const isPublicPage = publicPages.some(page => currentPage === page || currentPage.startsWith(page));
 
-    // Если нет токена и страница не публичная - редирект на логин
+    // КРИТИЧНО: Если нет токена и страница не публичная - редирект ОДИН РАЗ
     if (!token && !isPublicPage) {
-        console.log('❌ No token, redirecting to login');
-        window.location.href = '/login.html';
+        console.log('❌ No token, redirecting to login (ONCE)');
+
+        // Проверяем что мы уже не на странице логина
+        if (!currentPage.includes('login')) {
+            window.location.replace('/login.html'); // replace вместо href!
+        }
         return;
     }
 
-    // Если есть токен и мы на публичной странице - редирект на главную
-    if (token && isPublicPage) {
-        console.log('✅ Already logged in, redirecting to home');
-        window.location.href = '/';
+    // Если есть токен и мы на публичной странице - редирект на главную ОДИН РАЗ
+    if (token && (currentPage === '/login.html' || currentPage === '/login' || currentPage === '/register.html' || currentPage === '/register')) {
+        console.log('✅ Already logged in, redirecting to home (ONCE)');
+        window.location.replace('/'); // replace вместо href!
         return;
     }
 
-    // Если есть токен и мы НЕ на публичной странице - проверяем токен
+    // Если есть токен и мы НЕ на публичной странице - проверяем токен ОДИН РАЗ
     if (token && !isPublicPage) {
-        console.log('🔍 Checking token validity...');
+        console.log('🔍 Checking token validity (ONCE)...');
 
-        fetch(`${apiBase}/auth/me`, {
-            headers: { 'Authorization': `Bearer ${token}` }
-        })
-            .then(res => {
+        // Функция для проверки авторизации
+        window.checkAuth = async function() {
+            try {
+                const res = await fetch(`${apiBase}/auth/me`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
                 console.log('📡 Auth check response:', res.status);
 
                 if (!res.ok) {
-                    // Токен невалиден
                     console.log('❌ Token invalid, clearing and redirecting');
                     localStorage.removeItem('jwt_token');
                     localStorage.removeItem('user');
-                    window.location.href = '/login.html';
-                    return null;
+
+                    // Только если не на странице логина
+                    if (!window.location.pathname.includes('login')) {
+                        window.location.replace('/login.html');
+                    }
+                    return false;
                 }
 
-                return res.json();
-            })
-            .then(userData => {
-                if (userData) {
-                    console.log('✅ Token valid, user:', userData.username);
+                const userData = await res.json();
+                console.log('✅ Token valid, user:', userData.username);
 
-                    // Сохраняем обновленные данные пользователя
-                    localStorage.setItem('user', JSON.stringify(userData));
+                // Сохраняем обновленные данные пользователя
+                localStorage.setItem('user', JSON.stringify(userData));
 
-                    // Обновляем UI если есть элементы
-                    updateUserInfo(userData);
-                }
-            })
-            .catch(err => {
+                // Обновляем UI
+                updateUserInfo(userData);
+
+                return true;
+
+            } catch (err) {
                 console.error('❌ Auth check failed:', err);
                 localStorage.removeItem('jwt_token');
                 localStorage.removeItem('user');
-                window.location.href = '/login.html';
-            });
+
+                // Только если не на странице логина
+                if (!window.location.pathname.includes('login')) {
+                    window.location.replace('/login.html');
+                }
+                return false;
+            }
+        };
+
+        // Запускаем проверку ТОЛЬКО ОДИН РАЗ при загрузке
+        checkAuth();
     }
 
     function updateUserInfo(user) {
@@ -102,12 +124,12 @@
 
         const response = await fetch(url, options);
 
-        // Если 401 - токен протух, выходим
-        if (response.status === 401) {
-            console.log('❌ 401 Unauthorized, logging out');
+        // Если 401 - токен протух, выходим (БЕЗ бесконечного цикла)
+        if (response.status === 401 && !window.location.pathname.includes('login')) {
+            console.log('❌ 401 Unauthorized, logging out (ONCE)');
             localStorage.removeItem('jwt_token');
             localStorage.removeItem('user');
-            window.location.href = '/login.html';
+            window.location.replace('/login.html'); // replace!
         }
 
         return response;
@@ -118,7 +140,7 @@
         console.log('👋 Logging out');
         localStorage.removeItem('jwt_token');
         localStorage.removeItem('user');
-        window.location.href = '/login.html';
+        window.location.replace('/login.html'); // replace!
     };
 
     // Получить заголовки авторизации
@@ -126,4 +148,6 @@
         const token = localStorage.getItem('jwt_token');
         return token ? { 'Authorization': `Bearer ${token}` } : {};
     };
+
+    console.log('✅ Auth check completed');
 })();

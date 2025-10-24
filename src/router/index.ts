@@ -1,11 +1,13 @@
 import { FastifyInstance } from "fastify";
 import { roomRoutes } from "./roomRouter";
 import { webhookRoutes } from "./webhookRouter";
-import { authRoutes } from "./authRouter"; // ← Добавлено!
 import path from "path";
 import fs from "fs";
 
 export async function registerRoutes(fastify: FastifyInstance) {
+    fastify.register(roomRoutes, { prefix: "/room" });
+    fastify.register(webhookRoutes, { prefix: "/hook" });
+
     fastify.get("/", async (request, reply) => {
         const html = fs.readFileSync(
             path.join(__dirname, "..", "static", "webhook_page.html"),
@@ -25,7 +27,6 @@ export async function registerRoutes(fastify: FastifyInstance) {
     fastify.get("/login.html", async (request, reply) => {
         const html = fs.readFileSync(
             path.join(__dirname, "..", "static", "login.html"),
-            "utf-8"
         );
         reply.type("text/html").send(html);
     });
@@ -57,6 +58,7 @@ export async function registerRoutes(fastify: FastifyInstance) {
     fastify.get("/admin.html", async (request, reply) => {
         const html = fs.readFileSync(
             path.join(__dirname, "..", "static", "admin.html"),
+            "utf-8"
         );
         reply.type("text/html").send(html);
     });

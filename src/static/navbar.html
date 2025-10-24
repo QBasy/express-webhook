@@ -1,14 +1,9 @@
-<!-- navbar.html - Универсальный навбар для всех страниц -->
+<!-- universal-header.html - Универсальный header для всех страниц -->
 <style>
-  .navbar-gradient {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  }
-
-  .dropdown {
+  .user-dropdown {
     position: relative;
   }
-
-  .dropdown-menu {
+  .user-dropdown-menu {
     display: none;
     position: absolute;
     right: 0;
@@ -20,219 +15,181 @@
     min-width: 200px;
     z-index: 50;
   }
-
-  .dropdown:hover .dropdown-menu {
+  .user-dropdown:hover .user-dropdown-menu {
     display: block;
   }
-
-  .nav-link {
-    transition: all 0.3s ease;
+  @keyframes pulse-dot {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
   }
-
-  .nav-link:hover {
-    transform: translateY(-2px);
+  .pulse-dot {
+    animation: pulse-dot 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
   }
 </style>
 
-<nav class="navbar-gradient shadow-lg">
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-    <div class="flex items-center justify-between h-16">
+<header class="bg-white shadow-md border-b border-gray-200">
+  <div class="max-w-7xl mx-auto px-4 py-4 sm:px-6 lg:px-8">
+    <div class="flex items-center justify-between">
       <!-- Logo & Title -->
-      <div class="flex items-center space-x-4">
-        <a href="/" class="flex items-center space-x-3 nav-link">
-          <div class="bg-white w-10 h-10 rounded-full flex items-center justify-center shadow-md">
-            <span class="text-purple-600 text-xl font-bold">WV</span>
-          </div>
-          <div class="text-white">
-            <h1 class="text-xl font-bold">Webhook Viewer</h1>
-            <p class="text-xs text-purple-200" id="nav-subtitle">GREEN-API QA TEAM</p>
-          </div>
+      <a href="/" class="flex items-center gap-4 hover:opacity-80 transition">
+        <!-- GREEN-API Logo -->
+        <svg width="50" height="50" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+          <rect width="100" height="100" rx="12" fill="#3B9702"/>
+          <text x="50" y="70" font-family="Arial, sans-serif" font-size="60" font-weight="bold" fill="white" text-anchor="middle">G</text>
+        </svg>
+        <div>
+          <h1 class="text-2xl font-bold text-gray-900">Webhook Viewer</h1>
+          <p class="text-xs text-green-600 font-semibold">GREEN-API QA TEAM</p>
+        </div>
+      </a>
+
+      <!-- Right Side: Navigation & User Menu -->
+      <div class="flex items-center gap-4">
+        <!-- Navigation Links (Desktop) -->
+        <nav class="hidden md:flex items-center gap-4" id="header-nav-links">
+          <!-- Будет заполнено JavaScript -->
+        </nav>
+
+        <!-- Connection Status (только на главной) -->
+        <div id="header-connection-status" class="hidden">
+          <!-- Будет показан только на странице webhooks -->
+        </div>
+
+        <!-- User Dropdown -->
+        <div id="header-user-menu">
+          <!-- Будет заполнено JavaScript -->
+        </div>
+
+        <!-- GREEN-API Link -->
+        <a href="https://green-api.com" target="_blank"
+           class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium transition shadow-sm">
+          GREEN-API →
         </a>
       </div>
-
-      <!-- Navigation Links -->
-      <div class="hidden md:flex items-center space-x-6" id="nav-links">
-        <!-- Будет заполнено JavaScript -->
-      </div>
-
-      <!-- User Menu -->
-      <div class="flex items-center space-x-4">
-        <!-- Auth Status -->
-        <div id="auth-status" class="text-white text-sm">
-          <!-- Загрузка... -->
-        </div>
-
-        <!-- User Dropdown (если залогинен) -->
-        <div id="user-dropdown" class="dropdown hidden">
-          <button class="flex items-center space-x-2 bg-white bg-opacity-20 hover:bg-opacity-30 rounded-lg px-4 py-2 text-white transition">
-            <span id="username-display" class="font-medium"></span>
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-            </svg>
-          </button>
-          <div class="dropdown-menu">
-            <div class="py-2">
-              <div class="px-4 py-2 text-sm text-gray-500 border-b border-gray-200">
-                <div class="font-semibold text-gray-800" id="dropdown-username"></div>
-                <div class="text-xs" id="dropdown-role"></div>
-              </div>
-              <a href="/" class="block px-4 py-2 text-sm text-gray-700 hover:bg-purple-50 transition">
-                🏠 Главная
-              </a>
-              <a href="/tester.html" class="block px-4 py-2 text-sm text-gray-700 hover:bg-purple-50 transition">
-                🧪 API Tester
-              </a>
-              <div id="admin-link" class="hidden">
-                <a href="/admin.html" class="block px-4 py-2 text-sm text-gray-700 hover:bg-purple-50 transition">
-                  👑 Админ панель
-                </a>
-              </div>
-              <div class="border-t border-gray-200 mt-2 pt-2">
-                <button onclick="navLogout()" class="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition">
-                  🚪 Выйти
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Login Button (если не залогинен) -->
-        <div id="login-button" class="hidden">
-          <a href="/login.html" class="bg-white text-purple-600 px-4 py-2 rounded-lg font-medium hover:bg-purple-50 transition">
-            Войти
-          </a>
-        </div>
-      </div>
-
-      <!-- Mobile menu button -->
-      <button id="mobile-menu-btn" class="md:hidden text-white p-2">
-        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
-        </svg>
-      </button>
     </div>
   </div>
-
-  <!-- Mobile menu -->
-  <div id="mobile-menu" class="hidden md:hidden bg-white bg-opacity-10 backdrop-blur-lg">
-    <div class="px-4 py-4 space-y-2" id="mobile-nav-links">
-      <!-- Будет заполнено JavaScript -->
-    </div>
-  </div>
-</nav>
+</header>
 
 <script>
-  // Navbar JavaScript
+  // Universal Header JavaScript
   (function() {
     const apiBase = window.location.origin;
     const token = localStorage.getItem('jwt_token');
     const userStr = localStorage.getItem('user');
     const user = userStr ? JSON.parse(userStr) : null;
-
-    // Определяем текущую страницу
     const currentPage = window.location.pathname;
 
-    // Обновляем навбар в зависимости от авторизации
-    function updateNavbar() {
-      const authStatus = document.getElementById('auth-status');
-      const userDropdown = document.getElementById('user-dropdown');
-      const loginButton = document.getElementById('login-button');
-      const navLinks = document.getElementById('nav-links');
-      const mobileNavLinks = document.getElementById('mobile-nav-links');
+    function updateHeader() {
+      const navLinks = document.getElementById('header-nav-links');
+      const userMenu = document.getElementById('header-user-menu');
 
       if (token && user) {
-        // Пользователь залогинен
-        authStatus.innerHTML = `
-                    <div class="flex items-center space-x-2">
-                        <div class="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-                        <span class="text-sm">Онлайн</span>
-                    </div>
-                `;
-
-        userDropdown.classList.remove('hidden');
-        loginButton.classList.add('hidden');
-
-        document.getElementById('username-display').textContent = user.username;
-        document.getElementById('dropdown-username').textContent = user.username;
-        document.getElementById('dropdown-role').textContent = user.role === 'admin' ? '👑 Администратор' : '👤 Пользователь';
-
-        if (user.role === 'admin') {
-          document.getElementById('admin-link').classList.remove('hidden');
-        }
-
-        // Ссылки для залогиненных
+        // ========== НАВИГАЦИОННЫЕ ССЫЛКИ ==========
         const links = [
           { href: '/', text: '🏠 Главная', active: currentPage === '/' || currentPage === '/index.html' },
-          { href: '/tester.html', text: '🧪 API Tester', active: currentPage === '/tester.html' }
+          { href: '/tester.html', text: '🧪 API Tester', active: currentPage === '/tester.html' },
+          { href: '/docs', text: '📖 Docs', active: currentPage === '/docs' }
         ];
 
         if (user.role === 'admin') {
-          links.push({ href: '/admin.html', text: '👑 Админ', active: currentPage === '/admin.html' });
+          links.push({ href: '/admin.html', text: '👑 Admin', active: currentPage === '/admin.html' });
         }
 
         navLinks.innerHTML = links.map(link => `
-                    <a href="${link.href}" class="nav-link text-white hover:text-purple-200 font-medium ${link.active ? 'underline' : ''}">
+                    <a href="${link.href}"
+                       class="text-gray-700 hover:text-green-600 font-medium transition ${link.active ? 'text-green-600 font-semibold' : ''}">
                         ${link.text}
                     </a>
                 `).join('');
 
-        mobileNavLinks.innerHTML = links.map(link => `
-                    <a href="${link.href}" class="block text-white hover:bg-white hover:bg-opacity-20 px-4 py-2 rounded transition ${link.active ? 'bg-white bg-opacity-20' : ''}">
-                        ${link.text}
-                    </a>
-                `).join('') + `
-                    <button onclick="navLogout()" class="block w-full text-left text-white hover:bg-red-500 px-4 py-2 rounded transition">
-                        🚪 Выйти
-                    </button>
+        // ========== USER DROPDOWN MENU ==========
+        userMenu.innerHTML = `
+                    <div class="user-dropdown">
+                        <button class="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition">
+                            <span class="font-medium text-gray-800">${user.username}</span>
+                            <svg class="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                            </svg>
+                        </button>
+                        <div class="user-dropdown-menu">
+                            <div class="py-2">
+                                <div class="px-4 py-2 text-sm text-gray-500 border-b border-gray-200">
+                                    <div class="font-semibold text-gray-800">${user.username}</div>
+                                    <div class="text-xs">${user.role === 'admin' ? '👑 Администратор' : '👤 Пользователь'}</div>
+                                </div>
+                                <a href="/" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition">
+                                    🏠 Главная
+                                </a>
+                                <a href="/tester.html" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition">
+                                    🧪 API Tester
+                                </a>
+                                <a href="/docs" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition">
+                                    📖 Документация
+                                </a>
+                                ${user.role === 'admin' ? `
+                                    <a href="/admin.html" class="block px-4 py-2 text-sm text-purple-600 hover:bg-purple-50 transition">
+                                        👑 Админ панель
+                                    </a>
+                                ` : ''}
+                                <div class="border-t border-gray-200 mt-2 pt-2">
+                                    <button onclick="headerLogout()" class="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition">
+                                        🚪 Выйти
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 `;
+
+        // Connection Status (только на главной странице)
+        if (currentPage === '/' || currentPage === '/index.html') {
+          const connStatus = document.getElementById('header-connection-status');
+          if (connStatus) {
+            connStatus.classList.remove('hidden');
+            connStatus.innerHTML = `
+                            <div class="flex items-center gap-2 px-3 py-1 rounded-full bg-green-100 text-green-700 text-sm">
+                                <span class="w-2 h-2 bg-green-500 rounded-full pulse-dot"></span>
+                                <span>Подключено</span>
+                            </div>
+                        `;
+          }
+        }
 
       } else {
-        authStatus.innerHTML = `
-                    <span class="text-sm text-purple-200">Гость</span>
-                `;
-
-        userDropdown.classList.add('hidden');
-        loginButton.classList.remove('hidden');
-
+        // ========== НЕ ЗАЛОГИНЕН ==========
         const links = [
           { href: '/login.html', text: '🔐 Вход', active: currentPage === '/login.html' },
           { href: '/register.html', text: '📝 Регистрация', active: currentPage === '/register.html' }
         ];
 
         navLinks.innerHTML = links.map(link => `
-                    <a href="${link.href}" class="nav-link text-white hover:text-purple-200 font-medium ${link.active ? 'underline' : ''}">
+                    <a href="${link.href}"
+                       class="text-gray-700 hover:text-green-600 font-medium transition ${link.active ? 'text-green-600 font-semibold' : ''}">
                         ${link.text}
                     </a>
                 `).join('');
 
-        mobileNavLinks.innerHTML = links.map(link => `
-                    <a href="${link.href}" class="block text-white hover:bg-white hover:bg-opacity-20 px-4 py-2 rounded transition ${link.active ? 'bg-white bg-opacity-20' : ''}">
-                        ${link.text}
+        userMenu.innerHTML = `
+                    <a href="/login.html"
+                       class="px-4 py-2 bg-gray-900 hover:bg-gray-800 text-white rounded-lg font-medium transition">
+                        Войти
                     </a>
-                `).join('');
+                `;
       }
     }
 
-    window.navLogout = function() {
+    // Функция выхода
+    window.headerLogout = function() {
       if (confirm('Вы уверены что хотите выйти?')) {
-        localStorage.removeItem('jwt_token');
-        localStorage.removeItem('user');
+        localStorage.clear();
         window.location.href = '/login.html';
       }
     };
 
-    const mobileMenuBtn = document.getElementById('mobile-menu-btn');
-    const mobileMenu = document.getElementById('mobile-menu');
+    // Обновляем header
+    updateHeader();
 
-    mobileMenuBtn?.addEventListener('click', () => {
-      mobileMenu.classList.toggle('hidden');
-    });
-
-    updateNavbar();
-
-    window.addEventListener('storage', () => {
-      updateNavbar();
-    });
-
+    // Слушаем изменения localStorage (например, при входе в другой вкладке)
+    window.addEventListener('storage', updateHeader);
   })();
 </script>
