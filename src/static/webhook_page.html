@@ -120,376 +120,396 @@
         .webhook-url-container:hover .copy-btn-inline {
             opacity: 1;
         }
+
+        /* Navbar styles */
+        .navbar-gradient {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
     </style>
 </head>
 <body class="bg-gradient-to-br from-gray-50 to-gray-100 min-h-screen flex flex-col">
-<!-- Header -->
-<header class="bg-white shadow-md border-b border-gray-200">
-    <div class="max-w-7xl mx-auto px-4 py-4 sm:px-6 lg:px-8">
-        <div class="flex items-center justify-between">
-            <div class="flex items-center gap-4">
-                <!-- GREEN-API Logo -->
-                <svg width="50" height="50" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-                    <rect width="100" height="100" rx="12" fill="#3B9702"/>
-                    <text x="50" y="70" font-family="Arial, sans-serif" font-size="60" font-weight="bold" fill="white" text-anchor="middle">G</text>
-                </svg>
-                <div>
-                    <h1 class="text-2xl font-bold text-gray-900">Webhook Viewer</h1>
-                    <p class="text-xs text-green-600 font-semibold">GREEN-API QA TEAM</p>
-                </div>
-            </div>
-            <div class="flex items-center gap-4">
-                <div id="connectionStatus" class="flex items-center gap-2 px-3 py-1 rounded-full bg-green-100 text-green-700 text-sm">
-                    <span class="w-2 h-2 bg-green-500 rounded-full pulse-dot"></span>
-                    <span>Подключено</span>
-                </div>
-                <a href="https://green-api.com" target="_blank" class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium transition shadow-sm">
-                    GREEN-API →
-                </a>
-            </div>
-        </div>
+
+<!-- Navbar -->
+<div id="navbar-container"></div>
+
+<!-- Loading Screen (показывается до проверки авторизации) -->
+<div id="auth-loading" class="fixed inset-0 bg-gray-50 flex items-center justify-center z-50">
+    <div class="text-center">
+        <div class="inline-block animate-spin rounded-full h-16 w-16 border-b-4 border-purple-600 mb-4"></div>
+        <p class="text-gray-600 text-lg">Проверка авторизации...</p>
     </div>
-</header>
+</div>
 
-<!-- Main Content -->
-<div class="flex-1 flex max-w-7xl mx-auto w-full">
-    <!-- Sidebar -->
-    <aside class="w-80 bg-white shadow-lg border-r border-gray-200 p-6 space-y-6 overflow-y-auto">
-        <!-- Room Controls -->
-        <div>
-            <h2 class="text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                <span class="w-6 h-6 bg-green-100 rounded flex items-center justify-center text-green-600">🏠</span>
-                Управление комнатой
-            </h2>
-            <div class="space-y-3">
-                <input id="roomId" type="text" placeholder="Введите ID комнаты"
-                       class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition">
-                <button id="createRoomBtn" class="w-full bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white px-4 py-3 rounded-lg font-medium transition shadow-md hover:shadow-lg">
-                    Создать / Войти
-                </button>
-                <button id="closeRoomBtn" class="w-full bg-red-600 hover:bg-red-700 text-white px-4 py-3 rounded-lg font-medium transition">
-                    Закрыть комнату
-                </button>
-                <!-- Добавьте эту кнопку рядом с Create / Close -->
-                <button id="showRoomsBtn" class="w-full bg-gray-100 hover:bg-gray-200 text-gray-800 px-4 py-2 rounded-lg font-medium transition text-sm">
-                    📁 Показать комнаты
-                </button>
-            </div>
-            <div id="roomStatus" class="mt-3 text-sm text-gray-600 p-3 bg-gray-50 rounded-lg"></div>
-        </div>
-
-        <!-- Statistics -->
-        <div class="p-4 bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg">
-            <h3 class="text-sm font-semibold text-blue-900 mb-2">Статистика</h3>
-            <div class="space-y-2">
-                <div class="flex justify-between text-sm">
-                    <span class="text-blue-700">Всего вебхуков:</span>
-                    <span id="webhookCount" class="font-bold text-blue-900">0</span>
+<!-- Main App (скрыт до авторизации) -->
+<div id="main-app" class="hidden flex-1 flex flex-col">
+    <body class="bg-gradient-to-br from-gray-50 to-gray-100 min-h-screen flex flex-col">
+    <!-- Header -->
+    <header class="bg-white shadow-md border-b border-gray-200">
+        <div class="max-w-7xl mx-auto px-4 py-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-4">
+                    <!-- GREEN-API Logo -->
+                    <svg width="50" height="50" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                        <rect width="100" height="100" rx="12" fill="#3B9702"/>
+                        <text x="50" y="70" font-family="Arial, sans-serif" font-size="60" font-weight="bold" fill="white" text-anchor="middle">G</text>
+                    </svg>
+                    <div>
+                        <h1 class="text-2xl font-bold text-gray-900">Webhook Viewer</h1>
+                        <p class="text-xs text-green-600 font-semibold">GREEN-API QA TEAM</p>
+                    </div>
                 </div>
-                <div class="flex justify-between text-sm">
-                    <span class="text-blue-700">Отображено:</span>
-                    <span id="displayedCount" class="font-bold text-blue-900">0</span>
-                </div>
-                <div class="flex justify-between text-sm">
-                    <span class="text-blue-700">Текущая страница:</span>
-                    <span id="currentPageDisplay" class="font-bold text-blue-900">1</span>
+                <div class="flex items-center gap-4">
+                    <div id="connectionStatus" class="flex items-center gap-2 px-3 py-1 rounded-full bg-green-100 text-green-700 text-sm">
+                        <span class="w-2 h-2 bg-green-500 rounded-full pulse-dot"></span>
+                        <span>Подключено</span>
+                    </div>
+                    <a href="https://green-api.com" target="_blank" class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium transition shadow-sm">
+                        GREEN-API →
+                    </a>
                 </div>
             </div>
         </div>
+    </header>
 
-        <!-- Fake Error Controls -->
-        <div class="border border-gray-200 rounded-lg p-4">
-            <h3 class="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                <span>⚠️</span> Симуляция ошибок
-            </h3>
-            <label class="flex items-center gap-2 mb-3">
-                <input type="checkbox" id="fakeErrorToggle" class="w-4 h-4 text-red-600 border-gray-300 rounded focus:ring-red-500">
-                <span class="text-sm text-gray-700">Включить симуляцию</span>
-            </label>
-            <input id="fakeStatusInput" type="number" min="100" max="599" placeholder="HTTP код"
-                   class="w-full p-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-500" value="500">
-        </div>
-
-        <!-- Sort Controls -->
-        <div class="border border-gray-200 rounded-lg p-4">
-            <h3 class="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                <span>🔄</span> Сортировка
-            </h3>
-            <select id="sortOrder" class="w-full p-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500">
-                <option value="newest">Новые первые</option>
-                <option value="oldest">Старые первые</option>
-            </select>
-        </div>
-
-        <!-- Actions -->
-        <div class="space-y-2">
-            <button id="sendTestHookBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-lg font-medium transition text-sm">
-                📤 Отправить тест
-            </button>
-            <button id="exportBtn" class="w-full bg-purple-600 hover:bg-purple-700 text-white px-4 py-2.5 rounded-lg font-medium transition text-sm">
-                💾 Экспорт JSON
-            </button>
-            <button id="clearHooksBtn" class="w-full bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2.5 rounded-lg font-medium transition text-sm">
-                🗑️ Очистить все
-            </button>
-        </div>
-    </aside>
-
-    <!-- Main Panel -->
-    <main class="flex-1 p-6 overflow-y-auto">
-        <!-- Search and Filter Bar -->
-        <div class="bg-white p-4 rounded-lg shadow-md mb-6">
-            <div class="flex gap-3 items-center">
-                <div class="flex-1 relative">
-                    <input id="searchInput" type="text" placeholder="Поиск по содержимому вебхука..."
-                           class="w-full p-3 pl-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition">
-                    <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">🔍</span>
+    <!-- Main Content -->
+    <div class="flex-1 flex max-w-7xl mx-auto w-full">
+        <!-- Sidebar -->
+        <aside class="w-80 bg-white shadow-lg border-r border-gray-200 p-6 space-y-6 overflow-y-auto">
+            <!-- Room Controls -->
+            <div>
+                <h2 class="text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                    <span class="w-6 h-6 bg-green-100 rounded flex items-center justify-center text-green-600">🏠</span>
+                    Управление комнатой
+                </h2>
+                <div class="space-y-3">
+                    <input id="roomId" type="text" placeholder="Введите ID комнаты"
+                           class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition">
+                    <button id="createRoomBtn" class="w-full bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white px-4 py-3 rounded-lg font-medium transition shadow-md hover:shadow-lg">
+                        Создать / Войти
+                    </button>
+                    <button id="closeRoomBtn" class="w-full bg-red-600 hover:bg-red-700 text-white px-4 py-3 rounded-lg font-medium transition">
+                        Закрыть комнату
+                    </button>
+                    <!-- Добавьте эту кнопку рядом с Create / Close -->
+                    <button id="showRoomsBtn" class="w-full bg-gray-100 hover:bg-gray-200 text-gray-800 px-4 py-2 rounded-lg font-medium transition text-sm">
+                        📁 Показать комнаты
+                    </button>
                 </div>
-                <select id="itemsPerPage" class="p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 text-sm">
-                    <option value="10">10 / страница</option>
-                    <option value="25" selected>25 / страница</option>
-                    <option value="50">50 / страница</option>
-                    <option value="100">100 / страница</option>
+                <div id="roomStatus" class="mt-3 text-sm text-gray-600 p-3 bg-gray-50 rounded-lg"></div>
+            </div>
+
+            <!-- Statistics -->
+            <div class="p-4 bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg">
+                <h3 class="text-sm font-semibold text-blue-900 mb-2">Статистика</h3>
+                <div class="space-y-2">
+                    <div class="flex justify-between text-sm">
+                        <span class="text-blue-700">Всего вебхуков:</span>
+                        <span id="webhookCount" class="font-bold text-blue-900">0</span>
+                    </div>
+                    <div class="flex justify-between text-sm">
+                        <span class="text-blue-700">Отображено:</span>
+                        <span id="displayedCount" class="font-bold text-blue-900">0</span>
+                    </div>
+                    <div class="flex justify-between text-sm">
+                        <span class="text-blue-700">Текущая страница:</span>
+                        <span id="currentPageDisplay" class="font-bold text-blue-900">1</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Fake Error Controls -->
+            <div class="border border-gray-200 rounded-lg p-4">
+                <h3 class="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                    <span>⚠️</span> Симуляция ошибок
+                </h3>
+                <label class="flex items-center gap-2 mb-3">
+                    <input type="checkbox" id="fakeErrorToggle" class="w-4 h-4 text-red-600 border-gray-300 rounded focus:ring-red-500">
+                    <span class="text-sm text-gray-700">Включить симуляцию</span>
+                </label>
+                <input id="fakeStatusInput" type="number" min="100" max="599" placeholder="HTTP код"
+                       class="w-full p-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-500" value="500">
+            </div>
+
+            <!-- Sort Controls -->
+            <div class="border border-gray-200 rounded-lg p-4">
+                <h3 class="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                    <span>🔄</span> Сортировка
+                </h3>
+                <select id="sortOrder" class="w-full p-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500">
+                    <option value="newest">Новые первые</option>
+                    <option value="oldest">Старые первые</option>
                 </select>
             </div>
-        </div>
 
-        <!-- Webhooks List -->
-        <div class="bg-white rounded-lg shadow-md overflow-hidden">
-            <div class="p-4 bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200">
-                <h2 class="text-xl font-semibold text-gray-900">История вебхуков</h2>
+            <!-- Actions -->
+            <div class="space-y-2">
+                <button id="sendTestHookBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-lg font-medium transition text-sm">
+                    📤 Отправить тест
+                </button>
+                <button id="exportBtn" class="w-full bg-purple-600 hover:bg-purple-700 text-white px-4 py-2.5 rounded-lg font-medium transition text-sm">
+                    💾 Экспорт JSON
+                </button>
+                <button id="clearHooksBtn" class="w-full bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2.5 rounded-lg font-medium transition text-sm">
+                    🗑️ Очистить все
+                </button>
             </div>
-            <div id="webhooksContainer" class="p-4 space-y-4 min-h-[400px]">
-                <div class="flex flex-col items-center justify-center py-16 text-gray-400">
-                    <div class="text-6xl mb-4">📭</div>
-                    <p class="text-lg">Нет вебхуков для отображения</p>
-                    <p class="text-sm mt-2">Создайте комнату и отправьте первый вебхук</p>
+        </aside>
+
+        <!-- Main Panel -->
+        <main class="flex-1 p-6 overflow-y-auto">
+            <!-- Search and Filter Bar -->
+            <div class="bg-white p-4 rounded-lg shadow-md mb-6">
+                <div class="flex gap-3 items-center">
+                    <div class="flex-1 relative">
+                        <input id="searchInput" type="text" placeholder="Поиск по содержимому вебхука..."
+                               class="w-full p-3 pl-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition">
+                        <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">🔍</span>
+                    </div>
+                    <select id="itemsPerPage" class="p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 text-sm">
+                        <option value="10">10 / страница</option>
+                        <option value="25" selected>25 / страница</option>
+                        <option value="50">50 / страница</option>
+                        <option value="100">100 / страница</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Webhooks List -->
+            <div class="bg-white rounded-lg shadow-md overflow-hidden">
+                <div class="p-4 bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200">
+                    <h2 class="text-xl font-semibold text-gray-900">История вебхуков</h2>
+                </div>
+                <div id="webhooksContainer" class="p-4 space-y-4 min-h-[400px]">
+                    <div class="flex flex-col items-center justify-center py-16 text-gray-400">
+                        <div class="text-6xl mb-4">📭</div>
+                        <p class="text-lg">Нет вебхуков для отображения</p>
+                        <p class="text-sm mt-2">Создайте комнату и отправьте первый вебхук</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pagination -->
+            <div id="paginationContainer" class="mt-6 flex items-center justify-between bg-white p-4 rounded-lg shadow-md">
+                <button id="prevPage" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg font-medium transition disabled:opacity-50 disabled:cursor-not-allowed">
+                    ← Назад
+                </button>
+                <div id="pageNumbers" class="flex gap-2"></div>
+                <button id="nextPage" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg font-medium transition disabled:opacity-50 disabled:cursor-not-allowed">
+                    Вперед →
+                </button>
+            </div>
+        </main>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t border-gray-200 mt-auto">
+        <div class="max-w-7xl mx-auto px-4 py-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between text-sm text-gray-600">
+                <div class="flex items-center gap-2">
+                    <span class="text-green-600 font-semibold">GREEN-API QA TEAM</span>
+                    <span class="text-gray-400">|</span>
+                    <p>© 2025 Webhook Viewer</p>
+                </div>
+                <div class="flex gap-6">
+                    <a href="/docs" class="hover:text-green-600 transition">Документация</a>
                 </div>
             </div>
         </div>
+    </footer>
 
-        <!-- Pagination -->
-        <div id="paginationContainer" class="mt-6 flex items-center justify-between bg-white p-4 rounded-lg shadow-md">
-            <button id="prevPage" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg font-medium transition disabled:opacity-50 disabled:cursor-not-allowed">
-                ← Назад
-            </button>
-            <div id="pageNumbers" class="flex gap-2"></div>
-            <button id="nextPage" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg font-medium transition disabled:opacity-50 disabled:cursor-not-allowed">
-                Вперед →
-            </button>
+    <!-- Панель со списком комнат -->
+    <div id="roomsPanel" class="fixed right-0 top-0 h-full w-96 bg-white shadow-xl border-l border-gray-200 transform translate-x-full transition-transform duration-300 z-50">
+        <div class="p-4 flex items-center justify-between border-b">
+            <h3 class="text-lg font-semibold">Все комнаты</h3>
+            <button id="closeRoomsPanel" class="text-gray-500 hover:text-gray-700">✕</button>
         </div>
-    </main>
-</div>
-
-<!-- Footer -->
-<footer class="bg-white border-t border-gray-200 mt-auto">
-    <div class="max-w-7xl mx-auto px-4 py-4 sm:px-6 lg:px-8">
-        <div class="flex items-center justify-between text-sm text-gray-600">
-            <div class="flex items-center gap-2">
-                <span class="text-green-600 font-semibold">GREEN-API QA TEAM</span>
-                <span class="text-gray-400">|</span>
-                <p>© 2025 Webhook Viewer</p>
+        <div id="roomsPanelContent" class="p-4 overflow-y-auto" style="height: calc(100% - 64px);">
+            <div id="roomsPanelLoading" class="flex items-center justify-center py-8 hidden">
+                <!-- Простая svg-иконка спиннера -->
+                <svg class="animate-spin h-8 w-8 text-green-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+                </svg>
             </div>
-            <div class="flex gap-6">
-                <a href="/docs" class="hover:text-green-600 transition">Документация</a>
-            </div>
+            <div id="roomsList" class="space-y-2"></div>
+            <div id="roomsPanelEmpty" class="text-center text-gray-500 py-6 hidden">Нет доступных комнат</div>
+            <div id="roomsPanelError" class="text-center text-red-500 py-6 hidden">Ошибка загрузки</div>
         </div>
     </div>
-</footer>
 
-<!-- Панель со списком комнат -->
-<div id="roomsPanel" class="fixed right-0 top-0 h-full w-96 bg-white shadow-xl border-l border-gray-200 transform translate-x-full transition-transform duration-300 z-50">
-    <div class="p-4 flex items-center justify-between border-b">
-        <h3 class="text-lg font-semibold">Все комнаты</h3>
-        <button id="closeRoomsPanel" class="text-gray-500 hover:text-gray-700">✕</button>
-    </div>
-    <div id="roomsPanelContent" class="p-4 overflow-y-auto" style="height: calc(100% - 64px);">
-        <div id="roomsPanelLoading" class="flex items-center justify-center py-8 hidden">
-            <!-- Простая svg-иконка спиннера -->
-            <svg class="animate-spin h-8 w-8 text-green-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
-            </svg>
-        </div>
-        <div id="roomsList" class="space-y-2"></div>
-        <div id="roomsPanelEmpty" class="text-center text-gray-500 py-6 hidden">Нет доступных комнат</div>
-        <div id="roomsPanelError" class="text-center text-red-500 py-6 hidden">Ошибка загрузки</div>
-    </div>
-</div>
+    <script>
+        const apiBase = `${window.location.origin}`;
+        const token = `Bearer ${localStorage.getItem("jwt_token")}`
+        let currentRoomId = null;
+        let hookInterval = null;
+        let lastIds = new Set();
+        let allHooks = [];
+        let searchTerm = "";
+        let currentPage = 1;
+        let itemsPerPage = 25;
+        let sortOrder = "newest";
+        let isOnline = true;
+        let reconnectAttempts = 0;
 
-<script>
-    const apiBase = `${window.location.origin}`;
-    const token = `Bearer ${localStorage.getItem("jwt_token")}`
-    let currentRoomId = null;
-    let hookInterval = null;
-    let lastIds = new Set();
-    let allHooks = [];
-    let searchTerm = "";
-    let currentPage = 1;
-    let itemsPerPage = 25;
-    let sortOrder = "newest";
-    let isOnline = true;
-    let reconnectAttempts = 0;
+        // DOM Elements
+        const roomIdInput = document.getElementById("roomId");
+        const roomStatus = document.getElementById("roomStatus");
+        const webhooksContainer = document.getElementById("webhooksContainer");
+        const webhookCount = document.getElementById("webhookCount");
+        const displayedCount = document.getElementById("displayedCount");
+        const currentPageDisplay = document.getElementById("currentPageDisplay");
+        const searchInput = document.getElementById("searchInput");
+        const fakeErrorToggle = document.getElementById("fakeErrorToggle");
+        const fakeStatusInput = document.getElementById("fakeStatusInput");
+        const sortOrderSelect = document.getElementById("sortOrder");
+        const itemsPerPageSelect = document.getElementById("itemsPerPage");
+        const connectionStatus = document.getElementById("connectionStatus");
+        const prevPageBtn = document.getElementById("prevPage");
+        const nextPageBtn = document.getElementById("nextPage");
+        const pageNumbers = document.getElementById("pageNumbers");
 
-    // DOM Elements
-    const roomIdInput = document.getElementById("roomId");
-    const roomStatus = document.getElementById("roomStatus");
-    const webhooksContainer = document.getElementById("webhooksContainer");
-    const webhookCount = document.getElementById("webhookCount");
-    const displayedCount = document.getElementById("displayedCount");
-    const currentPageDisplay = document.getElementById("currentPageDisplay");
-    const searchInput = document.getElementById("searchInput");
-    const fakeErrorToggle = document.getElementById("fakeErrorToggle");
-    const fakeStatusInput = document.getElementById("fakeStatusInput");
-    const sortOrderSelect = document.getElementById("sortOrder");
-    const itemsPerPageSelect = document.getElementById("itemsPerPage");
-    const connectionStatus = document.getElementById("connectionStatus");
-    const prevPageBtn = document.getElementById("prevPage");
-    const nextPageBtn = document.getElementById("nextPage");
-    const pageNumbers = document.getElementById("pageNumbers");
+        // Новые DOM элементы для панели
+        const showRoomsBtn = document.getElementById("showRoomsBtn");
+        const roomsPanel = document.getElementById("roomsPanel");
+        const closeRoomsPanel = document.getElementById("closeRoomsPanel");
+        const roomsPanelLoading = document.getElementById("roomsPanelLoading");
+        const roomsList = document.getElementById("roomsList");
+        const roomsPanelEmpty = document.getElementById("roomsPanelEmpty");
+        const roomsPanelError = document.getElementById("roomsPanelError");
 
-    // Новые DOM элементы для панели
-    const showRoomsBtn = document.getElementById("showRoomsBtn");
-    const roomsPanel = document.getElementById("roomsPanel");
-    const closeRoomsPanel = document.getElementById("closeRoomsPanel");
-    const roomsPanelLoading = document.getElementById("roomsPanelLoading");
-    const roomsList = document.getElementById("roomsList");
-    const roomsPanelEmpty = document.getElementById("roomsPanelEmpty");
-    const roomsPanelError = document.getElementById("roomsPanelError");
+        // Initialize
+        fakeStatusInput.disabled = false;
+        fakeErrorToggle.checked = false;
 
-    // Initialize
-    fakeStatusInput.disabled = false;
-    fakeErrorToggle.checked = false;
+        // Copy with visual feedback
+        function copyToClipboardWithFeedback(text, event) {
+            navigator.clipboard.writeText(text).then(() => {
+                const indicator = document.createElement('div');
+                indicator.className = 'copy-indicator';
+                indicator.textContent = '✓ Скопировано';
+                indicator.style.left = event.pageX + 'px';
+                indicator.style.top = event.pageY + 'px';
+                document.body.appendChild(indicator);
 
-    // Copy with visual feedback
-    function copyToClipboardWithFeedback(text, event) {
-        navigator.clipboard.writeText(text).then(() => {
-            const indicator = document.createElement('div');
-            indicator.className = 'copy-indicator';
-            indicator.textContent = '✓ Скопировано';
-            indicator.style.left = event.pageX + 'px';
-            indicator.style.top = event.pageY + 'px';
-            document.body.appendChild(indicator);
+                setTimeout(() => {
+                    indicator.style.opacity = '0';
+                    setTimeout(() => indicator.remove(), 300);
+                }, 1000);
+            });
+        }
 
-            setTimeout(() => {
-                indicator.style.opacity = '0';
-                setTimeout(() => indicator.remove(), 300);
-            }, 1000);
-        });
-    }
-
-    // Connection Status Management
-    function updateConnectionStatus(online) {
-        isOnline = online;
-        if (online) {
-            connectionStatus.className = "flex items-center gap-2 px-3 py-1 rounded-full bg-green-100 text-green-700 text-sm";
-            connectionStatus.innerHTML = `
+        // Connection Status Management
+        function updateConnectionStatus(online) {
+            isOnline = online;
+            if (online) {
+                connectionStatus.className = "flex items-center gap-2 px-3 py-1 rounded-full bg-green-100 text-green-700 text-sm";
+                connectionStatus.innerHTML = `
                     <span class="w-2 h-2 bg-green-500 rounded-full pulse-dot"></span>
                     <span>Подключено</span>
                 `;
-            reconnectAttempts = 0;
-        } else {
-            connectionStatus.className = "flex items-center gap-2 px-3 py-1 rounded-full bg-red-100 text-red-700 text-sm connection-lost";
-            connectionStatus.innerHTML = `
+                reconnectAttempts = 0;
+            } else {
+                connectionStatus.className = "flex items-center gap-2 px-3 py-1 rounded-full bg-red-100 text-red-700 text-sm connection-lost";
+                connectionStatus.innerHTML = `
                     <span class="w-2 h-2 bg-red-500 rounded-full"></span>
                     <span>Нет соединения</span>
                 `;
-            attemptReconnect();
+                attemptReconnect();
+            }
         }
-    }
 
-    async function attemptReconnect() {
-        if (isOnline || !currentRoomId) return;
+        async function attemptReconnect() {
+            if (isOnline || !currentRoomId) return;
 
-        reconnectAttempts++;
-        const delay = Math.min(1000 * Math.pow(2, reconnectAttempts), 30000);
+            reconnectAttempts++;
+            const delay = Math.min(1000 * Math.pow(2, reconnectAttempts), 30000);
 
-        connectionStatus.innerHTML = `
+            connectionStatus.innerHTML = `
                 <span class="w-2 h-2 bg-yellow-500 rounded-full pulse-dot"></span>
                 <span>Переподключение... (${reconnectAttempts})</span>
             `;
 
-        setTimeout(async () => {
-            try {
-                const res = await fetch(`${apiBase}/hook/${encodeURIComponent(currentRoomId)}`, { headers: { "Authorization": token } });
-                if (res.ok) {
-                    updateConnectionStatus(true);
-                    showAlert("Соединение восстановлено", "success");
-                } else {
+            setTimeout(async () => {
+                try {
+                    const res = await fetch(`${apiBase}/hook/${encodeURIComponent(currentRoomId)}`, { headers: { "Authorization": token } });
+                    if (res.ok) {
+                        updateConnectionStatus(true);
+                        showAlert("Соединение восстановлено", "success");
+                    } else {
+                        attemptReconnect();
+                    }
+                } catch {
                     attemptReconnect();
                 }
-            } catch {
-                attemptReconnect();
-            }
-        }, delay);
-    }
-
-    // Fake Error Toggle
-    fakeErrorToggle.addEventListener("change", async (e) => {
-        if (!currentRoomId) {
-            fakeErrorToggle.checked = false;
-            return showAlert("Сначала создайте комнату", "warning");
+            }, delay);
         }
 
-        const enabled = e.target.checked;
-        const parsed = parseInt(fakeStatusInput.value, 10);
-        const statusCode = (Number.isInteger(parsed) && parsed >= 100 && parsed <= 599) ? parsed : 500;
-
-        try {
-            const res = await fetch(`${apiBase}/room/${encodeURIComponent(currentRoomId)}/fake-error`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json", "Authorization": token },
-                body: JSON.stringify({ enabled, statusCode })
-            });
-
-            if (!res.ok) throw new Error("Не удалось обновить статус");
-
-            fakeStatusInput.disabled = !enabled;
-            showAlert(enabled ? `Симуляция ${statusCode} включена` : "Симуляция отключена", "success");
-        } catch (err) {
-            fakeErrorToggle.checked = !enabled;
-            showAlert("Ошибка при изменении состояния", "error");
-            updateConnectionStatus(false);
-        }
-    });
-
-    async function updateFakeErrorStatus() {
-        if (!currentRoomId) return;
-        try {
-            const res = await fetch(`${apiBase}/room/${encodeURIComponent(currentRoomId)}/fake-error`, { headers: { "Authorization": token } });
-            if (!res.ok) {
+        // Fake Error Toggle
+        fakeErrorToggle.addEventListener("change", async (e) => {
+            if (!currentRoomId) {
                 fakeErrorToggle.checked = false;
-                fakeStatusInput.disabled = false;
-                return;
+                return showAlert("Сначала создайте комнату", "warning");
             }
-            const data = await res.json();
-            const enabled = data.fakeError ?? data.enabled ?? false;
-            const statusCode = data.statusCode ?? data.status ?? 500;
 
-            fakeErrorToggle.checked = Boolean(enabled);
-            fakeStatusInput.value = statusCode;
-            fakeStatusInput.disabled = !enabled;
-        } catch (err) {
-            console.warn("updateFakeErrorStatus failed", err);
+            const enabled = e.target.checked;
+            const parsed = parseInt(fakeStatusInput.value, 10);
+            const statusCode = (Number.isInteger(parsed) && parsed >= 100 && parsed <= 599) ? parsed : 500;
+
+            try {
+                const res = await fetch(`${apiBase}/room/${encodeURIComponent(currentRoomId)}/fake-error`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json", "Authorization": token },
+                    body: JSON.stringify({ enabled, statusCode })
+                });
+
+                if (!res.ok) throw new Error("Не удалось обновить статус");
+
+                fakeStatusInput.disabled = !enabled;
+                showAlert(enabled ? `Симуляция ${statusCode} включена` : "Симуляция отключена", "success");
+            } catch (err) {
+                fakeErrorToggle.checked = !enabled;
+                showAlert("Ошибка при изменении состояния", "error");
+                updateConnectionStatus(false);
+            }
+        });
+
+        async function updateFakeErrorStatus() {
+            if (!currentRoomId) return;
+            try {
+                const res = await fetch(`${apiBase}/room/${encodeURIComponent(currentRoomId)}/fake-error`, { headers: { "Authorization": token } });
+                if (!res.ok) {
+                    fakeErrorToggle.checked = false;
+                    fakeStatusInput.disabled = false;
+                    return;
+                }
+                const data = await res.json();
+                const enabled = data.fakeError ?? data.enabled ?? false;
+                const statusCode = data.statusCode ?? data.status ?? 500;
+
+                fakeErrorToggle.checked = Boolean(enabled);
+                fakeStatusInput.value = statusCode;
+                fakeStatusInput.disabled = !enabled;
+            } catch (err) {
+                console.warn("updateFakeErrorStatus failed", err);
+            }
         }
-    }
 
-    // Room Management
-    document.getElementById("createRoomBtn").addEventListener("click", async () => {
-        const id = roomIdInput.value.trim();
-        if (!id) return showAlert("Введите ID комнаты", "warning");
+        // Room Management
+        document.getElementById("createRoomBtn").addEventListener("click", async () => {
+            const id = roomIdInput.value.trim();
+            if (!id) return showAlert("Введите ID комнаты", "warning");
 
-        try {
-            currentRoomId = id;
-            lastIds.clear();
-            allHooks = [];
-            currentPage = 1;
+            try {
+                currentRoomId = id;
+                lastIds.clear();
+                allHooks = [];
+                currentPage = 1;
 
-            const res = await fetch(`${apiBase}/room/${encodeURIComponent(id)}`, { method: "POST", headers: { "Authorization": token } });
-            if (!res.ok) throw new Error("Ошибка создания комнаты");
+                const res = await fetch(`${apiBase}/room/${encodeURIComponent(id)}`, { method: "POST", headers: { "Authorization": token } });
+                if (!res.ok) throw new Error("Ошибка создания комнаты");
 
-            const webhookUrl = `${apiBase}/hook/${encodeURIComponent(id)}`;
-            roomStatus.innerHTML = `
+                const webhookUrl = `${apiBase}/hook/${encodeURIComponent(id)}`;
+                roomStatus.innerHTML = `
                     <div class="font-semibold text-green-700 mb-2">✓ Комната активна</div>
                     <div class="webhook-url-container text-xs break-all bg-white p-2 rounded border border-gray-200 group">
                         <div class="flex items-center justify-between gap-2">
@@ -503,273 +523,273 @@
                     </div>
                 `;
 
-            await updateFakeErrorStatus();
-            startFetchingHooks();
-            updateConnectionStatus(true);
-            showAlert("Комната создана успешно", "success");
-        } catch (e) {
-            showAlert("Ошибка: " + e.message, "error");
-            updateConnectionStatus(false);
-        }
-    });
+                await updateFakeErrorStatus();
+                startFetchingHooks();
+                updateConnectionStatus(true);
+                showAlert("Комната создана успешно", "success");
+            } catch (e) {
+                showAlert("Ошибка: " + e.message, "error");
+                updateConnectionStatus(false);
+            }
+        });
 
-    window.copyUrlToClipboard = (event, url) => {
-        event.stopPropagation();
-        copyToClipboardWithFeedback(url, event);
-    };
+        window.copyUrlToClipboard = (event, url) => {
+            event.stopPropagation();
+            copyToClipboardWithFeedback(url, event);
+        };
 
-    document.getElementById("closeRoomBtn").addEventListener("click", async () => {
-        if (!currentRoomId) return showAlert("Нет активной комнаты", "warning");
+        document.getElementById("closeRoomBtn").addEventListener("click", async () => {
+            if (!currentRoomId) return showAlert("Нет активной комнаты", "warning");
 
-        try {
-            await fetch(`${apiBase}/room/${encodeURIComponent(currentRoomId)}`, { method: "DELETE", headers: { "Authorization": token } });
-            stopFetchingHooks();
-            roomStatus.innerHTML = `<div class="text-gray-500 text-sm">Комната закрыта</div>`;
-            currentRoomId = null;
-            lastIds.clear();
-            allHooks = [];
-            currentPage = 1;
-            renderAllWebhooks();
+            try {
+                await fetch(`${apiBase}/room/${encodeURIComponent(currentRoomId)}`, { method: "DELETE", headers: { "Authorization": token } });
+                stopFetchingHooks();
+                roomStatus.innerHTML = `<div class="text-gray-500 text-sm">Комната закрыта</div>`;
+                currentRoomId = null;
+                lastIds.clear();
+                allHooks = [];
+                currentPage = 1;
+                renderAllWebhooks();
 
-            fakeErrorToggle.checked = false;
-            fakeStatusInput.value = "500";
-            fakeStatusInput.disabled = false;
+                fakeErrorToggle.checked = false;
+                fakeStatusInput.value = "500";
+                fakeStatusInput.disabled = false;
 
-            showAlert("Комната закрыта", "success");
-        } catch (e) {
-            showAlert("Ошибка закрытия комнаты", "error");
-        }
-    });
+                showAlert("Комната закрыта", "success");
+            } catch (e) {
+                showAlert("Ошибка закрытия комнаты", "error");
+            }
+        });
 
-    document.getElementById("clearHooksBtn").addEventListener("click", async () => {
-        if (!currentRoomId) return showAlert("Нет активной комнаты", "warning");
+        document.getElementById("clearHooksBtn").addEventListener("click", async () => {
+            if (!currentRoomId) return showAlert("Нет активной комнаты", "warning");
 
-        try {
-            await fetch(`${apiBase}/hook/${encodeURIComponent(currentRoomId)}`, { method: "DELETE", headers: { "Authorization": token } });
-            lastIds.clear();
-            allHooks = [];
-            currentPage = 1;
-            renderAllWebhooks();
-            showAlert("Вебхуки очищены", "success");
-        } catch (e) {
-            showAlert("Ошибка очистки", "error");
-        }
-    });
+            try {
+                await fetch(`${apiBase}/hook/${encodeURIComponent(currentRoomId)}`, { method: "DELETE", headers: { "Authorization": token } });
+                lastIds.clear();
+                allHooks = [];
+                currentPage = 1;
+                renderAllWebhooks();
+                showAlert("Вебхуки очищены", "success");
+            } catch (e) {
+                showAlert("Ошибка очистки", "error");
+            }
+        });
 
-    document.getElementById("sendTestHookBtn").addEventListener("click", async () => {
-        if (!currentRoomId) return showAlert("Нет активной комнаты", "warning");
+        document.getElementById("sendTestHookBtn").addEventListener("click", async () => {
+            if (!currentRoomId) return showAlert("Нет активной комнаты", "warning");
 
-        const testData = {
-            message: "Тестовый вебхук",
-            time: new Date().toISOString(),
-            randomValue: Math.random().toString(36).substring(7),
-            nested: {
-                level1: {
-                    level2: "Глубокое значение",
-                    array: [1, 2, 3, 4, 5]
+            const testData = {
+                message: "Тестовый вебхук",
+                time: new Date().toISOString(),
+                randomValue: Math.random().toString(36).substring(7),
+                nested: {
+                    level1: {
+                        level2: "Глубокое значение",
+                        array: [1, 2, 3, 4, 5]
+                    }
                 }
+            };
+
+            try {
+                const res = await fetch(`${apiBase}/hook/${encodeURIComponent(currentRoomId)}`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json", "Authorization": token },
+                    body: JSON.stringify(testData)
+                });
+
+                if (!res.ok) {
+                    const errBody = await res.json().catch(() => null);
+                    throw new Error(errBody?.error || res.status);
+                }
+                showAlert("Тестовый вебхук отправлен", "success");
+            } catch (e) {
+                showAlert("Ошибка отправки: " + e.message, "error");
+                updateConnectionStatus(false);
+            }
+        });
+
+        document.getElementById("exportBtn").addEventListener("click", () => {
+            if (allHooks.length === 0) return showAlert("Нет данных для экспорта", "warning");
+
+            const dataStr = JSON.stringify(allHooks, null, 2);
+            const dataBlob = new Blob([dataStr], { type: "application/json" });
+            const url = URL.createObjectURL(dataBlob);
+            const link = document.createElement("a");
+            link.href = url;
+            link.download = `webhooks_${currentRoomId || 'no-room'}_${Date.now()}.json`;
+            link.click();
+            URL.revokeObjectURL(url);
+            showAlert("Экспорт завершён", "success");
+        });
+
+        // Search and Sort
+        searchInput.addEventListener("input", (e) => {
+            searchTerm = e.target.value.toLowerCase();
+            currentPage = 1;
+            renderAllWebhooks();
+        });
+
+        sortOrderSelect.addEventListener("change", (e) => {
+            sortOrder = e.target.value;
+            renderAllWebhooks();
+        });
+
+        itemsPerPageSelect.addEventListener("change", (e) => {
+            itemsPerPage = parseInt(e.target.value);
+            currentPage = 1;
+            renderAllWebhooks();
+        });
+
+        // Pagination
+        prevPageBtn.addEventListener("click", () => {
+            if (currentPage > 1) {
+                currentPage--;
+                renderAllWebhooks();
+            }
+        });
+
+        nextPageBtn.addEventListener("click", () => {
+            const totalPages = Math.ceil(getFilteredHooks().length / itemsPerPage);
+            if (currentPage < totalPages) {
+                currentPage++;
+                renderAllWebhooks();
+            }
+        });
+
+        // Utility Functions
+        window.deleteWebhook = async (webhookId) => {
+            if (!currentRoomId) return;
+
+            try {
+                await fetch(`${apiBase}/hook/${encodeURIComponent(currentRoomId)}/${encodeURIComponent(webhookId)}`, { method: "DELETE", headers: { "Authorization": token } });
+                allHooks = allHooks.filter(h => h.receiptId !== webhookId);
+                lastIds.delete(webhookId);
+                renderAllWebhooks();
+                showAlert("Вебхук удалён", "success");
+            } catch (e) {
+                showAlert("Ошибка удаления", "error");
+                updateConnectionStatus(false);
             }
         };
 
-        try {
-            const res = await fetch(`${apiBase}/hook/${encodeURIComponent(currentRoomId)}`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json", "Authorization": token },
-                body: JSON.stringify(testData)
+        window.copyEntireWebhook = (body, event) => {
+            const text = JSON.stringify(body, null, 2);
+            copyToClipboardWithFeedback(text, event);
+        };
+
+        function startFetchingHooks() {
+            stopFetchingHooks();
+            hookInterval = setInterval(async () => {
+                if (!currentRoomId) return;
+                try {
+                    const res = await fetch(`${apiBase}/hook/${encodeURIComponent(currentRoomId)}`, { headers: { "Authorization": token } });
+                    if (!res.ok) {
+                        updateConnectionStatus(false);
+                        throw new Error("Ошибка загрузки");
+                    }
+                    updateConnectionStatus(true);
+                    const data = await res.json();
+                    processWebhooks(data);
+                } catch (e) {
+                    updateConnectionStatus(false);
+                    console.error("Ошибка загрузки вебхуков:", e);
+                }
+            }, 2000);
+        }
+
+        function stopFetchingHooks() {
+            if (hookInterval) clearInterval(hookInterval);
+        }
+
+        function processWebhooks(hooks) {
+            if (!hooks || hooks.length === 0) return;
+
+            let hasNew = false;
+            hooks.forEach(hook => {
+                if (!lastIds.has(hook.receiptId)) {
+                    lastIds.add(hook.receiptId);
+                    allHooks.unshift(hook);
+                    hasNew = true;
+                }
             });
 
-            if (!res.ok) {
-                const errBody = await res.json().catch(() => null);
-                throw new Error(errBody?.error || res.status);
+            if (hasNew) renderAllWebhooks();
+        }
+
+        function getFilteredHooks() {
+            let filtered = allHooks.filter(hook => {
+                if (!searchTerm) return true;
+                const bodyStr = JSON.stringify(hook.body).toLowerCase();
+                return bodyStr.includes(searchTerm) || hook.receiptId.toString().includes(searchTerm);
+            });
+
+            if (sortOrder === "oldest") {
+                filtered = [...filtered].reverse();
             }
-            showAlert("Тестовый вебхук отправлен", "success");
-        } catch (e) {
-            showAlert("Ошибка отправки: " + e.message, "error");
-            updateConnectionStatus(false);
+
+            return filtered;
         }
-    });
 
-    document.getElementById("exportBtn").addEventListener("click", () => {
-        if (allHooks.length === 0) return showAlert("Нет данных для экспорта", "warning");
+        function syntaxHighlight(json) {
+            if (typeof json !== 'string') {
+                json = JSON.stringify(json, null, 2);
+            }
 
-        const dataStr = JSON.stringify(allHooks, null, 2);
-        const dataBlob = new Blob([dataStr], { type: "application/json" });
-        const url = URL.createObjectURL(dataBlob);
-        const link = document.createElement("a");
-        link.href = url;
-        link.download = `webhooks_${currentRoomId || 'no-room'}_${Date.now()}.json`;
-        link.click();
-        URL.revokeObjectURL(url);
-        showAlert("Экспорт завершён", "success");
-    });
+            json = json.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
-    // Search and Sort
-    searchInput.addEventListener("input", (e) => {
-        searchTerm = e.target.value.toLowerCase();
-        currentPage = 1;
-        renderAllWebhooks();
-    });
-
-    sortOrderSelect.addEventListener("change", (e) => {
-        sortOrder = e.target.value;
-        renderAllWebhooks();
-    });
-
-    itemsPerPageSelect.addEventListener("change", (e) => {
-        itemsPerPage = parseInt(e.target.value);
-        currentPage = 1;
-        renderAllWebhooks();
-    });
-
-    // Pagination
-    prevPageBtn.addEventListener("click", () => {
-        if (currentPage > 1) {
-            currentPage--;
-            renderAllWebhooks();
-        }
-    });
-
-    nextPageBtn.addEventListener("click", () => {
-        const totalPages = Math.ceil(getFilteredHooks().length / itemsPerPage);
-        if (currentPage < totalPages) {
-            currentPage++;
-            renderAllWebhooks();
-        }
-    });
-
-    // Utility Functions
-    window.deleteWebhook = async (webhookId) => {
-        if (!currentRoomId) return;
-
-        try {
-            await fetch(`${apiBase}/hook/${encodeURIComponent(currentRoomId)}/${encodeURIComponent(webhookId)}`, { method: "DELETE", headers: { "Authorization": token } });
-            allHooks = allHooks.filter(h => h.receiptId !== webhookId);
-            lastIds.delete(webhookId);
-            renderAllWebhooks();
-            showAlert("Вебхук удалён", "success");
-        } catch (e) {
-            showAlert("Ошибка удаления", "error");
-            updateConnectionStatus(false);
-        }
-    };
-
-    window.copyEntireWebhook = (body, event) => {
-        const text = JSON.stringify(body, null, 2);
-        copyToClipboardWithFeedback(text, event);
-    };
-
-    function startFetchingHooks() {
-        stopFetchingHooks();
-        hookInterval = setInterval(async () => {
-            if (!currentRoomId) return;
-            try {
-                const res = await fetch(`${apiBase}/hook/${encodeURIComponent(currentRoomId)}`, { headers: { "Authorization": token } });
-                if (!res.ok) {
-                    updateConnectionStatus(false);
-                    throw new Error("Ошибка загрузки");
+            return json.replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, function (match) {
+                let cls = 'json-number';
+                if (/^"/.test(match)) {
+                    if (/:$/.test(match)) {
+                        cls = 'json-key';
+                        const key = match.slice(1, -2);
+                        return `<span class="${cls}" onclick="copyValue(event, '${escapeHtml(key)}')" title="Копировать ключ">${match}</span>`;
+                    } else {
+                        cls = 'json-string';
+                        const val = match.slice(1, -1);
+                        return `<span class="${cls}" onclick="copyValue(event, '${escapeHtml(val)}')" title="Копировать значение">${match}</span>`;
+                    }
+                } else if (/true|false/.test(match)) {
+                    cls = 'json-boolean';
+                } else if (/null/.test(match)) {
+                    cls = 'json-null';
                 }
-                updateConnectionStatus(true);
-                const data = await res.json();
-                processWebhooks(data);
-            } catch (e) {
-                updateConnectionStatus(false);
-                console.error("Ошибка загрузки вебхуков:", e);
-            }
-        }, 2000);
-    }
-
-    function stopFetchingHooks() {
-        if (hookInterval) clearInterval(hookInterval);
-    }
-
-    function processWebhooks(hooks) {
-        if (!hooks || hooks.length === 0) return;
-
-        let hasNew = false;
-        hooks.forEach(hook => {
-            if (!lastIds.has(hook.receiptId)) {
-                lastIds.add(hook.receiptId);
-                allHooks.unshift(hook);
-                hasNew = true;
-            }
-        });
-
-        if (hasNew) renderAllWebhooks();
-    }
-
-    function getFilteredHooks() {
-        let filtered = allHooks.filter(hook => {
-            if (!searchTerm) return true;
-            const bodyStr = JSON.stringify(hook.body).toLowerCase();
-            return bodyStr.includes(searchTerm) || hook.receiptId.toString().includes(searchTerm);
-        });
-
-        if (sortOrder === "oldest") {
-            filtered = [...filtered].reverse();
+                return `<span class="${cls}">${match}</span>`;
+            });
         }
 
-        return filtered;
-    }
-
-    function syntaxHighlight(json) {
-        if (typeof json !== 'string') {
-            json = JSON.stringify(json, null, 2);
+        function escapeHtml(text) {
+            return text.replace(/'/g, "\\'").replace(/"/g, '&quot;');
         }
 
-        json = json.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        window.copyValue = (event, value) => {
+            event.stopPropagation();
+            const decodedValue = value.replace(/&quot;/g, '"').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>');
+            copyToClipboardWithFeedback(decodedValue, event);
+        };
 
-        return json.replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, function (match) {
-            let cls = 'json-number';
-            if (/^"/.test(match)) {
-                if (/:$/.test(match)) {
-                    cls = 'json-key';
-                    const key = match.slice(1, -2);
-                    return `<span class="${cls}" onclick="copyValue(event, '${escapeHtml(key)}')" title="Копировать ключ">${match}</span>`;
-                } else {
-                    cls = 'json-string';
-                    const val = match.slice(1, -1);
-                    return `<span class="${cls}" onclick="copyValue(event, '${escapeHtml(val)}')" title="Копировать значение">${match}</span>`;
-                }
-            } else if (/true|false/.test(match)) {
-                cls = 'json-boolean';
-            } else if (/null/.test(match)) {
-                cls = 'json-null';
-            }
-            return `<span class="${cls}">${match}</span>`;
-        });
-    }
+        function renderAllWebhooks() {
+            const filtered = getFilteredHooks();
+            const totalPages = Math.ceil(filtered.length / itemsPerPage);
+            const startIdx = (currentPage - 1) * itemsPerPage;
+            const endIdx = startIdx + itemsPerPage;
+            const paginatedHooks = filtered.slice(startIdx, endIdx);
 
-    function escapeHtml(text) {
-        return text.replace(/'/g, "\\'").replace(/"/g, '&quot;');
-    }
+            webhookCount.textContent = allHooks.length;
+            displayedCount.textContent = paginatedHooks.length;
+            currentPageDisplay.textContent = currentPage;
 
-    window.copyValue = (event, value) => {
-        event.stopPropagation();
-        const decodedValue = value.replace(/&quot;/g, '"').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>');
-        copyToClipboardWithFeedback(decodedValue, event);
-    };
-
-    function renderAllWebhooks() {
-        const filtered = getFilteredHooks();
-        const totalPages = Math.ceil(filtered.length / itemsPerPage);
-        const startIdx = (currentPage - 1) * itemsPerPage;
-        const endIdx = startIdx + itemsPerPage;
-        const paginatedHooks = filtered.slice(startIdx, endIdx);
-
-        webhookCount.textContent = allHooks.length;
-        displayedCount.textContent = paginatedHooks.length;
-        currentPageDisplay.textContent = currentPage;
-
-        if (paginatedHooks.length === 0) {
-            webhooksContainer.innerHTML = `
+            if (paginatedHooks.length === 0) {
+                webhooksContainer.innerHTML = `
                     <div class="flex flex-col items-center justify-center py-16 text-gray-400">
                         <div class="text-6xl mb-4">📭</div>
                         <p class="text-lg">${searchTerm ? 'Ничего не найдено' : 'Нет вебхуков для отображения'}</p>
                         <p class="text-sm mt-2">${searchTerm ? 'Попробуйте изменить запрос' : 'Создайте комнату и отправьте первый вебхук'}</p>
                     </div>
                 `;
-        } else {
-            webhooksContainer.innerHTML = paginatedHooks.map(hook => `
+            } else {
+                webhooksContainer.innerHTML = paginatedHooks.map(hook => `
                     <div class="p-4 border border-gray-200 rounded-lg bg-white hover:shadow-lg hover:border-green-300 transition-all fade-in">
                         <div class="flex justify-between items-start mb-3">
                             <div class="flex items-center gap-3">
@@ -801,121 +821,121 @@
                         </div>
                     </div>
                 `).join("");
+            }
+
+            renderPagination(totalPages);
         }
 
-        renderPagination(totalPages);
-    }
+        function renderPagination(totalPages) {
+            prevPageBtn.disabled = currentPage === 1;
+            nextPageBtn.disabled = currentPage === totalPages || totalPages === 0;
 
-    function renderPagination(totalPages) {
-        prevPageBtn.disabled = currentPage === 1;
-        nextPageBtn.disabled = currentPage === totalPages || totalPages === 0;
-
-        let pages = [];
-        if (totalPages <= 7) {
-            pages = Array.from({ length: totalPages }, (_, i) => i + 1);
-        } else {
-            if (currentPage <= 4) {
-                pages = [1, 2, 3, 4, 5, '...', totalPages];
-            } else if (currentPage >= totalPages - 3) {
-                pages = [1, '...', totalPages - 4, totalPages - 3, totalPages - 2, totalPages - 1, totalPages];
+            let pages = [];
+            if (totalPages <= 7) {
+                pages = Array.from({ length: totalPages }, (_, i) => i + 1);
             } else {
-                pages = [1, '...', currentPage - 1, currentPage, currentPage + 1, '...', totalPages];
+                if (currentPage <= 4) {
+                    pages = [1, 2, 3, 4, 5, '...', totalPages];
+                } else if (currentPage >= totalPages - 3) {
+                    pages = [1, '...', totalPages - 4, totalPages - 3, totalPages - 2, totalPages - 1, totalPages];
+                } else {
+                    pages = [1, '...', currentPage - 1, currentPage, currentPage + 1, '...', totalPages];
+                }
             }
-        }
 
-        pageNumbers.innerHTML = pages.map(page => {
-            if (page === '...') {
-                return `<span class="px-3 py-2 text-gray-400">...</span>`;
-            }
-            const isActive = page === currentPage;
-            return `
+            pageNumbers.innerHTML = pages.map(page => {
+                if (page === '...') {
+                    return `<span class="px-3 py-2 text-gray-400">...</span>`;
+                }
+                const isActive = page === currentPage;
+                return `
                     <button onclick="goToPage(${page})"
                             class="px-3 py-2 rounded-lg font-medium transition ${
-                isActive
-                    ? 'bg-green-600 text-white shadow-md'
-                    : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
-            }">
+                    isActive
+                        ? 'bg-green-600 text-white shadow-md'
+                        : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
+                }">
                         ${page}
                     </button>
                 `;
-        }).join('');
-    }
+            }).join('');
+        }
 
-    window.goToPage = (page) => {
-        currentPage = page;
-        renderAllWebhooks();
-    };
-
-    function formatTimestamp(ts) {
-        if (!ts) return "Недавно";
-        const date = new Date(ts);
-        const now = new Date();
-        const diff = now - date;
-
-        if (diff < 60000) return "Только что";
-        if (diff < 3600000) return `${Math.floor(diff / 60000)} мин. назад`;
-        if (diff < 86400000) return `${Math.floor(diff / 3600000)} ч. назад`;
-
-        return date.toLocaleString("ru-RU", {
-            day: '2-digit',
-            month: '2-digit',
-            year: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit'
-        });
-    }
-
-    function escapeJson(obj) {
-        return JSON.stringify(obj).replace(/'/g, "\\'").replace(/"/g, "&quot;");
-    }
-
-    function showAlert(message, type) {
-        const colors = {
-            success: "bg-green-100 text-green-800 border-green-400",
-            error: "bg-red-100 text-red-800 border-red-400",
-            warning: "bg-yellow-100 text-yellow-800 border-yellow-400"
+        window.goToPage = (page) => {
+            currentPage = page;
+            renderAllWebhooks();
         };
 
-        const icons = {
-            success: "✓",
-            error: "✕",
-            warning: "⚠"
-        };
+        function formatTimestamp(ts) {
+            if (!ts) return "Недавно";
+            const date = new Date(ts);
+            const now = new Date();
+            const diff = now - date;
 
-        const alert = document.createElement("div");
-        alert.className = `fixed top-20 right-6 px-5 py-3 rounded-lg border-l-4 ${colors[type]} shadow-2xl transition-all z-50 max-w-md fade-in`;
-        alert.innerHTML = `
+            if (diff < 60000) return "Только что";
+            if (diff < 3600000) return `${Math.floor(diff / 60000)} мин. назад`;
+            if (diff < 86400000) return `${Math.floor(diff / 3600000)} ч. назад`;
+
+            return date.toLocaleString("ru-RU", {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+
+        function escapeJson(obj) {
+            return JSON.stringify(obj).replace(/'/g, "\\'").replace(/"/g, "&quot;");
+        }
+
+        function showAlert(message, type) {
+            const colors = {
+                success: "bg-green-100 text-green-800 border-green-400",
+                error: "bg-red-100 text-red-800 border-red-400",
+                warning: "bg-yellow-100 text-yellow-800 border-yellow-400"
+            };
+
+            const icons = {
+                success: "✓",
+                error: "✕",
+                warning: "⚠"
+            };
+
+            const alert = document.createElement("div");
+            alert.className = `fixed top-20 right-6 px-5 py-3 rounded-lg border-l-4 ${colors[type]} shadow-2xl transition-all z-50 max-w-md fade-in`;
+            alert.innerHTML = `
                 <div class="flex items-center gap-3">
                     <span class="text-xl font-bold">${icons[type]}</span>
                     <span class="font-medium">${message}</span>
                 </div>
             `;
-        document.body.appendChild(alert);
+            document.body.appendChild(alert);
 
-        setTimeout(() => {
-            alert.style.opacity = "0";
-            alert.style.transform = "translateX(100%)";
-            setTimeout(() => alert.remove(), 300);
-        }, 4000);
-    }
+            setTimeout(() => {
+                alert.style.opacity = "0";
+                alert.style.transform = "translateX(100%)";
+                setTimeout(() => alert.remove(), 300);
+            }, 4000);
+        }
 
-    // универсальная функция открытия комнаты
-    async function openRoom(id) {
-        if (!id) return showAlert("Введите ID комнаты", "warning");
+        // универсальная функция открытия комнаты
+        async function openRoom(id) {
+            if (!id) return showAlert("Введите ID комнаты", "warning");
 
-        try {
-            currentRoomId = id;
-            roomIdInput.value = id;
-            lastIds.clear();
-            allHooks = [];
-            currentPage = 1;
-            renderAllWebhooks();
+            try {
+                currentRoomId = id;
+                roomIdInput.value = id;
+                lastIds.clear();
+                allHooks = [];
+                currentPage = 1;
+                renderAllWebhooks();
 
-            const res = await fetch(`${apiBase}/room/${encodeURIComponent(id)}`, { method: "POST", headers: { "Authorization": token } });
-            if (!res.ok) throw new Error("Ошибка создания/входа в комнату");
+                const res = await fetch(`${apiBase}/room/${encodeURIComponent(id)}`, { method: "POST", headers: { "Authorization": token } });
+                if (!res.ok) throw new Error("Ошибка создания/входа в комнату");
 
-            const webhookUrl = `${apiBase}/hook/${encodeURIComponent(id)}`;
-            roomStatus.innerHTML = `
+                const webhookUrl = `${apiBase}/hook/${encodeURIComponent(id)}`;
+                roomStatus.innerHTML = `
             <div class="font-semibold text-green-700 mb-2">✓ Комната активна</div>
             <div class="webhook-url-container text-xs break-all bg-white p-2 rounded border border-gray-200 group">
                 <div class="flex items-center justify-between gap-2">
@@ -929,62 +949,62 @@
             </div>
         `;
 
-            await updateFakeErrorStatus();
-            startFetchingHooks();
-            updateConnectionStatus(true);
-            showAlert("Комната создана успешно", "success");
-        } catch (e) {
-            showAlert("Ошибка: " + (e.message || e), "error");
-            updateConnectionStatus(false);
+                await updateFakeErrorStatus();
+                startFetchingHooks();
+                updateConnectionStatus(true);
+                showAlert("Комната создана успешно", "success");
+            } catch (e) {
+                showAlert("Ошибка: " + (e.message || e), "error");
+                updateConnectionStatus(false);
+            }
         }
-    }
 
-    // изменяем обработчик кнопки Create чтобы использовать openRoom
-    document.getElementById("createRoomBtn").addEventListener("click", async () => {
-        const id = roomIdInput.value.trim();
-        await openRoom(id);
-    });
+        // изменяем обработчик кнопки Create чтобы использовать openRoom
+        document.getElementById("createRoomBtn").addEventListener("click", async () => {
+            const id = roomIdInput.value.trim();
+            await openRoom(id);
+        });
 
-    // Открыть / закрыть панель
-    function openRoomsPanel() {
-        roomsPanel.classList.remove('translate-x-full');
-        roomsPanelError.classList.add('hidden');
-        fetchAllRooms();
-    }
-    function closeRoomsPanelFn() {
-        roomsPanel.classList.add('translate-x-full');
-    }
+        // Открыть / закрыть панель
+        function openRoomsPanel() {
+            roomsPanel.classList.remove('translate-x-full');
+            roomsPanelError.classList.add('hidden');
+            fetchAllRooms();
+        }
+        function closeRoomsPanelFn() {
+            roomsPanel.classList.add('translate-x-full');
+        }
 
-    // обработчики
-    showRoomsBtn.addEventListener('click', openRoomsPanel);
-    closeRoomsPanel.addEventListener('click', closeRoomsPanelFn);
+        // обработчики
+        showRoomsBtn.addEventListener('click', openRoomsPanel);
+        closeRoomsPanel.addEventListener('click', closeRoomsPanelFn);
 
-    // Загрузка списка комнат
-    async function fetchAllRooms() {
-        roomsList.innerHTML = '';
-        roomsPanelEmpty.classList.add('hidden');
-        roomsPanelError.classList.add('hidden');
-        roomsPanelLoading.classList.remove('hidden');
+        // Загрузка списка комнат
+        async function fetchAllRooms() {
+            roomsList.innerHTML = '';
+            roomsPanelEmpty.classList.add('hidden');
+            roomsPanelError.classList.add('hidden');
+            roomsPanelLoading.classList.remove('hidden');
 
-        try {
-            const res = await fetch(`${apiBase}/room/allRooms`, { headers: { "Authorization": token } });
-            roomsPanelLoading.classList.add('hidden');
+            try {
+                const res = await fetch(`${apiBase}/room/allRooms`, { headers: { "Authorization": token } });
+                roomsPanelLoading.classList.add('hidden');
 
-            if (!res.ok) {
-                roomsPanelError.classList.remove('hidden');
-                return;
-            }
+                if (!res.ok) {
+                    roomsPanelError.classList.remove('hidden');
+                    return;
+                }
 
-            const data = await res.json();
-            const rooms = data.rooms;
+                const data = await res.json();
+                const rooms = data.rooms;
 
-            if (!rooms || rooms.length === 0) {
-                roomsPanelEmpty.classList.remove('hidden');
-                return;
-            }
+                if (!rooms || rooms.length === 0) {
+                    roomsPanelEmpty.classList.remove('hidden');
+                    return;
+                }
 
-            // Рендер списка комнат
-            roomsList.innerHTML = rooms.map(r => `
+                // Рендер списка комнат
+                roomsList.innerHTML = rooms.map(r => `
             <div class="p-3 border border-gray-200 rounded-lg flex items-center justify-between hover:bg-gray-50">
                 <div class="flex flex-col">
                     <button class="text-left text-sm font-medium text-gray-800 room-select-btn" data-room-id="${r.roomId}">
@@ -998,38 +1018,40 @@
             </div>
         `).join('');
 
-            // навесим обработчики на все кнопки
-            document.querySelectorAll('.select-room-action, .room-select-btn').forEach(el => {
-                el.addEventListener('click', async (e) => {
-                    const rid = e.currentTarget.getAttribute('data-room-id');
-                    await openRoom(rid);
-                    closeRoomsPanelFn();
+                // навесим обработчики на все кнопки
+                document.querySelectorAll('.select-room-action, .room-select-btn').forEach(el => {
+                    el.addEventListener('click', async (e) => {
+                        const rid = e.currentTarget.getAttribute('data-room-id');
+                        await openRoom(rid);
+                        closeRoomsPanelFn();
+                    });
                 });
-            });
 
-        } catch (err) {
-            roomsPanelLoading.classList.add('hidden');
-            roomsPanelError.classList.remove('hidden');
-            console.error('fetchAllRooms error', err);
+            } catch (err) {
+                roomsPanelLoading.classList.add('hidden');
+                roomsPanelError.classList.remove('hidden');
+                console.error('fetchAllRooms error', err);
+            }
         }
-    }
 
-    // Monitor online/offline status
-    window.addEventListener('online', () => {
-        updateConnectionStatus(true);
-        if (currentRoomId) {
-            showAlert("Интернет-соединение восстановлено", "success");
-            startFetchingHooks();
-        }
-    });
+        // Monitor online/offline status
+        window.addEventListener('online', () => {
+            updateConnectionStatus(true);
+            if (currentRoomId) {
+                showAlert("Интернет-соединение восстановлено", "success");
+                startFetchingHooks();
+            }
+        });
 
-    window.addEventListener('offline', () => {
-        updateConnectionStatus(false);
-        showAlert("Потеряно интернет-соединение", "error");
-    });
+        window.addEventListener('offline', () => {
+            updateConnectionStatus(false);
+            showAlert("Потеряно интернет-соединение", "error");
+        });
 
-    // Initial render
-    renderAllWebhooks();
-</script>
+        // Initial render
+        renderAllWebhooks();
+    </script>
+    </body>
+</div>
 </body>
 </html>

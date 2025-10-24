@@ -118,7 +118,7 @@ async function start() {
 
     } catch (err: any) {
         logger.error('❌ Failed to start server');
-        logger.error('Error:', err.message);
+        logger.error(`Error: ${err}`);
 
         if (err.message?.includes('ECONNREFUSED')) {
             logger.error('');

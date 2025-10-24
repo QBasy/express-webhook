@@ -1,0 +1,238 @@
+<!-- navbar.html - Универсальный навбар для всех страниц -->
+<style>
+  .navbar-gradient {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  }
+
+  .dropdown {
+    position: relative;
+  }
+
+  .dropdown-menu {
+    display: none;
+    position: absolute;
+    right: 0;
+    top: 100%;
+    margin-top: 0.5rem;
+    background: white;
+    border-radius: 0.5rem;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    min-width: 200px;
+    z-index: 50;
+  }
+
+  .dropdown:hover .dropdown-menu {
+    display: block;
+  }
+
+  .nav-link {
+    transition: all 0.3s ease;
+  }
+
+  .nav-link:hover {
+    transform: translateY(-2px);
+  }
+</style>
+
+<nav class="navbar-gradient shadow-lg">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="flex items-center justify-between h-16">
+      <!-- Logo & Title -->
+      <div class="flex items-center space-x-4">
+        <a href="/" class="flex items-center space-x-3 nav-link">
+          <div class="bg-white w-10 h-10 rounded-full flex items-center justify-center shadow-md">
+            <span class="text-purple-600 text-xl font-bold">WV</span>
+          </div>
+          <div class="text-white">
+            <h1 class="text-xl font-bold">Webhook Viewer</h1>
+            <p class="text-xs text-purple-200" id="nav-subtitle">GREEN-API QA TEAM</p>
+          </div>
+        </a>
+      </div>
+
+      <!-- Navigation Links -->
+      <div class="hidden md:flex items-center space-x-6" id="nav-links">
+        <!-- Будет заполнено JavaScript -->
+      </div>
+
+      <!-- User Menu -->
+      <div class="flex items-center space-x-4">
+        <!-- Auth Status -->
+        <div id="auth-status" class="text-white text-sm">
+          <!-- Загрузка... -->
+        </div>
+
+        <!-- User Dropdown (если залогинен) -->
+        <div id="user-dropdown" class="dropdown hidden">
+          <button class="flex items-center space-x-2 bg-white bg-opacity-20 hover:bg-opacity-30 rounded-lg px-4 py-2 text-white transition">
+            <span id="username-display" class="font-medium"></span>
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+            </svg>
+          </button>
+          <div class="dropdown-menu">
+            <div class="py-2">
+              <div class="px-4 py-2 text-sm text-gray-500 border-b border-gray-200">
+                <div class="font-semibold text-gray-800" id="dropdown-username"></div>
+                <div class="text-xs" id="dropdown-role"></div>
+              </div>
+              <a href="/" class="block px-4 py-2 text-sm text-gray-700 hover:bg-purple-50 transition">
+                🏠 Главная
+              </a>
+              <a href="/tester.html" class="block px-4 py-2 text-sm text-gray-700 hover:bg-purple-50 transition">
+                🧪 API Tester
+              </a>
+              <div id="admin-link" class="hidden">
+                <a href="/admin.html" class="block px-4 py-2 text-sm text-gray-700 hover:bg-purple-50 transition">
+                  👑 Админ панель
+                </a>
+              </div>
+              <div class="border-t border-gray-200 mt-2 pt-2">
+                <button onclick="navLogout()" class="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition">
+                  🚪 Выйти
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Login Button (если не залогинен) -->
+        <div id="login-button" class="hidden">
+          <a href="/login.html" class="bg-white text-purple-600 px-4 py-2 rounded-lg font-medium hover:bg-purple-50 transition">
+            Войти
+          </a>
+        </div>
+      </div>
+
+      <!-- Mobile menu button -->
+      <button id="mobile-menu-btn" class="md:hidden text-white p-2">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- Mobile menu -->
+  <div id="mobile-menu" class="hidden md:hidden bg-white bg-opacity-10 backdrop-blur-lg">
+    <div class="px-4 py-4 space-y-2" id="mobile-nav-links">
+      <!-- Будет заполнено JavaScript -->
+    </div>
+  </div>
+</nav>
+
+<script>
+  // Navbar JavaScript
+  (function() {
+    const apiBase = window.location.origin;
+    const token = localStorage.getItem('jwt_token');
+    const userStr = localStorage.getItem('user');
+    const user = userStr ? JSON.parse(userStr) : null;
+
+    // Определяем текущую страницу
+    const currentPage = window.location.pathname;
+
+    // Обновляем навбар в зависимости от авторизации
+    function updateNavbar() {
+      const authStatus = document.getElementById('auth-status');
+      const userDropdown = document.getElementById('user-dropdown');
+      const loginButton = document.getElementById('login-button');
+      const navLinks = document.getElementById('nav-links');
+      const mobileNavLinks = document.getElementById('mobile-nav-links');
+
+      if (token && user) {
+        // Пользователь залогинен
+        authStatus.innerHTML = `
+                    <div class="flex items-center space-x-2">
+                        <div class="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                        <span class="text-sm">Онлайн</span>
+                    </div>
+                `;
+
+        userDropdown.classList.remove('hidden');
+        loginButton.classList.add('hidden');
+
+        document.getElementById('username-display').textContent = user.username;
+        document.getElementById('dropdown-username').textContent = user.username;
+        document.getElementById('dropdown-role').textContent = user.role === 'admin' ? '👑 Администратор' : '👤 Пользователь';
+
+        if (user.role === 'admin') {
+          document.getElementById('admin-link').classList.remove('hidden');
+        }
+
+        // Ссылки для залогиненных
+        const links = [
+          { href: '/', text: '🏠 Главная', active: currentPage === '/' || currentPage === '/index.html' },
+          { href: '/tester.html', text: '🧪 API Tester', active: currentPage === '/tester.html' }
+        ];
+
+        if (user.role === 'admin') {
+          links.push({ href: '/admin.html', text: '👑 Админ', active: currentPage === '/admin.html' });
+        }
+
+        navLinks.innerHTML = links.map(link => `
+                    <a href="${link.href}" class="nav-link text-white hover:text-purple-200 font-medium ${link.active ? 'underline' : ''}">
+                        ${link.text}
+                    </a>
+                `).join('');
+
+        mobileNavLinks.innerHTML = links.map(link => `
+                    <a href="${link.href}" class="block text-white hover:bg-white hover:bg-opacity-20 px-4 py-2 rounded transition ${link.active ? 'bg-white bg-opacity-20' : ''}">
+                        ${link.text}
+                    </a>
+                `).join('') + `
+                    <button onclick="navLogout()" class="block w-full text-left text-white hover:bg-red-500 px-4 py-2 rounded transition">
+                        🚪 Выйти
+                    </button>
+                `;
+
+      } else {
+        authStatus.innerHTML = `
+                    <span class="text-sm text-purple-200">Гость</span>
+                `;
+
+        userDropdown.classList.add('hidden');
+        loginButton.classList.remove('hidden');
+
+        const links = [
+          { href: '/login.html', text: '🔐 Вход', active: currentPage === '/login.html' },
+          { href: '/register.html', text: '📝 Регистрация', active: currentPage === '/register.html' }
+        ];
+
+        navLinks.innerHTML = links.map(link => `
+                    <a href="${link.href}" class="nav-link text-white hover:text-purple-200 font-medium ${link.active ? 'underline' : ''}">
+                        ${link.text}
+                    </a>
+                `).join('');
+
+        mobileNavLinks.innerHTML = links.map(link => `
+                    <a href="${link.href}" class="block text-white hover:bg-white hover:bg-opacity-20 px-4 py-2 rounded transition ${link.active ? 'bg-white bg-opacity-20' : ''}">
+                        ${link.text}
+                    </a>
+                `).join('');
+      }
+    }
+
+    window.navLogout = function() {
+      if (confirm('Вы уверены что хотите выйти?')) {
+        localStorage.removeItem('jwt_token');
+        localStorage.removeItem('user');
+        window.location.href = '/login.html';
+      }
+    };
+
+    const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+    const mobileMenu = document.getElementById('mobile-menu');
+
+    mobileMenuBtn?.addEventListener('click', () => {
+      mobileMenu.classList.toggle('hidden');
+    });
+
+    updateNavbar();
+
+    window.addEventListener('storage', () => {
+      updateNavbar();
+    });
+
+  })();
+</script>

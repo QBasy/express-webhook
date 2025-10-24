@@ -28,7 +28,7 @@ export class AuthService {
             username,
             password: hashedPassword,
             role,
-            status: 'approved', // Сразу approved при создании через admin
+            status: 'approved',
             webhookTTL,
             createdAt: new Date()
         });
@@ -37,14 +37,12 @@ export class AuthService {
         return { userId: result.insertedId.toString() };
     }
 
-    // Регистрация (создание заявки)
     async registerUser(
         username: string,
         email: string,
         password: string,
         reason?: string
     ): Promise<string> {
-        // Проверка: пользователь уже существует?
         const existing = await this.usersCollection.findOne({ username });
         if (existing) {
             throw new Error('Username already exists');
@@ -87,7 +85,6 @@ export class AuthService {
             throw new Error('Invalid username or password');
         }
 
-        // Проверка статуса
         if (user.status === 'pending') {
             throw new Error('Account pending approval');
         }
@@ -100,7 +97,6 @@ export class AuthService {
             throw new Error('Account is not approved');
         }
 
-        // Генерируем токен
         const token = this.jwtSign({
             userId: user._id.toString(),
             username: user.username,
@@ -121,6 +117,7 @@ export class AuthService {
         }
     }
 
+    // Одобрить пользователя
     async approveUser(userId: string): Promise<boolean> {
         const result = await this.usersCollection.updateOne(
             { _id: new ObjectId(userId) },
