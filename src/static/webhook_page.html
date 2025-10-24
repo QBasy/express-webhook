@@ -319,6 +319,7 @@
 
 <script>
     const apiBase = `${window.location.origin}`;
+    const token = `Bearer ${localStorage.getItem("jwt_token")}`
     let currentRoomId = null;
     let hookInterval = null;
     let lastIds = new Set();
@@ -410,7 +411,7 @@
 
         setTimeout(async () => {
             try {
-                const res = await fetch(`${apiBase}/hook/${encodeURIComponent(currentRoomId)}`);
+                const res = await fetch(`${apiBase}/hook/${encodeURIComponent(currentRoomId)}`, { headers: { "Authorization": token } });
                 if (res.ok) {
                     updateConnectionStatus(true);
                     showAlert("Соединение восстановлено", "success");
@@ -437,7 +438,7 @@
         try {
             const res = await fetch(`${apiBase}/room/${encodeURIComponent(currentRoomId)}/fake-error`, {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
+                headers: { "Content-Type": "application/json", "Authorization": token },
                 body: JSON.stringify({ enabled, statusCode })
             });
 
@@ -455,7 +456,7 @@
     async function updateFakeErrorStatus() {
         if (!currentRoomId) return;
         try {
-            const res = await fetch(`${apiBase}/room/${encodeURIComponent(currentRoomId)}/fake-error`);
+            const res = await fetch(`${apiBase}/room/${encodeURIComponent(currentRoomId)}/fake-error`, { headers: { "Authorization": token } });
             if (!res.ok) {
                 fakeErrorToggle.checked = false;
                 fakeStatusInput.disabled = false;
@@ -484,7 +485,7 @@
             allHooks = [];
             currentPage = 1;
 
-            const res = await fetch(`${apiBase}/room/${encodeURIComponent(id)}`, { method: "POST" });
+            const res = await fetch(`${apiBase}/room/${encodeURIComponent(id)}`, { method: "POST", headers: { "Authorization": token } });
             if (!res.ok) throw new Error("Ошибка создания комнаты");
 
             const webhookUrl = `${apiBase}/hook/${encodeURIComponent(id)}`;
@@ -521,7 +522,7 @@
         if (!currentRoomId) return showAlert("Нет активной комнаты", "warning");
 
         try {
-            await fetch(`${apiBase}/room/${encodeURIComponent(currentRoomId)}`, { method: "DELETE" });
+            await fetch(`${apiBase}/room/${encodeURIComponent(currentRoomId)}`, { method: "DELETE", headers: { "Authorization": token } });
             stopFetchingHooks();
             roomStatus.innerHTML = `<div class="text-gray-500 text-sm">Комната закрыта</div>`;
             currentRoomId = null;
@@ -544,7 +545,7 @@
         if (!currentRoomId) return showAlert("Нет активной комнаты", "warning");
 
         try {
-            await fetch(`${apiBase}/hook/${encodeURIComponent(currentRoomId)}`, { method: "DELETE" });
+            await fetch(`${apiBase}/hook/${encodeURIComponent(currentRoomId)}`, { method: "DELETE", headers: { "Authorization": token } });
             lastIds.clear();
             allHooks = [];
             currentPage = 1;
@@ -573,7 +574,7 @@
         try {
             const res = await fetch(`${apiBase}/hook/${encodeURIComponent(currentRoomId)}`, {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
+                headers: { "Content-Type": "application/json", "Authorization": token },
                 body: JSON.stringify(testData)
             });
 
@@ -641,7 +642,7 @@
         if (!currentRoomId) return;
 
         try {
-            await fetch(`${apiBase}/hook/${encodeURIComponent(currentRoomId)}/${encodeURIComponent(webhookId)}`, { method: "DELETE" });
+            await fetch(`${apiBase}/hook/${encodeURIComponent(currentRoomId)}/${encodeURIComponent(webhookId)}`, { method: "DELETE", headers: { "Authorization": token } });
             allHooks = allHooks.filter(h => h.receiptId !== webhookId);
             lastIds.delete(webhookId);
             renderAllWebhooks();
@@ -662,7 +663,7 @@
         hookInterval = setInterval(async () => {
             if (!currentRoomId) return;
             try {
-                const res = await fetch(`${apiBase}/hook/${encodeURIComponent(currentRoomId)}`);
+                const res = await fetch(`${apiBase}/hook/${encodeURIComponent(currentRoomId)}`, { headers: { "Authorization": token } });
                 if (!res.ok) {
                     updateConnectionStatus(false);
                     throw new Error("Ошибка загрузки");
@@ -910,7 +911,7 @@
             currentPage = 1;
             renderAllWebhooks();
 
-            const res = await fetch(`${apiBase}/room/${encodeURIComponent(id)}`, { method: "POST" });
+            const res = await fetch(`${apiBase}/room/${encodeURIComponent(id)}`, { method: "POST", headers: { "Authorization": token } });
             if (!res.ok) throw new Error("Ошибка создания/входа в комнату");
 
             const webhookUrl = `${apiBase}/hook/${encodeURIComponent(id)}`;
@@ -966,7 +967,7 @@
         roomsPanelLoading.classList.remove('hidden');
 
         try {
-            const res = await fetch(`${apiBase}/room/allRooms`);
+            const res = await fetch(`${apiBase}/room/allRooms`, { headers: { "Authorization": token } });
             roomsPanelLoading.classList.add('hidden');
 
             if (!res.ok) {
