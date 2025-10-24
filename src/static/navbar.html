@@ -1,4 +1,4 @@
-<!-- universal-header.html - Универсальный header для всех страниц -->
+<!-- universal-header.html - Универсальный header для всех страниц (С ОТЛАДКОЙ) -->
 <style>
   .user-dropdown {
     position: relative;
@@ -71,19 +71,49 @@
 </header>
 
 <script>
-  // Universal Header JavaScript
+  // Universal Header JavaScript (С ОТЛАДКОЙ)
+  console.log('🔧 Header script loading...');
+
   (function() {
     const apiBase = window.location.origin;
     const token = localStorage.getItem('jwt_token');
     const userStr = localStorage.getItem('user');
-    const user = userStr ? JSON.parse(userStr) : null;
+
+    console.log('📊 Header data:', {
+      hasToken: !!token,
+      userStr: userStr,
+      currentPage: window.location.pathname
+    });
+
+    let user = null;
+    try {
+      user = userStr ? JSON.parse(userStr) : null;
+      console.log('👤 Parsed user:', user);
+    } catch (e) {
+      console.error('❌ Failed to parse user:', e);
+    }
+
     const currentPage = window.location.pathname;
 
     function updateHeader() {
+      console.log('🔄 Updating header...');
+
       const navLinks = document.getElementById('header-nav-links');
       const userMenu = document.getElementById('header-user-menu');
 
+      if (!navLinks) {
+        console.error('❌ header-nav-links not found!');
+        return;
+      }
+
+      if (!userMenu) {
+        console.error('❌ header-user-menu not found!');
+        return;
+      }
+
       if (token && user) {
+        console.log('✅ User logged in:', user.username);
+
         // ========== НАВИГАЦИОННЫЕ ССЫЛКИ ==========
         const links = [
           { href: '/', text: '🏠 Главная', active: currentPage === '/' || currentPage === '/index.html' },
@@ -96,50 +126,53 @@
         }
 
         navLinks.innerHTML = links.map(link => `
-                    <a href="${link.href}"
-                       class="text-gray-700 hover:text-green-600 font-medium transition ${link.active ? 'text-green-600 font-semibold' : ''}">
-                        ${link.text}
-                    </a>
-                `).join('');
+          <a href="${link.href}"
+             class="text-gray-700 hover:text-green-600 font-medium transition ${link.active ? 'text-green-600 font-semibold' : ''}">
+            ${link.text}
+          </a>
+        `).join('');
 
         // ========== USER DROPDOWN MENU ==========
         userMenu.innerHTML = `
-                    <div class="user-dropdown">
-                        <button class="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition">
-                            <span class="font-medium text-gray-800">${user.username}</span>
-                            <svg class="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                            </svg>
-                        </button>
-                        <div class="user-dropdown-menu">
-                            <div class="py-2">
-                                <div class="px-4 py-2 text-sm text-gray-500 border-b border-gray-200">
-                                    <div class="font-semibold text-gray-800">${user.username}</div>
-                                    <div class="text-xs">${user.role === 'admin' ? '👑 Администратор' : '👤 Пользователь'}</div>
-                                </div>
-                                <a href="/" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition">
-                                    🏠 Главная
-                                </a>
-                                <a href="/tester.html" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition">
-                                    🧪 API Tester
-                                </a>
-                                <a href="/docs" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition">
-                                    📖 Документация
-                                </a>
-                                ${user.role === 'admin' ? `
-                                    <a href="/admin.html" class="block px-4 py-2 text-sm text-purple-600 hover:bg-purple-50 transition">
-                                        👑 Админ панель
-                                    </a>
-                                ` : ''}
-                                <div class="border-t border-gray-200 mt-2 pt-2">
-                                    <button onclick="headerLogout()" class="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition">
-                                        🚪 Выйти
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                `;
+          <div class="user-dropdown">
+            <button class="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition">
+              <span class="font-medium text-gray-800">${user.username}</span>
+              <svg class="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+              </svg>
+            </button>
+            <div class="user-dropdown-menu">
+              <div class="py-2">
+                <div class="px-4 py-2 text-sm text-gray-500 border-b border-gray-200">
+                  <div class="font-semibold text-gray-800">${user.username}</div>
+                  <div class="text-xs">${user.role === 'admin' ? '👑 Администратор' : '👤 Пользователь'}</div>
+                </div>
+                <a href="/" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition">
+                  🏠 Главная
+                </a>
+                <a href="/tester.html" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition">
+                  🧪 API Tester
+                </a>
+                <a href="/docs" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition">
+                  📖 Документация
+                </a>
+                ${user.role === 'admin' ? `
+                  <a href="/admin.html" class="block px-4 py-2 text-sm text-purple-600 hover:bg-purple-50 transition">
+                    👑 Админ панель
+                  </a>
+                ` : ''}
+                <div class="border-t border-gray-200 mt-2 pt-2">
+                  <button onclick="headerLogout()" class="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition">
+                    🚪 Выйти
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+
+        console.log('✅ Nav links added:', links.length);
+        console.log('✅ User menu added');
 
         // Connection Status (только на главной странице)
         if (currentPage === '/' || currentPage === '/index.html') {
@@ -147,15 +180,18 @@
           if (connStatus) {
             connStatus.classList.remove('hidden');
             connStatus.innerHTML = `
-                            <div class="flex items-center gap-2 px-3 py-1 rounded-full bg-green-100 text-green-700 text-sm">
-                                <span class="w-2 h-2 bg-green-500 rounded-full pulse-dot"></span>
-                                <span>Подключено</span>
-                            </div>
-                        `;
+              <div class="flex items-center gap-2 px-3 py-1 rounded-full bg-green-100 text-green-700 text-sm">
+                <span class="w-2 h-2 bg-green-500 rounded-full pulse-dot"></span>
+                <span>Подключено</span>
+              </div>
+            `;
+            console.log('✅ Connection status added');
           }
         }
 
       } else {
+        console.log('⚠️ User NOT logged in');
+
         // ========== НЕ ЗАЛОГИНЕН ==========
         const links = [
           { href: '/login.html', text: '🔐 Вход', active: currentPage === '/login.html' },
@@ -163,23 +199,28 @@
         ];
 
         navLinks.innerHTML = links.map(link => `
-                    <a href="${link.href}"
-                       class="text-gray-700 hover:text-green-600 font-medium transition ${link.active ? 'text-green-600 font-semibold' : ''}">
-                        ${link.text}
-                    </a>
-                `).join('');
+          <a href="${link.href}"
+             class="text-gray-700 hover:text-green-600 font-medium transition ${link.active ? 'text-green-600 font-semibold' : ''}">
+            ${link.text}
+          </a>
+        `).join('');
 
         userMenu.innerHTML = `
-                    <a href="/login.html"
-                       class="px-4 py-2 bg-gray-900 hover:bg-gray-800 text-white rounded-lg font-medium transition">
-                        Войти
-                    </a>
-                `;
+          <a href="/login.html"
+             class="px-4 py-2 bg-gray-900 hover:bg-gray-800 text-white rounded-lg font-medium transition">
+            Войти
+          </a>
+        `;
+
+        console.log('✅ Guest links added');
       }
+
+      console.log('✅ Header update complete!');
     }
 
     // Функция выхода
     window.headerLogout = function() {
+      console.log('👋 Logging out...');
       if (confirm('Вы уверены что хотите выйти?')) {
         localStorage.clear();
         window.location.href = '/login.html';
@@ -190,6 +231,11 @@
     updateHeader();
 
     // Слушаем изменения localStorage (например, при входе в другой вкладке)
-    window.addEventListener('storage', updateHeader);
+    window.addEventListener('storage', () => {
+      console.log('🔄 Storage changed, updating header...');
+      updateHeader();
+    });
+
+    console.log('✅ Header script loaded!');
   })();
 </script>
