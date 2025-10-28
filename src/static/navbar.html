@@ -1,241 +1,331 @@
-<!-- universal-header.html - Универсальный header для всех страниц (С ОТЛАДКОЙ) -->
 <style>
-  .user-dropdown {
-    position: relative;
-  }
-  .user-dropdown-menu {
-    display: none;
-    position: absolute;
-    right: 0;
-    top: 100%;
-    margin-top: 0.5rem;
-    background: white;
-    border-radius: 0.5rem;
-    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-    min-width: 200px;
-    z-index: 50;
-  }
-  .user-dropdown:hover .user-dropdown-menu {
-    display: block;
-  }
-  @keyframes pulse-dot {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.5; }
-  }
-  .pulse-dot {
-    animation: pulse-dot 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-  }
+    .navbar-dropdown {
+        position: relative;
+    }
+
+    .navbar-dropdown-menu {
+        position: absolute;
+        right: 0;
+        top: 100%;
+        background: white;
+        border-radius: 0.75rem;
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+        min-width: 220px;
+        z-index: 50;
+        border: 1px solid #e5e7eb;
+
+        opacity: 0;
+        visibility: hidden;
+        transform: translateY(-5px);
+        transition: all 0.2s ease;
+        pointer-events: none;
+    }
+
+    .navbar-dropdown-menu.show {
+        opacity: 1;
+        visibility: visible;
+        transform: translateY(0);
+        pointer-events: auto;
+    }
+
+    /* Hover zone - увеличиваем область для удобства */
+    .navbar-dropdown::before {
+        content: '';
+        position: absolute;
+        top: 100%;
+        right: 0;
+        width: 100%;
+        height: 10px;
+        z-index: 49;
+    }
+
+    .navbar-dropdown:hover .navbar-dropdown-menu {
+        opacity: 1;
+        visibility: visible;
+        transform: translateY(0);
+        pointer-events: auto;
+    }
+
+    @keyframes pulse-dot {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.5; }
+    }
+    .pulse-dot {
+        animation: pulse-dot 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    }
+    .navbar-link {
+        transition: all 0.2s ease;
+    }
+    .navbar-link:hover {
+        transform: translateY(-2px);
+    }
 </style>
 
-<header class="bg-white shadow-md border-b border-gray-200">
-  <div class="max-w-7xl mx-auto px-4 py-4 sm:px-6 lg:px-8">
-    <div class="flex items-center justify-between">
-      <!-- Logo & Title -->
-      <a href="/" class="flex items-center gap-4 hover:opacity-80 transition">
-        <!-- GREEN-API Logo -->
-        <svg width="50" height="50" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-          <rect width="100" height="100" rx="12" fill="#3B9702"/>
-          <text x="50" y="70" font-family="Arial, sans-serif" font-size="60" font-weight="bold" fill="white" text-anchor="middle">G</text>
-        </svg>
-        <div>
-          <h1 class="text-2xl font-bold text-gray-900">Webhook Viewer</h1>
-          <p class="text-xs text-green-600 font-semibold">GREEN-API QA TEAM</p>
+<header class="bg-white shadow-md border-b-2 border-green-500">
+    <div class="max-w-7xl mx-auto px-4 py-4 sm:px-6 lg:px-8">
+        <div class="flex items-center justify-between">
+            <!-- Logo & Title -->
+            <a href="/" class="flex items-center gap-4 hover:opacity-90 transition-opacity">
+                <!-- GREEN-API Logo -->
+                <svg width="50" height="50" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                    <rect width="100" height="100" rx="12" fill="#3B9702"/>
+                    <text x="50" y="70" font-family="Arial, sans-serif" font-size="60" font-weight="bold" fill="white" text-anchor="middle">G</text>
+                </svg>
+                <div>
+                    <h1 class="text-2xl font-bold text-gray-900">Webhook Viewer</h1>
+                    <p class="text-xs text-green-600 font-semibold tracking-wide">GREEN-API QA TEAM</p>
+                </div>
+            </a>
+
+            <!-- Right Side -->
+            <div class="flex items-center gap-6">
+                <!-- Navigation Links -->
+                <nav class="hidden md:flex items-center gap-6" id="navbar-links">
+                    <!-- Будет заполнено JS -->
+                </nav>
+
+                <!-- User Menu / Login Button -->
+                <div id="navbar-user-section">
+                    <!-- Будет заполнено JS -->
+                </div>
+            </div>
         </div>
-      </a>
-
-      <!-- Right Side: Navigation & User Menu -->
-      <div class="flex items-center gap-4">
-        <!-- Navigation Links (Desktop) -->
-        <nav class="hidden md:flex items-center gap-4" id="header-nav-links">
-          <!-- Будет заполнено JavaScript -->
-        </nav>
-
-        <!-- Connection Status (только на главной) -->
-        <div id="header-connection-status" class="hidden">
-          <!-- Будет показан только на странице webhooks -->
-        </div>
-
-        <!-- User Dropdown -->
-        <div id="header-user-menu">
-          <!-- Будет заполнено JavaScript -->
-        </div>
-
-        <!-- GREEN-API Link -->
-        <a href="https://green-api.com" target="_blank"
-           class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium transition shadow-sm">
-          GREEN-API →
-        </a>
-      </div>
     </div>
-  </div>
 </header>
 
 <script>
-  // Universal Header JavaScript (С ОТЛАДКОЙ)
-  console.log('🔧 Header script loading...');
+    (function() {
+        const apiBase = window.location.origin;
+        const token = localStorage.getItem('jwt_token');
+        const userStr = localStorage.getItem('user');
+        const currentPage = window.location.pathname;
 
-  (function() {
-    const apiBase = window.location.origin;
-    const token = localStorage.getItem('jwt_token');
-    const userStr = localStorage.getItem('user');
+        console.log('🔧 Navbar loading...', { hasToken: !!token, currentPage });
 
-    console.log('📊 Header data:', {
-      hasToken: !!token,
-      userStr: userStr,
-      currentPage: window.location.pathname
-    });
-
-    let user = null;
-    try {
-      user = userStr ? JSON.parse(userStr) : null;
-      console.log('👤 Parsed user:', user);
-    } catch (e) {
-      console.error('❌ Failed to parse user:', e);
-    }
-
-    const currentPage = window.location.pathname;
-
-    function updateHeader() {
-      console.log('🔄 Updating header...');
-
-      const navLinks = document.getElementById('header-nav-links');
-      const userMenu = document.getElementById('header-user-menu');
-
-      if (!navLinks) {
-        console.error('❌ header-nav-links not found!');
-        return;
-      }
-
-      if (!userMenu) {
-        console.error('❌ header-user-menu not found!');
-        return;
-      }
-
-      if (token && user) {
-        console.log('✅ User logged in:', user.username);
-
-        // ========== НАВИГАЦИОННЫЕ ССЫЛКИ ==========
-        const links = [
-          { href: '/', text: '🏠 Главная', active: currentPage === '/' || currentPage === '/index.html' },
-          { href: '/tester.html', text: '🧪 API Tester', active: currentPage === '/tester.html' },
-          { href: '/docs', text: '📖 Docs', active: currentPage === '/docs' }
-        ];
-
-        if (user.role === 'admin') {
-          links.push({ href: '/admin.html', text: '👑 Admin', active: currentPage === '/admin.html' });
+        let user = null;
+        try {
+            user = userStr ? JSON.parse(userStr) : null;
+        } catch (e) {
+            console.error('❌ Failed to parse user:', e);
+            localStorage.removeItem('user');
         }
 
-        navLinks.innerHTML = links.map(link => `
-          <a href="${link.href}"
-             class="text-gray-700 hover:text-green-600 font-medium transition ${link.active ? 'text-green-600 font-semibold' : ''}">
-            ${link.text}
-          </a>
-        `).join('');
+        const navbarLinks = document.getElementById('navbar-links');
+        const navbarUserSection = document.getElementById('navbar-user-section');
 
-        // ========== USER DROPDOWN MENU ==========
-        userMenu.innerHTML = `
-          <div class="user-dropdown">
-            <button class="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition">
-              <span class="font-medium text-gray-800">${user.username}</span>
-              <svg class="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-              </svg>
-            </button>
-            <div class="user-dropdown-menu">
-              <div class="py-2">
-                <div class="px-4 py-2 text-sm text-gray-500 border-b border-gray-200">
-                  <div class="font-semibold text-gray-800">${user.username}</div>
-                  <div class="text-xs">${user.role === 'admin' ? '👑 Администратор' : '👤 Пользователь'}</div>
+        if (!navbarLinks || !navbarUserSection) {
+            console.error('❌ Navbar elements not found!');
+            return;
+        }
+
+        const isPublicPage = ['/login.html', '/login', '/register.html', '/register'].some(
+            page => currentPage === page || currentPage.startsWith(page)
+        );
+
+        if (token && user) {
+            console.log('✅ User logged in:', user.username, user.role);
+
+            const links = [
+                {
+                    href: '/',
+                    icon: '🏠',
+                    text: 'Главная',
+                    active: currentPage === '/' || currentPage === '/index.html'
+                },
+                {
+                    href: '/tester.html',
+                    icon: '🧪',
+                    text: 'API Tester',
+                    active: currentPage === '/tester.html'
+                },
+                {
+                    href: '/docs',
+                    icon: '📖',
+                    text: 'Документация',
+                    active: currentPage === '/docs'
+                }
+            ];
+
+            if (user.role === 'admin') {
+                links.push({
+                    href: '/admin.html',
+                    icon: '👑',
+                    text: 'Админ панель',
+                    active: currentPage === '/admin.html'
+                });
+            }
+
+            navbarLinks.innerHTML = links.map(link => `
+                <a href="${link.href}"
+                   class="navbar-link flex items-center gap-2 font-medium transition-all
+                          ${link.active
+                ? 'text-green-600 font-semibold'
+                : 'text-gray-700 hover:text-green-600'}">
+                    <span>${link.icon}</span>
+                    <span>${link.text}</span>
+                </a>
+            `).join('');
+
+            // ========== USER DROPDOWN ==========
+            navbarUserSection.innerHTML = `
+                <div class="navbar-dropdown">
+                    <button id="dropdown-toggle" class="flex items-center gap-3 px-4 py-2 bg-green-50 hover:bg-green-100 rounded-lg transition-all border border-green-200">
+                        <div class="w-8 h-8 bg-green-600 rounded-full flex items-center justify-center text-white font-bold">
+                            ${user.username.charAt(0).toUpperCase()}
+                        </div>
+                        <div class="text-left hidden lg:block">
+                            <div class="text-sm font-semibold text-gray-800">${user.username}</div>
+                            <div class="text-xs text-green-600">${user.role === 'admin' ? '👑 Admin' : '👤 User'}</div>
+                        </div>
+                        <svg class="w-4 h-4 text-gray-600 transition-transform" id="dropdown-arrow" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                        </svg>
+                    </button>
+
+                    <div class="navbar-dropdown-menu" id="dropdown-menu">
+                        <div class="py-2">
+                            <!-- User Info -->
+                            <div class="px-4 py-3 border-b border-gray-200">
+                                <div class="font-semibold text-gray-900">${user.username}</div>
+                                <div class="text-xs text-gray-500">${user.email || 'Нет email'}</div>
+                                <div class="text-xs text-green-600 mt-1">${user.role === 'admin' ? '👑 Администратор' : '👤 Пользователь'}</div>
+                            </div>
+
+                            <!-- Navigation Links -->
+                            <a href="/" class="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-green-50 transition-colors">
+                                <span>🏠</span>
+                                <span>Главная</span>
+                            </a>
+                            <a href="/tester.html" class="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-green-50 transition-colors">
+                                <span>🧪</span>
+                                <span>API Tester</span>
+                            </a>
+                            <a href="/docs" class="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-green-50 transition-colors">
+                                <span>📖</span>
+                                <span>Документация</span>
+                            </a>
+                            ${user.role === 'admin' ? `
+                                <a href="/admin.html" class="flex items-center gap-3 px-4 py-2 text-sm text-purple-600 hover:bg-purple-50 transition-colors font-medium">
+                                    <span>👑</span>
+                                    <span>Админ панель</span>
+                                </a>
+                            ` : ''}
+
+                            <div class="border-t border-gray-200 mt-2 pt-2">
+                                <button onclick="navbarLogout()" class="w-full flex items-center gap-3 px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors font-medium">
+                                    <span>🚪</span>
+                                    <span>Выйти</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <a href="/" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition">
-                  🏠 Главная
-                </a>
-                <a href="/tester.html" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition">
-                  🧪 API Tester
-                </a>
-                <a href="/docs" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition">
-                  📖 Документация
-                </a>
-                ${user.role === 'admin' ? `
-                  <a href="/admin.html" class="block px-4 py-2 text-sm text-purple-600 hover:bg-purple-50 transition">
-                    👑 Админ панель
-                  </a>
-                ` : ''}
-                <div class="border-t border-gray-200 mt-2 pt-2">
-                  <button onclick="headerLogout()" class="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition">
-                    🚪 Выйти
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        `;
-
-        console.log('✅ Nav links added:', links.length);
-        console.log('✅ User menu added');
-
-        // Connection Status (только на главной странице)
-        if (currentPage === '/' || currentPage === '/index.html') {
-          const connStatus = document.getElementById('header-connection-status');
-          if (connStatus) {
-            connStatus.classList.remove('hidden');
-            connStatus.innerHTML = `
-              <div class="flex items-center gap-2 px-3 py-1 rounded-full bg-green-100 text-green-700 text-sm">
-                <span class="w-2 h-2 bg-green-500 rounded-full pulse-dot"></span>
-                <span>Подключено</span>
-              </div>
             `;
-            console.log('✅ Connection status added');
-          }
+
+            // ========== DROPDOWN FUNCTIONALITY ==========
+            const dropdownToggle = document.getElementById('dropdown-toggle');
+            const dropdownMenu = document.getElementById('dropdown-menu');
+            const dropdownArrow = document.getElementById('dropdown-arrow');
+            const dropdown = dropdownToggle.closest('.navbar-dropdown');
+
+            let isOpen = false;
+
+            // Клик по кнопке
+            dropdownToggle.addEventListener('click', function(e) {
+                e.stopPropagation();
+                toggleDropdown();
+            });
+
+            // Закрытие при клике вне меню
+            document.addEventListener('click', function(e) {
+                if (!dropdown.contains(e.target)) {
+                    closeDropdown();
+                }
+            });
+
+            // Закрытие по Escape
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') {
+                    closeDropdown();
+                }
+            });
+
+            function toggleDropdown() {
+                isOpen = !isOpen;
+                if (isOpen) {
+                    openDropdown();
+                } else {
+                    closeDropdown();
+                }
+            }
+
+            function openDropdown() {
+                isOpen = true;
+                dropdownMenu.classList.add('show');
+                dropdownArrow.style.transform = 'rotate(180deg)';
+            }
+
+            function closeDropdown() {
+                isOpen = false;
+                dropdownMenu.classList.remove('show');
+                dropdownArrow.style.transform = 'rotate(0deg)';
+            }
+
+        } else {
+            console.log('⚠️ User NOT logged in');
+
+            // ========== НАВИГАЦИЯ ДЛЯ ГОСТЕЙ ==========
+            if (!isPublicPage) {
+                // На приватных страницах без токена - показываем минимум
+                navbarLinks.innerHTML = '';
+                navbarUserSection.innerHTML = `
+                    <a href="/login.html"
+                       class="px-6 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold transition-all shadow-sm hover:shadow-md">
+                        Войти
+                    </a>
+                `;
+            } else {
+                // На публичных страницах показываем навигацию
+                const links = [
+                    {
+                        href: '/login.html',
+                        text: 'Вход',
+                        active: currentPage === '/login.html'
+                    },
+                    {
+                        href: '/register.html',
+                        text: 'Регистрация',
+                        active: currentPage === '/register.html'
+                    }
+                ];
+
+                navbarLinks.innerHTML = links.map(link => `
+                    <a href="${link.href}"
+                       class="navbar-link font-medium transition-all
+                              ${link.active
+                    ? 'text-green-600 font-semibold'
+                    : 'text-gray-700 hover:text-green-600'}">
+                        ${link.text}
+                    </a>
+                `).join('');
+
+                navbarUserSection.innerHTML = `
+                    <a href="/login.html"
+                       class="px-6 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold transition-all shadow-sm hover:shadow-md">
+                        Войти
+                    </a>
+                `;
+            }
         }
 
-      } else {
-        console.log('⚠️ User NOT logged in');
+        window.navbarLogout = function() {
+            console.log('👋 Logging out from navbar...');
+            if (confirm('Вы уверены что хотите выйти?')) {
+                localStorage.clear();
+                window.location.href = '/login.html';
+            }
+        };
 
-        // ========== НЕ ЗАЛОГИНЕН ==========
-        const links = [
-          { href: '/login.html', text: '🔐 Вход', active: currentPage === '/login.html' },
-          { href: '/register.html', text: '📝 Регистрация', active: currentPage === '/register.html' }
-        ];
-
-        navLinks.innerHTML = links.map(link => `
-          <a href="${link.href}"
-             class="text-gray-700 hover:text-green-600 font-medium transition ${link.active ? 'text-green-600 font-semibold' : ''}">
-            ${link.text}
-          </a>
-        `).join('');
-
-        userMenu.innerHTML = `
-          <a href="/login.html"
-             class="px-4 py-2 bg-gray-900 hover:bg-gray-800 text-white rounded-lg font-medium transition">
-            Войти
-          </a>
-        `;
-
-        console.log('✅ Guest links added');
-      }
-
-      console.log('✅ Header update complete!');
-    }
-
-    // Функция выхода
-    window.headerLogout = function() {
-      console.log('👋 Logging out...');
-      if (confirm('Вы уверены что хотите выйти?')) {
-        localStorage.clear();
-        window.location.href = '/login.html';
-      }
-    };
-
-    // Обновляем header
-    updateHeader();
-
-    // Слушаем изменения localStorage (например, при входе в другой вкладке)
-    window.addEventListener('storage', () => {
-      console.log('🔄 Storage changed, updating header...');
-      updateHeader();
-    });
-
-    console.log('✅ Header script loaded!');
-  })();
+        console.log('✅ Navbar loaded successfully!');
+    })();
 </script>

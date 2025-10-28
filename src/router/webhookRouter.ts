@@ -32,7 +32,12 @@ export async function webhookRoutes(fastify: FastifyInstance) {
             });
         }
 
-        const receiptId = await fastify.webhookRepo.addWebhook(id, webhook);
+        // ← ИСПРАВЛЕНО: передаём TTL из комнаты
+        const receiptId = await fastify.webhookRepo.addWebhook(
+            id,
+            webhook,
+            room.webhookTTL
+        );
 
         await fastify.roomRepo.updateActivity(id);
 

@@ -3,7 +3,7 @@ import 'dotenv/config';
 import Fastify from 'fastify';
 import cors from '@fastify/cors';
 import jwt from '@fastify/jwt';
-import { connectMongoDB } from './src/db/connection';
+import { connectMongoDB, closeMongoDB } from './src/db/connection';
 import { runMigrations } from './src/db/migrations';
 import { AuthService } from './src/auth/authService';
 import { RoomRepository } from './src/repository/roomRepo';
@@ -16,7 +16,7 @@ import { logger } from './src/utils/logger';
 async function start() {
     const app = Fastify({
         logger: {
-            level: process.env.NODE_ENV === 'production' ? 'info' : 'debug',
+            level: process.env.NODE_ENV === 'production' ? 'warn' : 'debug', // ← меньше логов в prod
             transport: process.env.NODE_ENV !== 'production' ? {
                 target: 'pino-pretty'
             } : undefined
@@ -24,18 +24,17 @@ async function start() {
     });
 
     try {
-        // ✅ 1. Проверка переменных окружения
-        logger.info('🔍 Checking environment variables...');
+        logger.info('Checking environment variables...');
 
         if (!process.env.MONGODB_URI) {
-            logger.error('❌ MONGODB_URI not found in environment variables!');
-            logger.error('💡 Please create .env file in project root with:');
-            logger.error('   MONGODB_URI=mongodb+srv://...');
+            logger.error('MONGODB_URI not found in environment variables!');
+            logger.error('Please create .env file in project root with:');
+            logger.error('MONGODB_URI=mongodb+srv://...');
             logger.error('');
-            logger.error('📄 Example .env file:');
-            logger.error('   MONGODB_URI=mongodb+srv://user:password@cluster.mongodb.net/dbname');
-            logger.error('   JWT_SECRET=your-secret-key');
-            logger.error('   PORT=6005');
+            logger.error('Example .env file:');
+            logger.error('MONGODB_URI=mongodb+srv://user:password@cluster.mongodb.net/dbname');
+            logger.error('JWT_SECRET=your-secret-key');
+            logger.error('PORT=6005');
             process.exit(1);
         }
 
@@ -43,18 +42,18 @@ async function start() {
             /\/\/([^:]+):([^@]+)@/,
             '//$1:****@'
         );
-        logger.info('✅ Environment variables loaded');
-        logger.info(`📍 MongoDB URI: ${safeUri}`);
+        logger.info('Environment variables loaded');
+        logger.info(`MongoDB URI: ${safeUri}`);
 
-        logger.info('🔗 Connecting to MongoDB...');
+        logger.info('Connecting to MongoDB...');
         const db = await connectMongoDB();
 
         app.decorate('mongo', { db });
-        logger.info('✅ MongoDB connected successfully');
+        logger.info('MongoDB connected successfully');
 
-        logger.info('🔄 Running migrations...');
+        logger.info('Running migrations...');
         await runMigrations(db);
-        logger.info('✅ Migrations completed');
+        logger.info('Migrations completed');
 
         await app.register(jwt, {
             secret: process.env.JWT_SECRET || 'super-secret-key-change-in-production',
@@ -62,7 +61,7 @@ async function start() {
                 expiresIn: process.env.JWT_EXPIRES_IN || '7d'
             }
         });
-        logger.info('✅ JWT registered');
+        logger.info('JWT registered');
 
         const authService = new AuthService(
             db.collection('users'),
@@ -77,24 +76,26 @@ async function start() {
         app.decorate('authService', authService);
         app.decorate('roomRepo', roomRepo);
         app.decorate('webhookRepo', webhookRepo);
-        logger.info('✅ Services initialized');
+        logger.info('Services initialized');
 
         await app.register(cors, {
             origin: true,
             credentials: true
         });
-        logger.info('✅ CORS registered');
+        logger.info('CORS registered');
 
         await app.register(authRoutes, { prefix: '/auth' });
         await app.register(adminRoutes, { prefix: '/admin' });
         await app.register(registerRoutes);
-        logger.info('✅ Routes registered');
+        logger.info('Routes registered');
 
+        // ← ИСПРАВЛЕНО: graceful shutdown с закрытием MongoDB
         const signals = ['SIGINT', 'SIGTERM'];
         signals.forEach(signal => {
             process.on(signal, async () => {
-                app.log.info(`Received ${signal}, closing gracefully...`);
+                logger.info(`Received ${signal}, closing gracefully...`);
                 await app.close();
+                await closeMongoDB(); // ← закрываем MongoDB
                 process.exit(0);
             });
         });
@@ -104,36 +105,37 @@ async function start() {
 
         logger.info('');
         logger.info('='.repeat(60));
-        logger.info(`🚀 Server started successfully!`);
+        logger.info(`Server started successfully!`);
         logger.info('='.repeat(60));
-        logger.info(`📍 Main App:       http://localhost:${PORT}/`);
-        logger.info(`🔐 Login:          http://localhost:${PORT}/login.html`);
-        logger.info(`📝 Register:       http://localhost:${PORT}/register.html`);
-        logger.info(`👑 Admin Panel:    http://localhost:${PORT}/admin.html`);
-        logger.info(`🧪 API Tester:     http://localhost:${PORT}/tester.html`);
-        logger.info(`📖 API Docs:       http://localhost:${PORT}/docs`);
-        logger.info(`💚 Health Check:   http://localhost:${PORT}/health`);
+        logger.info(`Main App:       http://localhost:${PORT}/`);
+        logger.info(`Login:          http://localhost:${PORT}/login.html`);
+        logger.info(`Register:       http://localhost:${PORT}/register.html`);
+        logger.info(`Admin Panel:    http://localhost:${PORT}/admin.html`);
+        logger.info(`API Tester:     http://localhost:${PORT}/tester.html`);
+        logger.info(`API Docs:       http://localhost:${PORT}/docs`);
+        logger.info(`Health Check:   http://localhost:${PORT}/health`);
         logger.info('='.repeat(60));
         logger.info('');
 
     } catch (err: any) {
-        logger.error('❌ Failed to start server');
+        logger.error('FAILED to start server');
         logger.error(`Error: ${err}`);
 
         if (err.message?.includes('ECONNREFUSED')) {
             logger.error('');
-            logger.error('💡 Connection refused. Possible causes:');
+            logger.error('Connection refused. Possible causes:');
             logger.error('   1. MongoDB is not running');
             logger.error('   2. Wrong MONGODB_URI in .env');
             logger.error('   3. Network/Firewall blocking connection');
             logger.error('   4. Check Network Access in MongoDB Atlas');
         } else if (err.message?.includes('Authentication failed')) {
             logger.error('');
-            logger.error('💡 Authentication failed. Check:');
+            logger.error('Authentication failed. Check:');
             logger.error('   1. Username and password in MONGODB_URI');
             logger.error('   2. Database Access settings in MongoDB Atlas');
         }
 
+        await closeMongoDB();
         process.exit(1);
     }
 }

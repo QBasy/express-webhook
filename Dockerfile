@@ -5,14 +5,13 @@ WORKDIR /app
 COPY package*.json ./
 COPY tsconfig.json ./
 
-RUN npm ci --only=production && \
+RUN npm ci && \
     npm cache clean --force
 
 COPY src/ ./src/
 COPY index.ts ./
 
-RUN npm install -g typescript && \
-    npx tsc
+RUN npx tsc
 
 FROM node:20-alpine
 
@@ -23,10 +22,12 @@ RUN addgroup -g 1001 -S nodejs && \
 
 WORKDIR /app
 
-COPY --from=builder --chown=nodejs:nodejs /app/node_modules ./node_modules
+COPY package*.json ./
+
+RUN npm ci --only=production && \
+npm cache clean --force
 
 COPY --from=builder --chown=nodejs:nodejs /app/dist ./dist
-COPY --from=builder --chown=nodejs:nodejs /app/package*.json ./
 
 COPY --chown=nodejs:nodejs src/static ./dist/src/static
 

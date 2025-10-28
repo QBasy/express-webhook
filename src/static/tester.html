@@ -1,989 +1,1122 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>API Tester - Webhook Viewer</title>
-  <link rel="icon" href="/favicon" type="image/x-icon">
-  <script src="https://cdn.tailwindcss.com"></script>
-  <style>
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(-10px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-    .fade-in {
-      animation: fadeIn 0.3s ease-out;
-    }
-    .response-box {
-      font-family: 'Courier New', monospace;
-    }
-    .tab-active {
-      border-bottom: 3px solid #7c3aed;
-      color: #7c3aed;
-      font-weight: 600;
-    }
-    .method-GET { background: #10b981; }
-    .method-POST { background: #f59e0b; }
-    .method-PUT { background: #3b82f6; }
-    .method-PATCH { background: #8b5cf6; }
-    .method-DELETE { background: #ef4444; }
-    .method-HEAD { background: #6b7280; }
-    .method-OPTIONS { background: #14b8a6; }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Tester - Webhook Viewer</title>
+    <link rel="icon" href="/favicon" type="image/x-icon">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .fade-in {
+            animation: fadeIn 0.3s ease-out;
+        }
+        .response-box {
+            font-family: 'Courier New', monospace;
+        }
+        .tab-active {
+            border-bottom: 3px solid #16a34a;
+            color: #16a34a;
+            font-weight: 600;
+        }
+        .method-GET { background: #10b981; }
+        .method-POST { background: #f59e0b; }
+        .method-PUT { background: #3b82f6; }
+        .method-PATCH { background: #8b5cf6; }
+        .method-DELETE { background: #ef4444; }
+        .method-HEAD { background: #6b7280; }
+        .method-OPTIONS { background: #14b8a6; }
 
-    /* Custom scrollbar */
-    .custom-scrollbar::-webkit-scrollbar {
-      width: 8px;
-      height: 8px;
-    }
-    .custom-scrollbar::-webkit-scrollbar-track {
-      background: #f1f1f1;
-      border-radius: 4px;
-    }
-    .custom-scrollbar::-webkit-scrollbar-thumb {
-      background: #888;
-      border-radius: 4px;
-    }
-    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-      background: #555;
-    }
-  </style>
+        /* Custom scrollbar */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f5f9;
+            border-radius: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #94a3b8;
+            border-radius: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #64748b;
+        }
+
+        /* Dark theme for JSON viewer */
+        .json-viewer {
+            background: #1e293b;
+            color: #e2e8f0;
+            border-radius: 8px;
+            padding: 16px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+        .json-key { color: #7dd3fc; }
+        .json-string { color: #86efac; }
+        .json-number { color: #fbbf24; }
+        .json-boolean { color: #f472b6; }
+        .json-null { color: #94a3b8; }
+
+        /* Status indicators */
+        .status-success { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
+        .status-error { background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; }
+        .status-warning { background: #fefce8; color: #a16207; border: 1px solid #fde68a; }
+        .status-info { background: #eff6ff; color: #1e40af; border: 1px solid #dbeafe; }
+
+        /* Hover effects */
+        .hover-lift:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Loading animation */
+        .loading-dots::after {
+            content: '';
+            animation: loading-dots 1.5s infinite;
+        }
+        @keyframes loading-dots {
+            0%, 20% { content: '.'; }
+            40% { content: '..'; }
+            60%, 100% { content: '...'; }
+        }
+    </style>
 </head>
 <body class="bg-gray-50 min-h-screen">
-<!-- Header -->
-<header class="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-40">
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-    <div class="flex items-center justify-between">
-      <div class="flex items-center space-x-4">
-        <div class="bg-gradient-to-r from-purple-600 to-blue-600 w-12 h-12 rounded-full flex items-center justify-center">
-          <span class="text-white text-xl font-bold">🧪</span>
-        </div>
-        <div>
-          <h1 class="text-2xl font-bold text-gray-800">API Tester</h1>
-          <p class="text-sm text-gray-500">Тестирование API запросов</p>
-        </div>
-      </div>
-      <div class="flex items-center space-x-4">
-        <a href="/" class="text-purple-600 hover:text-purple-800 font-medium">
-          🔙 К вебхукам
-        </a>
-      </div>
-    </div>
-  </div>
-</header>
+
+<!-- Navbar -->
+<div id="navbar-container"></div>
+<script src="/auth-check.js"></script>
+<script src="/navbar-loader.js"></script>
 
 <!-- Alert -->
 <div id="alert" class="hidden fixed top-20 right-4 z-50 p-4 rounded-lg shadow-lg max-w-md fade-in"></div>
 
 <!-- Main Content -->
 <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-    <!-- Left Panel: Request Configuration -->
-    <div class="lg:col-span-2 space-y-4">
-      <!-- Environment Variables -->
-      <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-        <div class="flex items-center justify-between mb-4">
-          <h2 class="text-lg font-semibold text-gray-800 flex items-center">
-            <span class="mr-2">⚙️</span>
-            Переменные окружения
-          </h2>
-          <button onclick="addVariable()" class="px-3 py-1 bg-purple-600 text-white text-sm rounded hover:bg-purple-700 transition">
-            + Добавить
-          </button>
-        </div>
-        <div id="variablesContainer" class="space-y-2">
-          <!-- Variables will be added here -->
-        </div>
-        <div class="mt-3 text-xs text-gray-500">
-          💡 Используйте {'{'}variable_name{'}'} в URL, заголовках или теле запроса
-        </div>
-      </div>
-
-      <!-- Request Builder -->
-      <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-        <h2 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
-          <span class="mr-2">🚀</span>
-          Запрос
-        </h2>
-
-        <!-- Method and URL -->
-        <div class="flex gap-2 mb-4">
-          <select id="method" class="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 font-semibold">
-            <option value="GET">GET</option>
-            <option value="POST">POST</option>
-            <option value="PUT">PUT</option>
-            <option value="PATCH">PATCH</option>
-            <option value="DELETE">DELETE</option>
-            <option value="HEAD">HEAD</option>
-            <option value="OPTIONS">OPTIONS</option>
-          </select>
-          <input
-                  type="text"
-                  id="url"
-                  placeholder="https://api.example.com/endpoint или {base_url}/users/{user_id}"
-                  class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
-                  value="http://localhost:6005/hook/test-room"
-          >
-          <button
-                  onclick="sendRequest()"
-                  class="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition font-semibold shadow-sm hover:shadow-md"
-          >
-            Отправить
-          </button>
-        </div>
-
-        <!-- Tabs -->
-        <div class="border-b border-gray-200 mb-4">
-          <div class="flex space-x-6">
-            <button onclick="switchTab('headers')" id="tab-headers" class="pb-2 tab-active">
-              Headers
-            </button>
-            <button onclick="switchTab('params')" id="tab-params" class="pb-2 text-gray-500 hover:text-gray-700">
-              Query Params
-            </button>
-            <button onclick="switchTab('body')" id="tab-body" class="pb-2 text-gray-500 hover:text-gray-700">
-              Body
-            </button>
-            <button onclick="switchTab('auth')" id="tab-auth" class="pb-2 text-gray-500 hover:text-gray-700">
-              Auth
-            </button>
-          </div>
-        </div>
-
-        <!-- Headers Tab -->
-        <div id="content-headers" class="space-y-2">
-          <div class="flex items-center justify-between mb-2">
-            <span class="text-sm font-medium text-gray-700">Заголовки запроса</span>
-            <button onclick="addHeader()" class="text-purple-600 hover:text-purple-800 text-sm font-medium">
-              + Добавить
-            </button>
-          </div>
-          <div id="headersContainer" class="space-y-2">
-            <div class="flex gap-2 items-center">
-              <input type="checkbox" checked class="w-4 h-4 text-purple-600">
-              <input type="text" placeholder="Key" value="Content-Type" class="flex-1 px-3 py-2 border border-gray-300 rounded text-sm">
-              <input type="text" placeholder="Value" value="application/json" class="flex-1 px-3 py-2 border border-gray-300 rounded text-sm">
-              <button onclick="this.parentElement.remove()" class="text-red-500 hover:text-red-700">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                </svg>
-              </button>
+    <!-- Page Header -->
+    <div class="mb-6">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center space-x-4">
+                <div class="bg-gradient-to-r from-green-600 to-emerald-600 w-12 h-12 rounded-full flex items-center justify-center">
+                    <span class="text-white text-xl font-bold">🧪</span>
+                </div>
+                <div>
+                    <h1 class="text-3xl font-bold text-gray-900">API Tester</h1>
+                    <p class="text-gray-600 mt-1">Тестирование REST API запросов как в Postman</p>
+                </div>
             </div>
-          </div>
-        </div>
-
-        <!-- Query Params Tab -->
-        <div id="content-params" class="space-y-2 hidden">
-          <div class="flex items-center justify-between mb-2">
-            <span class="text-sm font-medium text-gray-700">Query параметры</span>
-            <button onclick="addParam()" class="text-purple-600 hover:text-purple-800 text-sm font-medium">
-              + Добавить
-            </button>
-          </div>
-          <div id="paramsContainer" class="space-y-2">
-            <!-- Params will be added here -->
-          </div>
-        </div>
-
-        <!-- Body Tab -->
-        <div id="content-body" class="space-y-2 hidden">
-          <div class="flex items-center justify-between mb-2">
-            <span class="text-sm font-medium text-gray-700">Тело запроса</span>
-            <select id="bodyType" onchange="handleBodyTypeChange()" class="text-sm border border-gray-300 rounded px-2 py-1">
-              <option value="json">JSON</option>
-              <option value="text">Text</option>
-              <option value="form">Form Data</option>
-              <option value="raw">Raw</option>
-            </select>
-          </div>
-          <div id="bodyContent">
-                            <textarea
-                                    id="bodyText"
-                                    rows="10"
-                                    placeholder='{"key": "value", "user": "{user_name}"}'
-                                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 font-mono text-sm custom-scrollbar"
-                            >{
-  "message": "Test webhook",
-  "timestamp": "2025-01-24T12:00:00Z",
-  "data": {
-    "user": "{user_name}",
-    "action": "test"
-  }
-}</textarea>
-            <div id="formDataContainer" class="hidden space-y-2">
-              <button onclick="addFormField()" class="text-purple-600 hover:text-purple-800 text-sm font-medium">
-                + Добавить поле
-              </button>
-              <div id="formFields"></div>
+            <div class="flex items-center space-x-3">
+                <div class="text-sm text-gray-500">
+                    <span class="inline-block w-2 h-2 bg-green-500 rounded-full mr-2"></span>
+                    Готов к работе
+                </div>
             </div>
-          </div>
         </div>
-
-        <!-- Auth Tab -->
-        <div id="content-auth" class="space-y-4 hidden">
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">Тип авторизации</label>
-            <select id="authType" onchange="handleAuthTypeChange()" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
-              <option value="none">No Auth</option>
-              <option value="bearer">Bearer Token</option>
-              <option value="basic">Basic Auth</option>
-              <option value="apikey">API Key</option>
-            </select>
-          </div>
-          <div id="authContent"></div>
-        </div>
-      </div>
     </div>
 
-    <!-- Right Panel: Response -->
-    <div class="lg:col-span-1">
-      <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 sticky top-24">
-        <h2 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
-          <span class="mr-2">📥</span>
-          Ответ
-        </h2>
-
-        <!-- Response Status -->
-        <div id="responseStatus" class="hidden mb-4 p-3 rounded-lg"></div>
-
-        <!-- Response Time -->
-        <div id="responseTime" class="hidden mb-4 text-sm text-gray-600"></div>
-
-        <!-- Response Tabs -->
-        <div class="border-b border-gray-200 mb-4">
-          <div class="flex space-x-4">
-            <button onclick="switchResponseTab('body')" id="resp-tab-body" class="pb-2 text-sm tab-active">
-              Body
-            </button>
-            <button onclick="switchResponseTab('headers')" id="resp-tab-headers" class="pb-2 text-sm text-gray-500 hover:text-gray-700">
-              Headers
-            </button>
-            <button onclick="switchResponseTab('curl')" id="resp-tab-curl" class="pb-2 text-sm text-gray-500 hover:text-gray-700">
-              cURL
-            </button>
-          </div>
-        </div>
-
-        <!-- Response Body -->
-        <div id="response-content-body">
-          <div id="responseBody" class="bg-gray-50 rounded-lg p-4 min-h-[300px] max-h-[600px] overflow-auto custom-scrollbar">
-            <div class="text-gray-400 text-center py-12">
-              <div class="text-4xl mb-2">📭</div>
-              <p>Нажмите "Отправить" для выполнения запроса</p>
-            </div>
-          </div>
-        </div>
-
-        <!-- Response Headers -->
-        <div id="response-content-headers" class="hidden">
-          <div id="responseHeaders" class="bg-gray-50 rounded-lg p-4 min-h-[300px] max-h-[600px] overflow-auto custom-scrollbar response-box text-sm">
-            <div class="text-gray-400 text-center py-12">
-              <p>Заголовки ответа появятся здесь</p>
-            </div>
-          </div>
-        </div>
-
-        <!-- cURL Command -->
-        <div id="response-content-curl" class="hidden">
-          <div id="curlCommand" class="bg-gray-900 text-green-400 rounded-lg p-4 min-h-[300px] max-h-[600px] overflow-auto custom-scrollbar response-box text-xs">
-            <div class="text-gray-400 text-center py-12">
-              <p>cURL команда появится здесь</p>
-            </div>
-          </div>
-          <button onclick="copyCurl()" class="mt-2 w-full px-4 py-2 bg-gray-800 text-white rounded hover:bg-gray-700 transition text-sm">
-            📋 Копировать cURL
-          </button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Saved Requests -->
-  <div class="mt-6 bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-    <div class="flex items-center justify-between mb-4">
-      <h2 class="text-lg font-semibold text-gray-800 flex items-center">
-        <span class="mr-2">💾</span>
-        Сохраненные запросы
-      </h2>
-      <button onclick="saveRequest()" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition text-sm">
-        💾 Сохранить текущий
-      </button>
-    </div>
-    <div id="savedRequests" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-      <!-- Saved requests will appear here -->
-    </div>
-  </div>
-</main>
-
-<script>
-  // State management
-  let variables = {};
-  let savedRequests = JSON.parse(localStorage.getItem('apiTesterRequests')) || [];
-  let lastCurlCommand = '';
-
-  // Initialize
-  document.addEventListener('DOMContentLoaded', () => {
-    loadSavedVariables();
-    renderSavedRequests();
-    updateCurlCommand();
-  });
-
-  // Variable management
-  function addVariable() {
-    const container = document.getElementById('variablesContainer');
-    const div = document.createElement('div');
-    div.className = 'flex gap-2 items-center fade-in';
-    div.innerHTML = `
-                <input type="checkbox" checked class="w-4 h-4 text-purple-600">
-                <input type="text" placeholder="Variable name" class="flex-1 px-3 py-2 border border-gray-300 rounded text-sm" onchange="updateVariables()">
-                <input type="text" placeholder="Value" class="flex-1 px-3 py-2 border border-gray-300 rounded text-sm" onchange="updateVariables()">
-                <button onclick="this.parentElement.remove(); updateVariables();" class="text-red-500 hover:text-red-700">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                    </svg>
-                </button>
-            `;
-    container.appendChild(div);
-  }
-
-  function updateVariables() {
-    variables = {};
-    const container = document.getElementById('variablesContainer');
-    const rows = container.querySelectorAll('div');
-    rows.forEach(row => {
-      const checkbox = row.querySelector('input[type="checkbox"]');
-      const inputs = row.querySelectorAll('input[type="text"]');
-      if (checkbox && checkbox.checked && inputs.length === 2) {
-        const key = inputs[0].value.trim();
-        const value = inputs[1].value.trim();
-        if (key) variables[key] = value;
-      }
-    });
-    saveVariables();
-    updateCurlCommand();
-  }
-
-  function saveVariables() {
-    localStorage.setItem('apiTesterVariables', JSON.stringify(variables));
-  }
-
-  function loadSavedVariables() {
-    const saved = JSON.parse(localStorage.getItem('apiTesterVariables') || '{}');
-    variables = saved;
-
-    // Add default variables if none exist
-    if (Object.keys(saved).length === 0) {
-      variables = {
-        'base_url': 'http://localhost:6005',
-        'user_name': 'test_user',
-        'room_id': 'test-room'
-      };
-      saveVariables();
-    }
-
-    // Render variables
-    const container = document.getElementById('variablesContainer');
-    container.innerHTML = '';
-    Object.entries(variables).forEach(([key, value]) => {
-      const div = document.createElement('div');
-      div.className = 'flex gap-2 items-center';
-      div.innerHTML = `
-                    <input type="checkbox" checked class="w-4 h-4 text-purple-600">
-                    <input type="text" placeholder="Variable name" value="${key}" class="flex-1 px-3 py-2 border border-gray-300 rounded text-sm" onchange="updateVariables()">
-                    <input type="text" placeholder="Value" value="${value}" class="flex-1 px-3 py-2 border border-gray-300 rounded text-sm" onchange="updateVariables()">
-                    <button onclick="this.parentElement.remove(); updateVariables();" class="text-red-500 hover:text-red-700">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                        </svg>
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Left Panel: Request Configuration -->
+        <div class="lg:col-span-2 space-y-6">
+            <!-- Environment Variables -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover-lift transition-all">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-lg font-semibold text-gray-800 flex items-center">
+                        <span class="mr-2">⚙️</span>
+                        Переменные окружения
+                    </h2>
+                    <button onclick="addVariable()" class="px-4 py-2 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 transition-all shadow-sm hover:shadow-md">
+                        + Добавить
                     </button>
-                `;
-      container.appendChild(div);
-    });
-  }
-
-  function replaceVariables(text) {
-    if (!text) return text;
-    let result = text;
-    Object.entries(variables).forEach(([key, value]) => {
-      const regex = new RegExp(`\\{${key}\\}`, 'g');
-      result = result.replace(regex, value);
-    });
-    return result;
-  }
-
-  // Header management
-  function addHeader() {
-    const container = document.getElementById('headersContainer');
-    const div = document.createElement('div');
-    div.className = 'flex gap-2 items-center fade-in';
-    div.innerHTML = `
-                <input type="checkbox" checked class="w-4 h-4 text-purple-600">
-                <input type="text" placeholder="Key" class="flex-1 px-3 py-2 border border-gray-300 rounded text-sm">
-                <input type="text" placeholder="Value" class="flex-1 px-3 py-2 border border-gray-300 rounded text-sm">
-                <button onclick="this.parentElement.remove(); updateCurlCommand();" class="text-red-500 hover:text-red-700">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                    </svg>
-                </button>
-            `;
-    container.appendChild(div);
-    updateCurlCommand();
-  }
-
-  function getHeaders() {
-    const headers = {};
-    const container = document.getElementById('headersContainer');
-    const rows = container.querySelectorAll('div');
-    rows.forEach(row => {
-      const checkbox = row.querySelector('input[type="checkbox"]');
-      const inputs = row.querySelectorAll('input[type="text"]');
-      if (checkbox && checkbox.checked && inputs.length === 2) {
-        const key = inputs[0].value.trim();
-        const value = replaceVariables(inputs[1].value.trim());
-        if (key) headers[key] = value;
-      }
-    });
-    return headers;
-  }
-
-  // Query Params management
-  function addParam() {
-    const container = document.getElementById('paramsContainer');
-    const div = document.createElement('div');
-    div.className = 'flex gap-2 items-center fade-in';
-    div.innerHTML = `
-                <input type="checkbox" checked class="w-4 h-4 text-purple-600">
-                <input type="text" placeholder="Key" class="flex-1 px-3 py-2 border border-gray-300 rounded text-sm">
-                <input type="text" placeholder="Value" class="flex-1 px-3 py-2 border border-gray-300 rounded text-sm">
-                <button onclick="this.parentElement.remove(); updateCurlCommand();" class="text-red-500 hover:text-red-700">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                    </svg>
-                </button>
-            `;
-    container.appendChild(div);
-    updateCurlCommand();
-  }
-
-  function getParams() {
-    const params = {};
-    const container = document.getElementById('paramsContainer');
-    const rows = container.querySelectorAll('div');
-    rows.forEach(row => {
-      const checkbox = row.querySelector('input[type="checkbox"]');
-      const inputs = row.querySelectorAll('input[type="text"]');
-      if (checkbox && checkbox.checked && inputs.length === 2) {
-        const key = inputs[0].value.trim();
-        const value = replaceVariables(inputs[1].value.trim());
-        if (key) params[key] = value;
-      }
-    });
-    return params;
-  }
-
-  // Form Data management
-  function addFormField() {
-    const container = document.getElementById('formFields');
-    const div = document.createElement('div');
-    div.className = 'flex gap-2 items-center fade-in';
-    div.innerHTML = `
-                <input type="checkbox" checked class="w-4 h-4 text-purple-600">
-                <input type="text" placeholder="Key" class="flex-1 px-3 py-2 border border-gray-300 rounded text-sm">
-                <input type="text" placeholder="Value" class="flex-1 px-3 py-2 border border-gray-300 rounded text-sm">
-                <button onclick="this.parentElement.remove(); updateCurlCommand();" class="text-red-500 hover:text-red-700">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                    </svg>
-                </button>
-            `;
-    container.appendChild(div);
-    updateCurlCommand();
-  }
-
-  function getFormData() {
-    const formData = {};
-    const container = document.getElementById('formFields');
-    const rows = container.querySelectorAll('div');
-    rows.forEach(row => {
-      const checkbox = row.querySelector('input[type="checkbox"]');
-      const inputs = row.querySelectorAll('input[type="text"]');
-      if (checkbox && checkbox.checked && inputs.length === 2) {
-        const key = inputs[0].value.trim();
-        const value = replaceVariables(inputs[1].value.trim());
-        if (key) formData[key] = value;
-      }
-    });
-    return formData;
-  }
-
-  // Body type handling
-  function handleBodyTypeChange() {
-    const bodyType = document.getElementById('bodyType').value;
-    const textArea = document.getElementById('bodyText');
-    const formContainer = document.getElementById('formDataContainer');
-
-    if (bodyType === 'form') {
-      textArea.classList.add('hidden');
-      formContainer.classList.remove('hidden');
-    } else {
-      textArea.classList.remove('hidden');
-      formContainer.classList.add('hidden');
-    }
-    updateCurlCommand();
-  }
-
-  // Auth handling
-  function handleAuthTypeChange() {
-    const authType = document.getElementById('authType').value;
-    const authContent = document.getElementById('authContent');
-
-    authContent.innerHTML = '';
-
-    if (authType === 'bearer') {
-      authContent.innerHTML = `
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Bearer Token</label>
-                        <input type="text" id="bearerToken" placeholder="your-token-here или {token_variable}"
-                            class="w-full px-3 py-2 border border-gray-300 rounded-lg" onchange="updateCurlCommand()">
+                </div>
+                <div id="variablesContainer" class="space-y-3">
+                    <!-- Variables will be added here -->
+                </div>
+                <div class="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                    <div class="text-sm text-blue-800">
+                        <span class="font-semibold">💡 Совет:</span> Используйте {'{'}variable_name{'}'} в URL, заголовках или теле запроса
                     </div>
-                `;
-    } else if (authType === 'basic') {
-      authContent.innerHTML = `
-                    <div class="space-y-3">
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Username</label>
-                            <input type="text" id="basicUsername" placeholder="username"
-                                class="w-full px-3 py-2 border border-gray-300 rounded-lg" onchange="updateCurlCommand()">
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Password</label>
-                            <input type="password" id="basicPassword" placeholder="password"
-                                class="w-full px-3 py-2 border border-gray-300 rounded-lg" onchange="updateCurlCommand()">
-                        </div>
-                    </div>
-                `;
-    } else if (authType === 'apikey') {
-      authContent.innerHTML = `
-                    <div class="space-y-3">
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Key</label>
-                            <input type="text" id="apiKeyName" placeholder="X-API-Key"
-                                class="w-full px-3 py-2 border border-gray-300 rounded-lg" onchange="updateCurlCommand()">
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Value</label>
-                            <input type="text" id="apiKeyValue" placeholder="your-api-key или {api_key}"
-                                class="w-full px-3 py-2 border border-gray-300 rounded-lg" onchange="updateCurlCommand()">
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Add to</label>
-                            <select id="apiKeyLocation" class="w-full px-3 py-2 border border-gray-300 rounded-lg" onchange="updateCurlCommand()">
-                                <option value="header">Header</option>
-                                <option value="query">Query Params</option>
-                            </select>
-                        </div>
-                    </div>
-                `;
-    }
-    updateCurlCommand();
-  }
+                </div>
+            </div>
 
-  function applyAuth(headers, params) {
-    const authType = document.getElementById('authType').value;
+            <!-- Request Builder -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover-lift transition-all">
+                <h2 class="text-lg font-semibold text-gray-800 mb-6 flex items-center">
+                    <span class="mr-2">🚀</span>
+                    Конструктор запроса
+                </h2>
 
-    if (authType === 'bearer') {
-      const token = replaceVariables(document.getElementById('bearerToken')?.value || '');
-      if (token) headers['Authorization'] = `Bearer ${token}`;
-    } else if (authType === 'basic') {
-      const username = document.getElementById('basicUsername')?.value || '';
-      const password = document.getElementById('basicPassword')?.value || '';
-      if (username && password) {
-        const encoded = btoa(`${username}:${password}`);
-        headers['Authorization'] = `Basic ${encoded}`;
-      }
-    } else if (authType === 'apikey') {
-      const keyName = document.getElementById('apiKeyName')?.value || '';
-      const keyValue = replaceVariables(document.getElementById('apiKeyValue')?.value || '');
-      const location = document.getElementById('apiKeyLocation')?.value || 'header';
-
-      if (keyName && keyValue) {
-        if (location === 'header') {
-          headers[keyName] = keyValue;
-        } else {
-          params[keyName] = keyValue;
-        }
-      }
-    }
-  }
-
-  // Tab switching
-  function switchTab(tab) {
-    ['headers', 'params', 'body', 'auth'].forEach(t => {
-      document.getElementById(`tab-${t}`).classList.remove('tab-active');
-      document.getElementById(`tab-${t}`).classList.add('text-gray-500');
-      document.getElementById(`content-${t}`).classList.add('hidden');
-    });
-
-    document.getElementById(`tab-${tab}`).classList.add('tab-active');
-    document.getElementById(`tab-${tab}`).classList.remove('text-gray-500');
-    document.getElementById(`content-${tab}`).classList.remove('hidden');
-  }
-
-  function switchResponseTab(tab) {
-    ['body', 'headers', 'curl'].forEach(t => {
-      document.getElementById(`resp-tab-${t}`).classList.remove('tab-active');
-      document.getElementById(`resp-tab-${t}`).classList.add('text-gray-500');
-      document.getElementById(`response-content-${t}`).classList.add('hidden');
-    });
-
-    document.getElementById(`resp-tab-${tab}`).classList.add('tab-active');
-    document.getElementById(`resp-tab-${tab}`).classList.remove('text-gray-500');
-    document.getElementById(`response-content-${tab}`).classList.remove('hidden');
-  }
-
-  // Send request
-  async function sendRequest() {
-    const method = document.getElementById('method').value;
-    let url = replaceVariables(document.getElementById('url').value.trim());
-    const bodyType = document.getElementById('bodyType').value;
-
-    if (!url) {
-      showAlert('Введите URL', 'error');
-      return;
-    }
-
-    // Get headers and params
-    const headers = getHeaders();
-    const params = getParams();
-
-    // Apply auth
-    applyAuth(headers, params);
-
-    // Add query params to URL
-    if (Object.keys(params).length > 0) {
-      const urlObj = new URL(url);
-      Object.entries(params).forEach(([key, value]) => {
-        urlObj.searchParams.append(key, value);
-      });
-      url = urlObj.toString();
-    }
-
-    // Prepare body
-    let body = null;
-    if (['POST', 'PUT', 'PATCH'].includes(method)) {
-      if (bodyType === 'form') {
-        body = getFormData();
-        headers['Content-Type'] = 'application/x-www-form-urlencoded';
-        body = new URLSearchParams(body).toString();
-      } else {
-        const bodyText = replaceVariables(document.getElementById('bodyText').value.trim());
-        if (bodyText) {
-          if (bodyType === 'json') {
-            try {
-              JSON.parse(bodyText); // Validate JSON
-              body = bodyText;
-            } catch (e) {
-              showAlert('Некорректный JSON: ' + e.message, 'error');
-              return;
-            }
-          } else {
-            body = bodyText;
-          }
-        }
-      }
-    }
-
-    // Show loading
-    showResponseStatus('⏳ Отправка запроса...', 'bg-blue-100 text-blue-800');
-
-    const startTime = Date.now();
-
-    try {
-      const options = {
-        method,
-        headers,
-      };
-
-      if (body) {
-        options.body = body;
-      }
-
-      const response = await fetch(url, options);
-      const endTime = Date.now();
-      const duration = endTime - startTime;
-
-      // Show response status
-      const statusClass = response.ok ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800';
-      showResponseStatus(`${response.status} ${response.statusText}`, statusClass);
-      showResponseTime(`⏱️ ${duration}ms`);
-
-      // Get response body
-      const contentType = response.headers.get('content-type');
-      let responseData;
-
-      if (contentType && contentType.includes('application/json')) {
-        responseData = await response.json();
-        displayResponseBody(JSON.stringify(responseData, null, 2), 'json');
-      } else {
-        responseData = await response.text();
-        displayResponseBody(responseData, 'text');
-      }
-
-      // Display response headers
-      displayResponseHeaders(response.headers);
-
-      // Update cURL
-      updateCurlCommand();
-
-    } catch (error) {
-      const endTime = Date.now();
-      const duration = endTime - startTime;
-
-      showResponseStatus('❌ Ошибка запроса', 'bg-red-100 text-red-800');
-      showResponseTime(`⏱️ ${duration}ms`);
-      displayResponseBody(`Error: ${error.message}`, 'text');
-
-      showAlert('Ошибка: ' + error.message, 'error');
-    }
-  }
-
-  function showResponseStatus(text, className) {
-    const statusEl = document.getElementById('responseStatus');
-    statusEl.textContent = text;
-    statusEl.className = 'mb-4 p-3 rounded-lg font-semibold ' + className;
-    statusEl.classList.remove('hidden');
-  }
-
-  function showResponseTime(text) {
-    const timeEl = document.getElementById('responseTime');
-    timeEl.textContent = text;
-    timeEl.classList.remove('hidden');
-  }
-
-  function displayResponseBody(data, type) {
-    const bodyEl = document.getElementById('responseBody');
-
-    if (type === 'json') {
-      bodyEl.innerHTML = `<pre class="text-xs">${escapeHtml(data)}</pre>`;
-    } else {
-      bodyEl.innerHTML = `<pre class="text-xs">${escapeHtml(data)}</pre>`;
-    }
-  }
-
-  function displayResponseHeaders(headers) {
-    const headersEl = document.getElementById('responseHeaders');
-    let html = '';
-
-    headers.forEach((value, key) => {
-      html += `<div><strong>${escapeHtml(key)}:</strong> ${escapeHtml(value)}</div>`;
-    });
-
-    headersEl.innerHTML = html || '<div class="text-gray-400">No headers</div>';
-  }
-
-  // cURL generation
-  function updateCurlCommand() {
-    const method = document.getElementById('method').value;
-    let url = replaceVariables(document.getElementById('url').value.trim());
-    const bodyType = document.getElementById('bodyType').value;
-
-    if (!url) {
-      lastCurlCommand = '';
-      return;
-    }
-
-    const headers = getHeaders();
-    const params = getParams();
-
-    applyAuth(headers, params);
-
-    // Add query params
-    if (Object.keys(params).length > 0) {
-      const urlObj = new URL(url);
-      Object.entries(params).forEach(([key, value]) => {
-        urlObj.searchParams.append(key, value);
-      });
-      url = urlObj.toString();
-    }
-
-    let curl = `curl -X ${method} '${url}'`;
-
-    // Add headers
-    Object.entries(headers).forEach(([key, value]) => {
-      curl += ` \\\n  -H '${key}: ${value}'`;
-    });
-
-    // Add body
-    if (['POST', 'PUT', 'PATCH'].includes(method)) {
-      if (bodyType === 'form') {
-        const formData = getFormData();
-        Object.entries(formData).forEach(([key, value]) => {
-          curl += ` \\\n  --data-urlencode '${key}=${value}'`;
-        });
-      } else {
-        const bodyText = replaceVariables(document.getElementById('bodyText').value.trim());
-        if (bodyText) {
-          const escapedBody = bodyText.replace(/'/g, "'\\''");
-          curl += ` \\\n  -d '${escapedBody}'`;
-        }
-      }
-    }
-
-    lastCurlCommand = curl;
-    document.getElementById('curlCommand').innerHTML = `<pre>${escapeHtml(curl)}</pre>`;
-  }
-
-  function copyCurl() {
-    if (!lastCurlCommand) {
-      showAlert('Нет cURL команды для копирования', 'error');
-      return;
-    }
-
-    navigator.clipboard.writeText(lastCurlCommand).then(() => {
-      showAlert('cURL команда скопирована!', 'success');
-    }).catch(() => {
-      showAlert('Ошибка копирования', 'error');
-    });
-  }
-
-  // Save/Load requests
-  function saveRequest() {
-    const name = prompt('Введите название запроса:');
-    if (!name) return;
-
-    const request = {
-      id: Date.now(),
-      name,
-      method: document.getElementById('method').value,
-      url: document.getElementById('url').value,
-      headers: getHeaders(),
-      params: getParams(),
-      body: document.getElementById('bodyText').value,
-      bodyType: document.getElementById('bodyType').value,
-      authType: document.getElementById('authType').value,
-    };
-
-    savedRequests.push(request);
-    localStorage.setItem('apiTesterRequests', JSON.stringify(savedRequests));
-    renderSavedRequests();
-    showAlert('Запрос сохранен!', 'success');
-  }
-
-  function loadRequest(id) {
-    const request = savedRequests.find(r => r.id === id);
-    if (!request) return;
-
-    document.getElementById('method').value = request.method;
-    document.getElementById('url').value = request.url;
-    document.getElementById('bodyText').value = request.body || '';
-    document.getElementById('bodyType').value = request.bodyType || 'json';
-    document.getElementById('authType').value = request.authType || 'none';
-
-    // Load headers
-    const headersContainer = document.getElementById('headersContainer');
-    headersContainer.innerHTML = '';
-    Object.entries(request.headers || {}).forEach(([key, value]) => {
-      const div = document.createElement('div');
-      div.className = 'flex gap-2 items-center';
-      div.innerHTML = `
-                    <input type="checkbox" checked class="w-4 h-4 text-purple-600">
-                    <input type="text" placeholder="Key" value="${key}" class="flex-1 px-3 py-2 border border-gray-300 rounded text-sm">
-                    <input type="text" placeholder="Value" value="${value}" class="flex-1 px-3 py-2 border border-gray-300 rounded text-sm">
-                    <button onclick="this.parentElement.remove(); updateCurlCommand();" class="text-red-500 hover:text-red-700">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                        </svg>
+                <!-- Method and URL -->
+                <div class="flex gap-3 mb-6">
+                    <select id="method" class="px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 font-semibold bg-white">
+                        <option value="GET">GET</option>
+                        <option value="POST">POST</option>
+                        <option value="PUT">PUT</option>
+                        <option value="PATCH">PATCH</option>
+                        <option value="DELETE">DELETE</option>
+                        <option value="HEAD">HEAD</option>
+                        <option value="OPTIONS">OPTIONS</option>
+                    </select>
+                    <input
+                            type="text"
+                            id="url"
+                            placeholder="https://api.example.com/endpoint или {base_url}/users/{user_id}"
+                            class="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                            value="https://jsonplaceholder.typicode.com/posts/1"
+                    >
+                    <button
+                            onclick="sendRequest()"
+                            id="sendButton"
+                            class="px-8 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-all font-semibold shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                        <span id="sendButtonText">Отправить</span>
                     </button>
-                `;
-      headersContainer.appendChild(div);
-    });
+                </div>
 
-    // Load params
-    const paramsContainer = document.getElementById('paramsContainer');
-    paramsContainer.innerHTML = '';
-    Object.entries(request.params || {}).forEach(([key, value]) => {
-      const div = document.createElement('div');
-      div.className = 'flex gap-2 items-center';
-      div.innerHTML = `
-                    <input type="checkbox" checked class="w-4 h-4 text-purple-600">
-                    <input type="text" placeholder="Key" value="${key}" class="flex-1 px-3 py-2 border border-gray-300 rounded text-sm">
-                    <input type="text" placeholder="Value" value="${value}" class="flex-1 px-3 py-2 border border-gray-300 rounded text-sm">
-                    <button onclick="this.parentElement.remove(); updateCurlCommand();" class="text-red-500 hover:text-red-700">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                        </svg>
-                    </button>
-                `;
-      paramsContainer.appendChild(div);
-    });
-
-    handleBodyTypeChange();
-    handleAuthTypeChange();
-    updateCurlCommand();
-
-    showAlert('Запрос загружен!', 'success');
-  }
-
-  function deleteRequest(id) {
-    if (!confirm('Удалить этот запрос?')) return;
-
-    savedRequests = savedRequests.filter(r => r.id !== id);
-    localStorage.setItem('apiTesterRequests', JSON.stringify(savedRequests));
-    renderSavedRequests();
-    showAlert('Запрос удален', 'success');
-  }
-
-  function renderSavedRequests() {
-    const container = document.getElementById('savedRequests');
-
-    if (savedRequests.length === 0) {
-      container.innerHTML = '<div class="col-span-full text-center text-gray-400 py-8">Нет сохраненных запросов</div>';
-      return;
-    }
-
-    container.innerHTML = savedRequests.map(req => `
-                <div class="border border-gray-200 rounded-lg p-4 hover:border-purple-500 transition cursor-pointer fade-in">
-                    <div class="flex items-start justify-between mb-2">
-                        <div class="flex-1" onclick="loadRequest(${req.id})">
-                            <div class="font-semibold text-gray-800 mb-1">${escapeHtml(req.name)}</div>
-                            <div class="flex items-center gap-2 text-sm">
-                                <span class="px-2 py-0.5 rounded text-white text-xs font-semibold method-${req.method}">${req.method}</span>
-                                <span class="text-gray-500 truncate">${escapeHtml(req.url)}</span>
-                            </div>
-                        </div>
-                        <button onclick="event.stopPropagation(); deleteRequest(${req.id})" class="text-red-500 hover:text-red-700 ml-2">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
-                            </svg>
+                <!-- Tabs -->
+                <div class="border-b border-gray-200 mb-6">
+                    <div class="flex space-x-8">
+                        <button onclick="switchTab('headers')" id="tab-headers" class="pb-3 tab-active">
+                            Headers
+                        </button>
+                        <button onclick="switchTab('params')" id="tab-params" class="pb-3 text-gray-500 hover:text-gray-700">
+                            Query Params
+                        </button>
+                        <button onclick="switchTab('body')" id="tab-body" class="pb-3 text-gray-500 hover:text-gray-700">
+                            Body
+                        </button>
+                        <button onclick="switchTab('auth')" id="tab-auth" class="pb-3 text-gray-500 hover:text-gray-700">
+                            Auth
                         </button>
                     </div>
                 </div>
-            `).join('');
-  }
 
-  // Utilities
-  function showAlert(message, type) {
-    const alert = document.getElementById('alert');
-    const bgColor = type === 'success' ? 'bg-green-500' : 'bg-red-500';
+                <!-- Headers Tab -->
+                <div id="content-headers" class="space-y-3">
+                    <div class="flex items-center justify-between mb-3">
+                        <span class="text-sm font-medium text-gray-700">Заголовки запроса</span>
+                        <button onclick="addHeader()" class="text-green-600 hover:text-green-800 text-sm font-medium">
+                            + Добавить заголовок
+                        </button>
+                    </div>
+                    <div id="headersContainer" class="space-y-3">
+                        <div class="flex gap-3 items-center p-3 bg-gray-50 rounded-lg">
+                            <input type="checkbox" checked class="w-4 h-4 text-green-600 rounded focus:ring-green-500">
+                            <input type="text" placeholder="Key" value="Content-Type" class="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500">
+                            <input type="text" placeholder="Value" value="application/json" class="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500">
+                            <button onclick="this.parentElement.remove(); updateCurlCommand();" class="text-red-500 hover:text-red-700 p-1">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                </div>
 
-    alert.className = `fixed top-20 right-4 z-50 p-4 rounded-lg shadow-lg max-w-md text-white ${bgColor} fade-in`;
-    alert.textContent = message;
-    alert.classList.remove('hidden');
+                <!-- Query Params Tab -->
+                <div id="content-params" class="space-y-3 hidden">
+                    <div class="flex items-center justify-between mb-3">
+                        <span class="text-sm font-medium text-gray-700">Query параметры</span>
+                        <button onclick="addParam()" class="text-green-600 hover:text-green-800 text-sm font-medium">
+                            + Добавить параметр
+                        </button>
+                    </div>
+                    <div id="paramsContainer" class="space-y-3">
+                        <!-- Params will be added here -->
+                    </div>
+                </div>
 
-    setTimeout(() => {
-      alert.classList.add('hidden');
-    }, 3000);
-  }
+                <!-- Body Tab -->
+                <div id="content-body" class="space-y-3 hidden">
+                    <div class="flex items-center justify-between mb-3">
+                        <span class="text-sm font-medium text-gray-700">Тело запроса</span>
+                        <select id="bodyType" onchange="handleBodyTypeChange()" class="text-sm border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500">
+                            <option value="json">JSON</option>
+                            <option value="text">Text</option>
+                            <option value="form">Form Data</option>
+                            <option value="raw">Raw</option>
+                        </select>
+                    </div>
+                    <div id="bodyContent">
+            <textarea
+                    id="bodyText"
+                    rows="12"
+                    placeholder='{"key": "value", "user": "{user_name}"}'
+                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 font-mono text-sm custom-scrollbar"
+            >{
+  "title": "Test Post",
+  "body": "This is a test post created via API Tester",
+  "userId": 1
+}</textarea>
+                        <div id="formDataContainer" class="hidden space-y-3">
+                            <button onclick="addFormField()" class="text-green-600 hover:text-green-800 text-sm font-medium">
+                                + Добавить поле
+                            </button>
+                            <div id="formFields"></div>
+                        </div>
+                    </div>
+                </div>
 
-  function escapeHtml(text) {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
-  }
+                <!-- Auth Tab -->
+                <div id="content-auth" class="space-y-4 hidden">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Тип авторизации</label>
+                        <select id="authType" onchange="handleAuthTypeChange()" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500">
+                            <option value="none">No Auth</option>
+                            <option value="bearer">Bearer Token</option>
+                            <option value="basic">Basic Auth</option>
+                            <option value="apikey">API Key</option>
+                        </select>
+                    </div>
+                    <div id="authContent"></div>
+                </div>
+            </div>
+        </div>
 
-  // Event listeners for real-time curl update
-  document.getElementById('url').addEventListener('input', updateCurlCommand);
-  document.getElementById('method').addEventListener('change', updateCurlCommand);
-  document.getElementById('bodyText').addEventListener('input', updateCurlCommand);
+        <!-- Right Panel: Response -->
+        <div class="lg:col-span-1">
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 sticky top-24 hover-lift transition-all">
+                <h2 class="text-lg font-semibold text-gray-800 mb-6 flex items-center">
+                    <span class="mr-2">📥</span>
+                    Ответ сервера
+                </h2>
+
+                <!-- Response Status -->
+                <div id="responseStatus" class="hidden mb-4 p-4 rounded-lg font-semibold"></div>
+
+                <!-- Response Time & Size -->
+                <div class="flex gap-4 mb-4">
+                    <div id="responseTime" class="hidden text-sm text-gray-600 bg-gray-50 px-3 py-2 rounded-lg"></div>
+                    <div id="responseSize" class="hidden text-sm text-gray-600 bg-gray-50 px-3 py-2 rounded-lg"></div>
+                </div>
+
+                <!-- Response Tabs -->
+                <div class="border-b border-gray-200 mb-4">
+                    <div class="flex space-x-6">
+                        <button onclick="switchResponseTab('body')" id="resp-tab-body" class="pb-2 text-sm tab-active">
+                            Body
+                        </button>
+                        <button onclick="switchResponseTab('headers')" id="resp-tab-headers" class="pb-2 text-sm text-gray-500 hover:text-gray-700">
+                            Headers
+                        </button>
+                        <button onclick="switchResponseTab('curl')" id="resp-tab-curl" class="pb-2 text-sm text-gray-500 hover:text-gray-700">
+                            cURL
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Response Body -->
+                <div id="response-content-body">
+                    <div id="responseBody" class="bg-gray-50 rounded-lg min-h-[400px] max-h-[600px] overflow-auto custom-scrollbar">
+                        <div class="text-gray-400 text-center py-16">
+                            <div class="text-4xl mb-4">📭</div>
+                            <p class="text-lg font-medium">Готов к запросу</p>
+                            <p class="text-sm mt-2">Нажмите "Отправить" для выполнения запроса</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Response Headers -->
+                <div id="response-content-headers" class="hidden">
+                    <div id="responseHeaders" class="bg-gray-50 rounded-lg p-4 min-h-[400px] max-h-[600px] overflow-auto custom-scrollbar response-box text-sm">
+                        <div class="text-gray-400 text-center py-16">
+                            <p>Заголовки ответа появятся здесь</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- cURL Command -->
+                <div id="response-content-curl" class="hidden">
+                    <div id="curlCommand" class="bg-gray-900 text-green-400 rounded-lg p-4 min-h-[400px] max-h-[600px] overflow-auto custom-scrollbar response-box text-xs">
+                        <div class="text-gray-400 text-center py-16">
+                            <p>cURL команда появится здесь</p>
+                        </div>
+                    </div>
+                    <button onclick="copyCurl()" class="mt-3 w-full px-4 py-2 bg-gray-800 text-white rounded-lg hover:bg-gray-700 transition text-sm">
+                        📋 Копировать cURL
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Saved Requests -->
+    <div class="mt-8 bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover-lift transition-all">
+        <div class="flex items-center justify-between mb-6">
+            <h2 class="text-lg font-semibold text-gray-800 flex items-center">
+                <span class="mr-2">💾</span>
+                Сохраненные запросы
+            </h2>
+            <button onclick="saveRequest()" class="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-all text-sm font-medium shadow-sm hover:shadow-md">
+                💾 Сохранить текущий
+            </button>
+        </div>
+        <div id="savedRequests" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <!-- Saved requests will appear here -->
+        </div>
+    </div>
+</main>
+
+<script>
+    // State management
+    let variables = {};
+    let savedRequests = JSON.parse(localStorage.getItem('apiTesterRequests')) || [];
+    let lastCurlCommand = '';
+    let isRequestInProgress = false;
+
+    // Initialize
+    document.addEventListener('DOMContentLoaded', () => {
+        loadSavedVariables();
+        renderSavedRequests();
+        updateCurlCommand();
+    });
+
+    // Variable management
+    function addVariable() {
+        const container = document.getElementById('variablesContainer');
+        const div = document.createElement('div');
+        div.className = 'flex gap-3 items-center p-3 bg-gray-50 rounded-lg fade-in';
+        div.innerHTML = `
+      <input type="checkbox" checked class="w-4 h-4 text-green-600 rounded focus:ring-green-500">
+      <input type="text" placeholder="Variable name" class="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500" onchange="updateVariables()">
+      <input type="text" placeholder="Value" class="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500" onchange="updateVariables()">
+      <button onclick="this.parentElement.remove(); updateVariables();" class="text-red-500 hover:text-red-700 p-1">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+        </svg>
+      </button>
+    `;
+        container.appendChild(div);
+    }
+
+    function updateVariables() {
+        variables = {};
+        const container = document.getElementById('variablesContainer');
+        const rows = container.querySelectorAll('div');
+        rows.forEach(row => {
+            const checkbox = row.querySelector('input[type="checkbox"]');
+            const inputs = row.querySelectorAll('input[type="text"]');
+            if (checkbox && checkbox.checked && inputs.length === 2) {
+                const key = inputs[0].value.trim();
+                const value = inputs[1].value.trim();
+                if (key) variables[key] = value;
+            }
+        });
+        saveVariables();
+        updateCurlCommand();
+    }
+
+    function saveVariables() {
+        localStorage.setItem('apiTesterVariables', JSON.stringify(variables));
+    }
+
+    function loadSavedVariables() {
+        const saved = JSON.parse(localStorage.getItem('apiTesterVariables') || '{}');
+        variables = saved;
+
+        // Add default variables if none exist
+        if (Object.keys(saved).length === 0) {
+            variables = {
+                'base_url': 'https://jsonplaceholder.typicode.com',
+                'api_key': 'your-api-key-here',
+                'user_id': '1'
+            };
+            saveVariables();
+        }
+
+        // Render variables
+        const container = document.getElementById('variablesContainer');
+        container.innerHTML = '';
+        Object.entries(variables).forEach(([key, value]) => {
+            const div = document.createElement('div');
+            div.className = 'flex gap-3 items-center p-3 bg-gray-50 rounded-lg';
+            div.innerHTML = `
+        <input type="checkbox" checked class="w-4 h-4 text-green-600 rounded focus:ring-green-500">
+        <input type="text" placeholder="Variable name" value="${key}" class="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500" onchange="updateVariables()">
+        <input type="text" placeholder="Value" value="${value}" class="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500" onchange="updateVariables()">
+        <button onclick="this.parentElement.remove(); updateVariables();" class="text-red-500 hover:text-red-700 p-1">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+          </svg>
+        </button>
+      `;
+            container.appendChild(div);
+        });
+    }
+
+    function replaceVariables(text) {
+        if (!text) return text;
+        let result = text;
+        Object.entries(variables).forEach(([key, value]) => {
+            const regex = new RegExp(`\\{${key}\\}`, 'g');
+            result = result.replace(regex, value);
+        });
+        return result;
+    }
+
+    // Header management
+    function addHeader() {
+        const container = document.getElementById('headersContainer');
+        const div = document.createElement('div');
+        div.className = 'flex gap-3 items-center p-3 bg-gray-50 rounded-lg fade-in';
+        div.innerHTML = `
+      <input type="checkbox" checked class="w-4 h-4 text-green-600 rounded focus:ring-green-500">
+      <input type="text" placeholder="Key" class="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500">
+      <input type="text" placeholder="Value" class="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500">
+      <button onclick="this.parentElement.remove(); updateCurlCommand();" class="text-red-500 hover:text-red-700 p-1">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+        </svg>
+      </button>
+    `;
+        container.appendChild(div);
+        updateCurlCommand();
+    }
+
+    function getHeaders() {
+        const headers = {};
+        const container = document.getElementById('headersContainer');
+        const rows = container.querySelectorAll('div');
+        rows.forEach(row => {
+            const checkbox = row.querySelector('input[type="checkbox"]');
+            const inputs = row.querySelectorAll('input[type="text"]');
+            if (checkbox && checkbox.checked && inputs.length === 2) {
+                const key = inputs[0].value.trim();
+                const value = replaceVariables(inputs[1].value.trim());
+                if (key) headers[key] = value;
+            }
+        });
+        return headers;
+    }
+
+    // Query Params management
+    function addParam() {
+        const container = document.getElementById('paramsContainer');
+        const div = document.createElement('div');
+        div.className = 'flex gap-3 items-center p-3 bg-gray-50 rounded-lg fade-in';
+        div.innerHTML = `
+      <input type="checkbox" checked class="w-4 h-4 text-green-600 rounded focus:ring-green-500">
+      <input type="text" placeholder="Key" class="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500">
+      <input type="text" placeholder="Value" class="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500">
+      <button onclick="this.parentElement.remove(); updateCurlCommand();" class="text-red-500 hover:text-red-700 p-1">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+        </svg>
+      </button>
+    `;
+        container.appendChild(div);
+        updateCurlCommand();
+    }
+
+    function getParams() {
+        const params = {};
+        const container = document.getElementById('paramsContainer');
+        const rows = container.querySelectorAll('div');
+        rows.forEach(row => {
+            const checkbox = row.querySelector('input[type="checkbox"]');
+            const inputs = row.querySelectorAll('input[type="text"]');
+            if (checkbox && checkbox.checked && inputs.length === 2) {
+                const key = inputs[0].value.trim();
+                const value = replaceVariables(inputs[1].value.trim());
+                if (key) params[key] = value;
+            }
+        });
+        return params;
+    }
+
+    // Form Data management
+    function addFormField() {
+        const container = document.getElementById('formFields');
+        const div = document.createElement('div');
+        div.className = 'flex gap-3 items-center p-3 bg-gray-50 rounded-lg fade-in';
+        div.innerHTML = `
+      <input type="checkbox" checked class="w-4 h-4 text-green-600 rounded focus:ring-green-500">
+      <input type="text" placeholder="Key" class="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500">
+      <input type="text" placeholder="Value" class="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500">
+      <button onclick="this.parentElement.remove(); updateCurlCommand();" class="text-red-500 hover:text-red-700 p-1">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+        </svg>
+      </button>
+    `;
+        container.appendChild(div);
+        updateCurlCommand();
+    }
+
+    function getFormData() {
+        const formData = {};
+        const container = document.getElementById('formFields');
+        const rows = container.querySelectorAll('div');
+        rows.forEach(row => {
+            const checkbox = row.querySelector('input[type="checkbox"]');
+            const inputs = row.querySelectorAll('input[type="text"]');
+            if (checkbox && checkbox.checked && inputs.length === 2) {
+                const key = inputs[0].value.trim();
+                const value = replaceVariables(inputs[1].value.trim());
+                if (key) formData[key] = value;
+            }
+        });
+        return formData;
+    }
+
+    function handleBodyTypeChange() {
+        const bodyType = document.getElementById('bodyType').value;
+        const textArea = document.getElementById('bodyText');
+        const formContainer = document.getElementById('formDataContainer');
+
+        if (bodyType === 'form') {
+            textArea.classList.add('hidden');
+            formContainer.classList.remove('hidden');
+        } else {
+            textArea.classList.remove('hidden');
+            formContainer.classList.add('hidden');
+        }
+        updateCurlCommand();
+    }
+
+    // Auth handling
+    function handleAuthTypeChange() {
+        const authType = document.getElementById('authType').value;
+        const authContent = document.getElementById('authContent');
+
+        authContent.innerHTML = '';
+
+        if (authType === 'bearer') {
+            authContent.innerHTML = `
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">Bearer Token</label>
+          <input type="text" id="bearerToken" placeholder="your-token-here или {token_variable}"
+            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500" onchange="updateCurlCommand()">
+        </div>
+      `;
+        } else if (authType === 'basic') {
+            authContent.innerHTML = `
+        <div class="space-y-3">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Username</label>
+            <input type="text" id="basicUsername" placeholder="username"
+              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500" onchange="updateCurlCommand()">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Password</label>
+            <input type="password" id="basicPassword" placeholder="password"
+              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500" onchange="updateCurlCommand()">
+          </div>
+        </div>
+      `;
+        } else if (authType === 'apikey') {
+            authContent.innerHTML = `
+        <div class="space-y-3">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Key</label>
+            <input type="text" id="apiKeyName" placeholder="X-API-Key"
+              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500" onchange="updateCurlCommand()">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Value</label>
+            <input type="text" id="apiKeyValue" placeholder="your-api-key или {api_key}"
+              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500" onchange="updateCurlCommand()">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Add to</label>
+            <select id="apiKeyLocation" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500" onchange="updateCurlCommand()">
+              <option value="header">Header</option>
+              <option value="query">Query Params</option>
+            </select>
+          </div>
+        </div>
+      `;
+        }
+        updateCurlCommand();
+    }
+
+    function applyAuth(headers, params) {
+        const authType = document.getElementById('authType').value;
+
+        if (authType === 'bearer') {
+            const token = replaceVariables(document.getElementById('bearerToken')?.value || '');
+            if (token) headers['Authorization'] = `Bearer ${token}`;
+        } else if (authType === 'basic') {
+            const username = document.getElementById('basicUsername')?.value || '';
+            const password = document.getElementById('basicPassword')?.value || '';
+            if (username && password) {
+                const encoded = btoa(`${username}:${password}`);
+                headers['Authorization'] = `Basic ${encoded}`;
+            }
+        } else if (authType === 'apikey') {
+            const keyName = document.getElementById('apiKeyName')?.value || '';
+            const keyValue = replaceVariables(document.getElementById('apiKeyValue')?.value || '');
+            const location = document.getElementById('apiKeyLocation')?.value || 'header';
+
+            if (keyName && keyValue) {
+                if (location === 'header') {
+                    headers[keyName] = keyValue;
+                } else {
+                    params[keyName] = keyValue;
+                }
+            }
+        }
+    }
+
+    // Tab switching
+    function switchTab(tab) {
+        ['headers', 'params', 'body', 'auth'].forEach(t => {
+            document.getElementById(`tab-${t}`).classList.remove('tab-active');
+            document.getElementById(`tab-${t}`).classList.add('text-gray-500');
+            document.getElementById(`content-${t}`).classList.add('hidden');
+        });
+
+        document.getElementById(`tab-${tab}`).classList.add('tab-active');
+        document.getElementById(`tab-${tab}`).classList.remove('text-gray-500');
+        document.getElementById(`content-${tab}`).classList.remove('hidden');
+    }
+
+    function switchResponseTab(tab) {
+        ['body', 'headers', 'curl'].forEach(t => {
+            document.getElementById(`resp-tab-${t}`).classList.remove('tab-active');
+            document.getElementById(`resp-tab-${t}`).classList.add('text-gray-500');
+            document.getElementById(`response-content-${t}`).classList.add('hidden');
+        });
+
+        document.getElementById(`resp-tab-${tab}`).classList.add('tab-active');
+        document.getElementById(`resp-tab-${tab}`).classList.remove('text-gray-500');
+        document.getElementById(`response-content-${tab}`).classList.remove('hidden');
+    }
+
+    // Send request
+    async function sendRequest() {
+        if (isRequestInProgress) return;
+
+        const method = document.getElementById('method').value;
+        let url = replaceVariables(document.getElementById('url').value.trim());
+        const bodyType = document.getElementById('bodyType').value;
+
+        if (!url) {
+            showAlert('Введите URL для запроса', 'error');
+            return;
+        }
+
+        // Validate URL
+        try {
+            new URL(url);
+        } catch (e) {
+            showAlert('Некорректный URL', 'error');
+            return;
+        }
+
+        isRequestInProgress = true;
+        updateSendButton(true);
+
+        // Get headers and params
+        const headers = getHeaders();
+        const params = getParams();
+
+        // Apply auth
+        applyAuth(headers, params);
+
+        // Add query params to URL
+        if (Object.keys(params).length > 0) {
+            const urlObj = new URL(url);
+            Object.entries(params).forEach(([key, value]) => {
+                urlObj.searchParams.append(key, value);
+            });
+            url = urlObj.toString();
+        }
+
+        // Prepare body
+        let body = null;
+        if (['POST', 'PUT', 'PATCH'].includes(method)) {
+            if (bodyType === 'form') {
+                body = getFormData();
+                headers['Content-Type'] = 'application/x-www-form-urlencoded';
+                body = new URLSearchParams(body).toString();
+            } else {
+                const bodyText = replaceVariables(document.getElementById('bodyText').value.trim());
+                if (bodyText) {
+                    if (bodyType === 'json') {
+                        try {
+                            JSON.parse(bodyText); // Validate JSON
+                            body = bodyText;
+                        } catch (e) {
+                            showAlert('Некорректный JSON: ' + e.message, 'error');
+                            isRequestInProgress = false;
+                            updateSendButton(false);
+                            return;
+                        }
+                    } else {
+                        body = bodyText;
+                    }
+                }
+            }
+        }
+
+        // Show loading
+        showResponseStatus('⏳ Отправка запроса<span class="loading-dots"></span>', 'status-info');
+
+        const startTime = Date.now();
+
+        try {
+            const options = {
+                method,
+                headers,
+                mode: 'cors', // Enable CORS
+            };
+
+            if (body) {
+                options.body = body;
+            }
+
+            const response = await fetch(url, options);
+            const endTime = Date.now();
+            const duration = endTime - startTime;
+
+            // Show response status
+            const statusClass = response.ok ? 'status-success' : 'status-error';
+            showResponseStatus(`${response.status} ${response.statusText}`, statusClass);
+            showResponseTime(`⏱️ ${duration}ms`);
+
+            // Get response body
+            const contentType = response.headers.get('content-type');
+            let responseData;
+            let responseSize = 0;
+
+            if (contentType && contentType.includes('application/json')) {
+                responseData = await response.json();
+                const jsonString = JSON.stringify(responseData, null, 2);
+                responseSize = new Blob([jsonString]).size;
+                displayResponseBody(jsonString, 'json');
+            } else {
+                responseData = await response.text();
+                responseSize = new Blob([responseData]).size;
+                displayResponseBody(responseData, 'text');
+            }
+
+            showResponseSize(`📦 ${formatBytes(responseSize)}`);
+
+            displayResponseHeaders(response.headers);
+
+            updateCurlCommand();
+
+            showAlert('Запрос выполнен успешно!', 'success');
+
+        } catch (error) {
+            const endTime = Date.now();
+            const duration = endTime - startTime;
+
+            showResponseStatus('❌ Ошибка запроса', 'status-error');
+            showResponseTime(`⏱️ ${duration}ms`);
+            displayResponseBody(`Error: ${error.message}\n\nВозможные причины:\n- CORS блокировка (попробуйте использовать CORS proxy)\n- Сетевая ошибка\n- Неверный URL\n- Сервер недоступен`, 'text');
+
+            showAlert('Ошибка: ' + error.message, 'error');
+        } finally {
+            isRequestInProgress = false;
+            updateSendButton(false);
+        }
+    }
+
+    function updateSendButton(loading) {
+        const button = document.getElementById('sendButton');
+        const buttonText = document.getElementById('sendButtonText');
+
+        if (loading) {
+            button.disabled = true;
+            buttonText.innerHTML = 'Отправка<span class="loading-dots"></span>';
+            button.classList.add('opacity-75');
+        } else {
+            button.disabled = false;
+            buttonText.textContent = 'Отправить';
+            button.classList.remove('opacity-75');
+        }
+    }
+
+    function showResponseStatus(text, className) {
+        const statusEl = document.getElementById('responseStatus');
+        statusEl.innerHTML = text;
+        statusEl.className = 'mb-4 p-4 rounded-lg font-semibold ' + className;
+        statusEl.classList.remove('hidden');
+    }
+
+    function showResponseTime(text) {
+        const timeEl = document.getElementById('responseTime');
+        timeEl.textContent = text;
+        timeEl.classList.remove('hidden');
+    }
+
+    function showResponseSize(text) {
+        const sizeEl = document.getElementById('responseSize');
+        sizeEl.textContent = text;
+        sizeEl.classList.remove('hidden');
+    }
+
+    function displayResponseBody(data, type) {
+        const bodyEl = document.getElementById('responseBody');
+
+        if (type === 'json') {
+            try {
+                const parsed = JSON.parse(data);
+                const formatted = JSON.stringify(parsed, null, 2);
+                bodyEl.innerHTML = `<div class="json-viewer">${syntaxHighlightJson(formatted)}</div>`;
+            } catch (e) {
+                bodyEl.innerHTML = `<div class="p-4"><pre class="text-sm">${escapeHtml(data)}</pre></div>`;
+            }
+        } else {
+            bodyEl.innerHTML = `<div class="p-4"><pre class="text-sm whitespace-pre-wrap">${escapeHtml(data)}</pre></div>`;
+        }
+    }
+
+    function syntaxHighlightJson(json) {
+        return json.replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, function (match) {
+            let cls = 'json-number';
+            if (/^"/.test(match)) {
+                if (/:$/.test(match)) {
+                    cls = 'json-key';
+                } else {
+                    cls = 'json-string';
+                }
+            } else if (/true|false/.test(match)) {
+                cls = 'json-boolean';
+            } else if (/null/.test(match)) {
+                cls = 'json-null';
+            }
+            return '<span class="' + cls + '">' + match + '</span>';
+        });
+    }
+
+    function displayResponseHeaders(headers) {
+        const headersEl = document.getElementById('responseHeaders');
+        let html = '';
+
+        headers.forEach((value, key) => {
+            html += `<div class="mb-2"><strong class="text-gray-700">${escapeHtml(key)}:</strong> <span class="text-gray-600">${escapeHtml(value)}</span></div>`;
+        });
+
+        headersEl.innerHTML = html || '<div class="text-gray-400 text-center py-8">No headers</div>';
+    }
+
+    function updateCurlCommand() {
+        const method = document.getElementById('method').value;
+        let url = replaceVariables(document.getElementById('url').value.trim());
+        const bodyType = document.getElementById('bodyType').value;
+
+        if (!url) {
+            lastCurlCommand = '';
+            document.getElementById('curlCommand').innerHTML = '<div class="text-gray-400 text-center py-16"><p>cURL команда появится здесь</p></div>';
+            return;
+        }
+
+        const headers = getHeaders();
+        const params = getParams();
+
+        applyAuth(headers, params);
+
+        if (Object.keys(params).length > 0) {
+            try {
+                const urlObj = new URL(url);
+                Object.entries(params).forEach(([key, value]) => {
+                    urlObj.searchParams.append(key, value);
+                });
+                url = urlObj.toString();
+            } catch (e) {
+
+            }
+        }
+
+        let curl = `curl -X ${method} '${url}'`;
+
+        Object.entries(headers).forEach(([key, value]) => {
+            curl += ` \\\n  -H '${key}: ${value}'`;
+        });
+
+        if (['POST', 'PUT', 'PATCH'].includes(method)) {
+            if (bodyType === 'form') {
+                const formData = getFormData();
+                Object.entries(formData).forEach(([key, value]) => {
+                    curl += ` \\\n  --data-urlencode '${key}=${value}'`;
+                });
+            } else {
+                const bodyText = replaceVariables(document.getElementById('bodyText').value.trim());
+                if (bodyText) {
+                    const escapedBody = bodyText.replace(/'/g, "'\\''");
+                    curl += ` \\\n  -d '${escapedBody}'`;
+                }
+            }
+        }
+
+        lastCurlCommand = curl;
+        document.getElementById('curlCommand').innerHTML = `<pre>${escapeHtml(curl)}</pre>`;
+    }
+
+    function copyCurl() {
+        if (!lastCurlCommand) {
+            showAlert('Нет cURL команды для копирования', 'error');
+            return;
+        }
+
+        navigator.clipboard.writeText(lastCurlCommand).then(() => {
+            showAlert('cURL команда скопирована!', 'success');
+        }).catch(() => {
+            showAlert('Ошибка копирования', 'error');
+        });
+    }
+
+    function saveRequest() {
+        const name = prompt('Введите название запроса:');
+        if (!name) return;
+
+        const request = {
+            id: Date.now(),
+            name,
+            method: document.getElementById('method').value,
+            url: document.getElementById('url').value,
+            headers: getHeaders(),
+            params: getParams(),
+            body: document.getElementById('bodyText').value,
+            bodyType: document.getElementById('bodyType').value,
+            authType: document.getElementById('authType').value,
+            createdAt: new Date().toISOString()
+        };
+
+        savedRequests.unshift(request);
+        localStorage.setItem('apiTesterRequests', JSON.stringify(savedRequests));
+        renderSavedRequests();
+        showAlert('Запрос сохранен!', 'success');
+    }
+
+    function loadRequest(id) {
+        const request = savedRequests.find(r => r.id === id);
+        if (!request) return;
+
+        document.getElementById('method').value = request.method;
+        document.getElementById('url').value = request.url;
+        document.getElementById('bodyText').value = request.body || '';
+        document.getElementById('bodyType').value = request.bodyType || 'json';
+        document.getElementById('authType').value = request.authType || 'none';
+
+        const headersContainer = document.getElementById('headersContainer');
+        headersContainer.innerHTML = '';
+        Object.entries(request.headers || {}).forEach(([key, value]) => {
+            const div = document.createElement('div');
+            div.className = 'flex gap-3 items-center p-3 bg-gray-50 rounded-lg';
+            div.innerHTML = `
+        <input type="checkbox" checked class="w-4 h-4 text-green-600 rounded focus:ring-green-500">
+        <input type="text" placeholder="Key" value="${key}" class="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500">
+        <input type="text" placeholder="Value" value="${value}" class="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500">
+        <button onclick="this.parentElement.remove(); updateCurlCommand();" class="text-red-500 hover:text-red-700 p-1">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+          </svg>
+        </button>
+      `;
+            headersContainer.appendChild(div);
+        });
+
+        const paramsContainer = document.getElementById('paramsContainer');
+        paramsContainer.innerHTML = '';
+        Object.entries(request.params || {}).forEach(([key, value]) => {
+            const div = document.createElement('div');
+            div.className = 'flex gap-3 items-center p-3 bg-gray-50 rounded-lg';
+            div.innerHTML = `
+        <input type="checkbox" checked class="w-4 h-4 text-green-600 rounded focus:ring-green-500">
+        <input type="text" placeholder="Key" value="${key}" class="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500">
+        <input type="text" placeholder="Value" value="${value}" class="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500">
+        <button onclick="this.parentElement.remove(); updateCurlCommand();" class="text-red-500 hover:text-red-700 p-1">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+          </svg>
+        </button>
+      `;
+            paramsContainer.appendChild(div);
+        });
+
+        handleBodyTypeChange();
+        handleAuthTypeChange();
+        updateCurlCommand();
+
+        showAlert('Запрос загружен!', 'success');
+    }
+
+    function deleteRequest(id) {
+        if (!confirm('Удалить этот запрос?')) return;
+
+        savedRequests = savedRequests.filter(r => r.id !== id);
+        localStorage.setItem('apiTesterRequests', JSON.stringify(savedRequests));
+        renderSavedRequests();
+        showAlert('Запрос удален', 'success');
+    }
+
+    function renderSavedRequests() {
+        const container = document.getElementById('savedRequests');
+
+        if (savedRequests.length === 0) {
+            container.innerHTML = '<div class="col-span-full text-center text-gray-400 py-12"><div class="text-4xl mb-2">📂</div><p>Нет сохраненных запросов</p><p class="text-sm mt-2">Сохраните текущий запрос для быстрого доступа</p></div>';
+            return;
+        }
+
+        container.innerHTML = savedRequests.map(req => `
+      <div class="border border-gray-200 rounded-lg p-4 hover:border-green-500 hover:shadow-md transition-all cursor-pointer fade-in bg-white">
+        <div class="flex items-start justify-between mb-3">
+          <div class="flex-1" onclick="loadRequest(${req.id})">
+            <div class="font-semibold text-gray-800 mb-2">${escapeHtml(req.name)}</div>
+            <div class="flex items-center gap-2 text-sm mb-2">
+              <span class="px-2 py-1 rounded text-white text-xs font-semibold method-${req.method}">${req.method}</span>
+              <span class="text-gray-500 truncate flex-1">${escapeHtml(req.url)}</span>
+            </div>
+            <div class="text-xs text-gray-400">
+              ${req.createdAt ? new Date(req.createdAt).toLocaleDateString('ru-RU') : 'Дата не указана'}
+            </div>
+          </div>
+          <button onclick="event.stopPropagation(); deleteRequest(${req.id})" class="text-red-500 hover:text-red-700 ml-2 p-1">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+            </svg>
+          </button>
+        </div>
+      </div>
+    `).join('');
+    }
+
+    function showAlert(message, type) {
+        const alert = document.getElementById('alert');
+        const bgColor = type === 'success' ? 'bg-green-500' : 'bg-red-500';
+
+        alert.className = `fixed top-20 right-4 z-50 p-4 rounded-lg shadow-lg max-w-md text-white ${bgColor} fade-in`;
+        alert.textContent = message;
+        alert.classList.remove('hidden');
+
+        setTimeout(() => {
+            alert.classList.add('hidden');
+        }, 4000);
+    }
+
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    function formatBytes(bytes) {
+        if (bytes === 0) return '0 Bytes';
+        const k = 1024;
+        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    }
+
+    document.getElementById('url').addEventListener('input', updateCurlCommand);
+    document.getElementById('method').addEventListener('change', updateCurlCommand);
+    document.getElementById('bodyText').addEventListener('input', updateCurlCommand);
+
+    document.addEventListener('keydown', function(e) {
+        if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+            e.preventDefault();
+            sendRequest();
+        }
+    });
 </script>
 </body>
 </html>

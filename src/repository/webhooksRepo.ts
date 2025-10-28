@@ -1,4 +1,3 @@
-// src/repository/webhookRepo.ts
 import { Collection, ObjectId } from 'mongodb';
 import { logger } from '../utils/logger';
 
@@ -9,23 +8,27 @@ export interface Webhook {
     body: any;
     timestamp: string;
     createdAt: Date;
+    expiresAt: Date; // ← ДОБАВЛЕНО для TTL
 }
 
 export class WebhookRepository {
     constructor(private webhooksCollection: Collection) {}
 
-    async addWebhook(roomId: string, body: any): Promise<string> {
+    async addWebhook(roomId: string, body: any, ttlSeconds: number): Promise<string> {
         const receiptId = new ObjectId().toString();
+        const now = new Date();
+        const expiresAt = new Date(now.getTime() + ttlSeconds * 1000);
 
         await this.webhooksCollection.insertOne({
             receiptId,
             roomId,
             body,
-            timestamp: new Date().toISOString(),
-            createdAt: new Date()
+            timestamp: now.toISOString(),
+            createdAt: now,
+            expiresAt // ← TTL будет работать
         });
 
-        logger.info(`Webhook ${receiptId} added to room ${roomId}`);
+        logger.debug(`Webhook ${receiptId} added to room ${roomId}, expires at ${expiresAt.toISOString()}`);
         return receiptId;
     }
 
@@ -50,7 +53,7 @@ export class WebhookRepository {
         });
 
         if (result.deletedCount > 0) {
-            logger.info(`Webhook ${receiptId} deleted from room ${roomId}`);
+            logger.debug(`Webhook ${receiptId} deleted from room ${roomId}`);
         }
 
         return result.deletedCount > 0;
@@ -58,6 +61,6 @@ export class WebhookRepository {
 
     async clearWebhooks(roomId: string): Promise<void> {
         await this.webhooksCollection.deleteMany({ roomId });
-        logger.info(`All webhooks cleared from room ${roomId}`);
+        logger.debug(`All webhooks cleared from room ${roomId}`);
     }
 }

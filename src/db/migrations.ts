@@ -24,7 +24,6 @@ export async function runMigrations(db: Db) {
         });
         logger.info('✅ Admin user created (username: admin, password: admin)');
     } else {
-        // Проверяем и обновляем существующего admin если нужно
         if (!adminExists.status || adminExists.isActive !== undefined) {
             logger.info('🔄 Updating admin user structure...');
 

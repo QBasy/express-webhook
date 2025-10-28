@@ -4,121 +4,66 @@ import { webhookRoutes } from "./webhookRouter";
 import path from "path";
 import fs from "fs";
 
+function sendStaticFile(reply: any, filePath: string, type: string) {
+    try {
+        const absPath = path.join(__dirname, "..", "static", filePath);
+        const content = fs.readFileSync(absPath, "utf-8");
+        reply.type(type).send(content);
+    } catch (err) {
+        reply.code(404).send("File not found");
+    }
+}
+
 export async function registerRoutes(fastify: FastifyInstance) {
     fastify.register(roomRoutes, { prefix: "/room" });
     fastify.register(webhookRoutes, { prefix: "/hook" });
 
-    fastify.get("/", async (request, reply) => {
-        const html = fs.readFileSync(
-            path.join(__dirname, "..", "static", "webhook_page.html"),
-            "utf-8"
-        );
-        reply.type("text/html").send(html);
+    const htmlPages = [
+        "/", "login", "login.html", "register", "register.html",
+        "admin", "admin.html", "docs", "tester", "tester.html", "navbar.html"
+    ];
+
+    htmlPages.forEach(page => {
+        const routePath = page === "/" ? "/" : `/${page}`;
+        const filename = page === "/" ? "webhook_page.html" :
+            page.replace("/", "").replace(".html", "") + ".html";
+
+        fastify.get(routePath, async (_, reply) => {
+            sendStaticFile(reply, filename, "text/html");
+        });
     });
 
-    fastify.get("/login", async (request, reply) => {
-        const html = fs.readFileSync(
-            path.join(__dirname, "..", "static", "login.html"),
-            "utf-8"
-        );
-        reply.type("text/html").send(html);
+    const jsFiles = ["auth-check.js", "navbar-loader.js"];
+
+    jsFiles.forEach(script => {
+        fastify.get(`/${script}`, async (_, reply) => {
+            sendStaticFile(reply, script, "application/javascript");
+        });
     });
 
-    fastify.get("/login.html", async (request, reply) => {
-        const html = fs.readFileSync(
-            path.join(__dirname, "..", "static", "login.html"),
-        );
-        reply.type("text/html").send(html);
+    fastify.get("/favicon.ico", async (_, reply) => {
+        const filePath = path.join(__dirname, "..", "static", "favicon.ico");
+        try {
+            const data = fs.readFileSync(filePath);
+            reply.type("image/x-icon").send(data);
+        } catch {
+            reply.code(404).send();
+        }
     });
 
-    fastify.get("/register", async (request, reply) => {
-        const html = fs.readFileSync(
-            path.join(__dirname, "..", "static", "register.html"),
-            "utf-8"
-        );
-        reply.type("text/html").send(html);
+    fastify.get("/favicon", async (_, reply) => {
+        const filePath = path.join(__dirname, "..", "static", "favicon.ico");
+        try {
+            const data = fs.readFileSync(filePath);
+            reply.type("image/x-icon").send(data);
+        } catch {
+            reply.code(404).send();
+        }
     });
 
-    fastify.get("/register.html", async (request, reply) => {
-        const html = fs.readFileSync(
-            path.join(__dirname, "..", "static", "register.html"),
-            "utf-8"
-        );
-        reply.type("text/html").send(html);
-    });
-
-    fastify.get("/admin", async (request, reply) => {
-        const html = fs.readFileSync(
-            path.join(__dirname, "..", "static", "admin.html"),
-            "utf-8"
-        );
-        reply.type("text/html").send(html);
-    });
-
-    fastify.get("/admin.html", async (request, reply) => {
-        const html = fs.readFileSync(
-            path.join(__dirname, "..", "static", "admin.html"),
-            "utf-8"
-        );
-        reply.type("text/html").send(html);
-    });
-
-    fastify.get("/docs", async (request, reply) => {
-        const html = fs.readFileSync(
-            path.join(__dirname, "..", "static", "docs.html"),
-            "utf-8"
-        );
-        reply.type("text/html").send(html);
-    });
-
-    fastify.get("/tester", async (request, reply) => {
-        const html = fs.readFileSync(
-            path.join(__dirname, "..", "static", "tester.html"),
-            "utf-8"
-        );
-        reply.type("text/html").send(html);
-    });
-
-    fastify.get("/tester.html", async (request, reply) => {
-        const html = fs.readFileSync(
-            path.join(__dirname, "..", "static", "tester.html"),
-            "utf-8"
-        );
-        reply.type("text/html").send(html);
-    });
-
-    // Navbar
-    fastify.get("/navbar.html", async (request, reply) => {
-        const html = fs.readFileSync(
-            path.join(__dirname, "..", "static", "navbar.html"),
-            "utf-8"
-        );
-        reply.type("text/html").send(html);
-    });
-
-    // Auth check script
-    fastify.get("/auth-check.js", async (request, reply) => {
-        const js = fs.readFileSync(
-            path.join(__dirname, "..", "static", "auth-check.js"),
-            "utf-8"
-        );
-        reply.type("application/javascript").send(js);
-    });
-
-    // Favicon
-    fastify.get("/favicon", async (request, reply) => {
-        const favicon = fs.readFileSync(
-            path.join(__dirname, "..", "static", "favicon.ico")
-        );
-        reply.type("image/x-icon").send(favicon);
-    });
-
-    // Health check
-    fastify.get("/health", async (request, reply) => {
-        return {
-            status: "ok",
-            timestamp: new Date().toISOString(),
-            uptime: process.uptime()
-        };
-    });
+    fastify.get("/health", async () => ({
+        status: "ok",
+        timestamp: new Date().toISOString(),
+        uptime: process.uptime()
+    }));
 }
