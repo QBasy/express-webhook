@@ -19,7 +19,7 @@ export async function registerRoutes(fastify: FastifyInstance) {
     fastify.register(webhookRoutes, { prefix: "/hook" });
 
     const htmlPages = [
-        "/", "login", "login.html", "register", "register.html",
+        "/", "login", "login.html", "register", "register.html", "json-compare.html",
         "admin", "admin.html", "docs", "tester", "tester.html", "navbar.html"
     ];
 

@@ -487,9 +487,6 @@
                 await updateFakeErrorStatus();
 
                 document.getElementById('roomStatus').classList.remove('hidden');
-                document.getElementById('webhookUrlSection').classList.remove('hidden');
-                document.getElementById('fakeErrorSection').classList.remove('hidden');
-                document.getElementById('clearWebhooksSection').classList.remove('hidden');
 
                 startFetchingHooks();
                 updateConnectionStatus(true);
