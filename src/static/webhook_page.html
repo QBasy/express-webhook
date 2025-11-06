@@ -380,14 +380,14 @@
             connectionStatus.className = "";
 
             if (online) {
-                connectionStatus.classList.add("flex", "items-center", "gap-2", "px-3", "py-1", "rounded-full", "bg-green-100", "text-green-700", "text-sm");
+                connectionStatus.classList.add("flex", "items-center", "gap-2", "px-3", "py-1", "rounded-full", "bg-green-100", "text-green-700", "text-sm", "mb-3");
                 connectionStatus.innerHTML = `
             <span class="w-2 h-2 bg-green-500 rounded-full pulse-dot"></span>
             <span>Подключено</span>
         `;
                 reconnectAttempts = 0;
             } else {
-                connectionStatus.classList.add("flex", "items-center", "gap-2", "px-3", "py-1", "rounded-full", "bg-red-100", "text-red-700", "text-sm", "connection-lost");
+                connectionStatus.classList.add("flex", "items-center", "gap-2", "px-3", "py-1", "rounded-full", "bg-red-100", "text-red-700", "text-sm", "mb-3" ,"connection-lost");
                 connectionStatus.innerHTML = `
             <span class="w-2 h-2 bg-red-500 rounded-full"></span>
             <span>Нет соединения</span>
