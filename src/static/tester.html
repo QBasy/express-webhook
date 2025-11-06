@@ -170,7 +170,7 @@
                             id="url"
                             placeholder="https://api.example.com/endpoint или {base_url}/users/{user_id}"
                             class="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                            value="https://jsonplaceholder.typicode.com/posts/1"
+                            value="https://{base_url}/"
                     >
                     <button
                             onclick="sendRequest()"
@@ -449,7 +449,7 @@
         // Add default variables if none exist
         if (Object.keys(saved).length === 0) {
             variables = {
-                'base_url': 'https://jsonplaceholder.typicode.com',
+                'base_url': 'jsonplaceholder.typicode.com',
                 'api_key': 'your-api-key-here',
                 'user_id': '1'
             };
