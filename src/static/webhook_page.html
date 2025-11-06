@@ -201,6 +201,20 @@
 
             <div class="border border-gray-200 rounded-lg p-4">
                 <h3 class="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                    <i data-lucide="arrow-right-circle" class="w-4 h-4 text-purple-600"></i>
+                    <span>Пересылка вебхуков</span>
+                </h3>
+                <label class="flex items-center gap-2 mb-3">
+                    <input type="checkbox" id="forwardToggle" class="w-4 h-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500">
+                    <span class="text-sm text-gray-700">Включить пересылку</span>
+                </label>
+                <input id="forwardEndpoint" type="text" placeholder="https://example.com/webhook"
+                       class="w-full p-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500">
+                <p class="text-xs text-gray-500 mt-2">Вебхуки будут автоматически отправляться на указанный URL</p>
+            </div>
+
+            <div class="border border-gray-200 rounded-lg p-4">
+                <h3 class="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
                     <i data-lucide="refresh-cw" class="w-4 h-4 text-blue-600"></i>
                     <span>Сортировка</span>
                 </h3>
@@ -320,6 +334,9 @@
         let sortOrder = "newest";
         let isOnline = true;
         let reconnectAttempts = 0;
+        let forwardEnabled = false;
+        let forwardEndpoint = "";
+        let roomsPanelOpen = false;
 
         // Initialize Lucide Icons
         function initLucideIcons() {
@@ -342,6 +359,8 @@
         const prevPageBtn = document.getElementById("prevPage");
         const nextPageBtn = document.getElementById("nextPage");
         const pageNumbers = document.getElementById("pageNumbers");
+        const forwardToggle = document.getElementById("forwardToggle");
+        const forwardEndpointInput = document.getElementById("forwardEndpoint");
 
         const showRoomsBtn = document.getElementById("showRoomsBtn");
         const roomsPanel = document.getElementById("roomsPanel");
@@ -354,6 +373,48 @@
         // Initialize
         fakeStatusInput.disabled = false;
         fakeErrorToggle.checked = false;
+
+        // Forward webhook toggle
+        forwardToggle.addEventListener("change", (e) => {
+            forwardEnabled = e.target.checked;
+            forwardEndpointInput.disabled = !forwardEnabled;
+
+            if (forwardEnabled && !forwardEndpointInput.value.trim()) {
+                showAlert("Введите URL для пересылки", "warning");
+                forwardToggle.checked = false;
+                forwardEnabled = false;
+                forwardEndpointInput.disabled = true;
+            } else {
+                showAlert(forwardEnabled ? "Пересылка вебхуков включена" : "Пересылка вебхуков отключена", "success");
+            }
+        });
+
+        forwardEndpointInput.addEventListener("input", (e) => {
+            forwardEndpoint = e.target.value.trim();
+        });
+
+        // Forward webhook function
+        async function forwardWebhook(webhookBody) {
+            if (!forwardEnabled || !forwardEndpoint) return;
+
+            try {
+                const response = await fetch(forwardEndpoint, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(webhookBody)
+                });
+
+                if (!response.ok) {
+                    console.error('Forward failed:', response.status);
+                    showAlert(`Ошибка пересылки: ${response.status}`, "error");
+                }
+            } catch (error) {
+                console.error('Forward error:', error);
+                showAlert(`Ошибка пересылки: ${error.message}`, "error");
+            }
+        }
 
         // Copy with visual feedback
         function copyToClipboardWithFeedback(text, event) {
@@ -543,6 +604,11 @@
 
                 document.getElementById('roomStatus').classList.add('hidden');
 
+                // Refresh rooms panel if it's open
+                if (roomsPanelOpen) {
+                    fetchAllRooms();
+                }
+
                 showAlert("Комната закрыта", "success");
             } catch (e) {
                 // showAlert("Ошибка закрытия комнаты", "error");
@@ -620,6 +686,7 @@
 
         sortOrderSelect.addEventListener("change", (e) => {
             sortOrder = e.target.value;
+            currentPage = 1;
             renderAllWebhooks();
         });
 
@@ -697,12 +764,34 @@
             hooks.forEach(hook => {
                 if (!lastIds.has(hook.receiptId)) {
                     lastIds.add(hook.receiptId);
-                    allHooks.unshift(hook);
+                    allHooks.push(hook);
                     hasNew = true;
+
+                    // Forward webhook if enabled
+                    if (forwardEnabled && forwardEndpoint) {
+                        forwardWebhook(hook.body);
+                    }
                 }
             });
 
-            if (hasNew) renderAllWebhooks();
+            if (hasNew) {
+                // Sort after adding new webhooks
+                sortAllHooks();
+                renderAllWebhooks();
+            }
+        }
+
+        function sortAllHooks() {
+            allHooks.sort((a, b) => {
+                const timeA = new Date(a.timestamp).getTime();
+                const timeB = new Date(b.timestamp).getTime();
+
+                if (sortOrder === "newest") {
+                    return timeB - timeA; // Newest first
+                } else {
+                    return timeA - timeB; // Oldest first
+                }
+            });
         }
 
         function getFilteredHooks() {
@@ -712,9 +801,17 @@
                 return bodyStr.includes(searchTerm) || hook.receiptId.toString().includes(searchTerm);
             });
 
-            if (sortOrder === "oldest") {
-                filtered = [...filtered].reverse();
-            }
+            // Apply sorting
+            filtered.sort((a, b) => {
+                const timeA = new Date(a.timestamp).getTime();
+                const timeB = new Date(b.timestamp).getTime();
+
+                if (sortOrder === "newest") {
+                    return timeB - timeA;
+                } else {
+                    return timeA - timeB;
+                }
+            });
 
             return filtered;
         }
@@ -965,11 +1062,14 @@
         });
 
         function openRoomsPanel() {
+            roomsPanelOpen = true;
             roomsPanel.classList.remove('translate-x-full');
             roomsPanelError.classList.add('hidden');
             fetchAllRooms();
         }
+
         function closeRoomsPanelFn() {
+            roomsPanelOpen = false;
             roomsPanel.classList.add('translate-x-full');
         }
 
