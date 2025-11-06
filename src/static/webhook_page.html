@@ -6,6 +6,7 @@
     <title>Webhook Viewer - GREEN-API QA TEAM</title>
     <link rel="icon" href="/favicon" type="image/x-icon">
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
     <style>
         @keyframes pulse-dot {
             0%, 100% { opacity: 1; }
@@ -61,7 +62,6 @@
             color: #6f42c1;
         }
 
-        /* Стили для подсветки вложенных объектов */
         .json-value-wrapper {
             display: inline;
             transition: background-color 0.2s;
@@ -121,7 +121,6 @@
             opacity: 1;
         }
 
-        /* Navbar styles */
         .navbar-gradient {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         }
@@ -143,7 +142,9 @@
         <aside class="w-80 bg-white shadow-lg border-r border-gray-200 p-6 space-y-6 overflow-y-auto">
             <div>
                 <h2 class="text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                    <span class="w-6 h-6 bg-green-100 rounded flex items-center justify-center text-green-600">🏠</span>
+                    <span class="w-6 h-6 bg-green-100 rounded flex items-center justify-center text-green-600">
+                        <i data-lucide="home" class="w-4 h-4"></i>
+                    </span>
                     Управление комнатой
                 </h2>
                 <div id="connectionStatus" class="flex items-center gap-2 px-3 py-1 rounded-full bg-green-100 text-green-700 text-sm mb-3">
@@ -159,8 +160,9 @@
                     <button id="closeRoomBtn" class="w-full bg-red-600 hover:bg-red-700 text-white px-4 py-3 rounded-lg font-medium transition">
                         Закрыть комнату
                     </button>
-                    <button id="showRoomsBtn" class="w-full bg-gray-100 hover:bg-gray-200 text-gray-800 px-4 py-2 rounded-lg font-medium transition text-sm">
-                        📁 Показать комнаты
+                    <button id="showRoomsBtn" class="w-full bg-gray-100 hover:bg-gray-200 text-gray-800 px-4 py-2 rounded-lg font-medium transition text-sm flex items-center justify-center gap-2">
+                        <i data-lucide="folder" class="w-4 h-4"></i>
+                        <span>Показать комнаты</span>
                     </button>
                 </div>
                 <div id="roomStatus" class="mt-3 text-sm text-gray-600 p-3 bg-gray-50 rounded-lg"></div>
@@ -186,7 +188,8 @@
 
             <div class="border border-gray-200 rounded-lg p-4">
                 <h3 class="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                    <span>⚠️</span> Симуляция ошибок
+                    <i data-lucide="alert-triangle" class="w-4 h-4 text-yellow-600"></i>
+                    <span>Симуляция ошибок</span>
                 </h3>
                 <label class="flex items-center gap-2 mb-3">
                     <input type="checkbox" id="fakeErrorToggle" class="w-4 h-4 text-red-600 border-gray-300 rounded focus:ring-red-500">
@@ -198,7 +201,8 @@
 
             <div class="border border-gray-200 rounded-lg p-4">
                 <h3 class="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                    <span>🔄</span> Сортировка
+                    <i data-lucide="refresh-cw" class="w-4 h-4 text-blue-600"></i>
+                    <span>Сортировка</span>
                 </h3>
                 <select id="sortOrder" class="w-full p-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500">
                     <option value="newest">Новые первые</option>
@@ -207,14 +211,17 @@
             </div>
 
             <div class="space-y-2">
-                <button id="sendTestHookBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-lg font-medium transition text-sm">
-                    📤 Отправить тест
+                <button id="sendTestHookBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-lg font-medium transition text-sm flex items-center justify-center gap-2">
+                    <i data-lucide="send" class="w-4 h-4"></i>
+                    <span>Отправить тест</span>
                 </button>
-                <button id="exportBtn" class="w-full bg-purple-600 hover:bg-purple-700 text-white px-4 py-2.5 rounded-lg font-medium transition text-sm">
-                    💾 Экспорт JSON
+                <button id="exportBtn" class="w-full bg-purple-600 hover:bg-purple-700 text-white px-4 py-2.5 rounded-lg font-medium transition text-sm flex items-center justify-center gap-2">
+                    <i data-lucide="download" class="w-4 h-4"></i>
+                    <span>Экспорт JSON</span>
                 </button>
-                <button id="clearHooksBtn" class="w-full bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2.5 rounded-lg font-medium transition text-sm">
-                    🗑️ Очистить все
+                <button id="clearHooksBtn" class="w-full bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2.5 rounded-lg font-medium transition text-sm flex items-center justify-center gap-2">
+                    <i data-lucide="trash-2" class="w-4 h-4"></i>
+                    <span>Очистить все</span>
                 </button>
             </div>
         </aside>
@@ -225,7 +232,9 @@
                     <div class="flex-1 relative">
                         <input id="searchInput" type="text" placeholder="Поиск по содержимому вебхука..."
                                class="w-full p-3 pl-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition">
-                        <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">🔍</span>
+                        <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+                            <i data-lucide="search" class="w-5 h-5"></i>
+                        </span>
                     </div>
                     <select id="itemsPerPage" class="p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 text-sm">
                         <option value="10">10 / страница</option>
@@ -242,7 +251,7 @@
                 </div>
                 <div id="webhooksContainer" class="p-4 space-y-4 min-h-[400px]">
                     <div class="flex flex-col items-center justify-center py-16 text-gray-400">
-                        <div class="text-6xl mb-4">📭</div>
+                        <i data-lucide="inbox" class="w-16 h-16 mb-4 text-gray-300"></i>
                         <p class="text-lg">Нет вебхуков для отображения</p>
                         <p class="text-sm mt-2">Создайте комнату и отправьте первый вебхук</p>
                     </div>
@@ -250,12 +259,14 @@
             </div>
 
             <div id="paginationContainer" class="mt-6 flex items-center justify-between bg-white p-4 rounded-lg shadow-md">
-                <button id="prevPage" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg font-medium transition disabled:opacity-50 disabled:cursor-not-allowed">
-                    ← Назад
+                <button id="prevPage" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg font-medium transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2">
+                    <i data-lucide="chevron-left" class="w-4 h-4"></i>
+                    <span>Назад</span>
                 </button>
                 <div id="pageNumbers" class="flex gap-2"></div>
-                <button id="nextPage" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg font-medium transition disabled:opacity-50 disabled:cursor-not-allowed">
-                    Вперед →
+                <button id="nextPage" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg font-medium transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2">
+                    <span>Вперед</span>
+                    <i data-lucide="chevron-right" class="w-4 h-4"></i>
                 </button>
             </div>
         </main>
@@ -279,7 +290,9 @@
     <div id="roomsPanel" class="fixed right-0 top-0 h-full w-96 bg-white shadow-xl border-l border-gray-200 transform translate-x-full transition-transform duration-300 z-50">
         <div class="p-4 flex items-center justify-between border-b">
             <h3 class="text-lg font-semibold">Все комнаты</h3>
-            <button id="closeRoomsPanel" class="text-gray-500 hover:text-gray-700">✕</button>
+            <button id="closeRoomsPanel" class="text-gray-500 hover:text-gray-700">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
         </div>
         <div id="roomsPanelContent" class="p-4 overflow-y-auto" style="height: calc(100% - 64px);">
             <div id="roomsPanelLoading" class="flex items-center justify-center py-8 hidden">
@@ -308,6 +321,11 @@
         let isOnline = true;
         let reconnectAttempts = 0;
 
+        // Initialize Lucide Icons
+        function initLucideIcons() {
+            lucide.createIcons();
+        }
+
         // DOM Elements
         const roomIdInput = document.getElementById("roomId");
         const roomStatus = document.getElementById("roomStatus");
@@ -325,7 +343,6 @@
         const nextPageBtn = document.getElementById("nextPage");
         const pageNumbers = document.getElementById("pageNumbers");
 
-        // Новые DOM элементы для панели
         const showRoomsBtn = document.getElementById("showRoomsBtn");
         const roomsPanel = document.getElementById("roomsPanel");
         const closeRoomsPanel = document.getElementById("closeRoomsPanel");
@@ -471,14 +488,17 @@
 
                 const webhookUrl = `${apiBase}/hook/${encodeURIComponent(id)}`;
                 roomStatus.innerHTML = `
-                    <div class="font-semibold text-green-700 mb-2">✓ Комната активна</div>
+                    <div class="font-semibold text-green-700 mb-2 flex items-center gap-2">
+                        <i data-lucide="check-circle" class="w-4 h-4"></i>
+                        <span>Комната активна</span>
+                    </div>
                     <div class="webhook-url-container text-xs break-all bg-white p-2 rounded border border-gray-200 group">
                         <div class="flex items-center justify-between gap-2">
                             <span class="flex-1">${webhookUrl}</span>
                             <button onclick="copyUrlToClipboard(event, '${webhookUrl}')"
-                                    class="copy-btn-inline text-blue-600 hover:text-blue-800 text-lg"
+                                    class="copy-btn-inline text-blue-600 hover:text-blue-800"
                                     title="Копировать URL">
-                                📋
+                                <i data-lucide="copy" class="w-4 h-4"></i>
                             </button>
                         </div>
                     </div>
@@ -487,6 +507,8 @@
                 await updateFakeErrorStatus();
 
                 document.getElementById('roomStatus').classList.remove('hidden');
+
+                initLucideIcons();
 
                 startFetchingHooks();
                 updateConnectionStatus(true);
@@ -520,13 +542,10 @@
                 fakeStatusInput.disabled = false;
 
                 document.getElementById('roomStatus').classList.add('hidden');
-                document.getElementById('webhookUrlSection').classList.add('hidden');
-                document.getElementById('fakeErrorSection').classList.add('hidden');
-                document.getElementById('clearWebhooksSection').classList.add('hidden');
 
                 showAlert("Комната закрыта", "success");
             } catch (e) {
-               // showAlert("Ошибка закрытия комнаты", "error");
+                // showAlert("Ошибка закрытия комнаты", "error");
             }
         });
 
@@ -752,7 +771,7 @@
             if (paginatedHooks.length === 0) {
                 webhooksContainer.innerHTML = `
                     <div class="flex flex-col items-center justify-center py-16 text-gray-400">
-                        <div class="text-6xl mb-4">📭</div>
+                        <i data-lucide="inbox" class="w-16 h-16 mb-4 text-gray-300"></i>
                         <p class="text-lg">${searchTerm ? 'Ничего не найдено' : 'Нет вебхуков для отображения'}</p>
                         <p class="text-sm mt-2">${searchTerm ? 'Попробуйте изменить запрос' : 'Создайте комнату и отправьте первый вебхук'}</p>
                     </div>
@@ -765,33 +784,38 @@
                                 <span class="px-2 py-1 bg-green-100 text-green-700 text-xs font-mono rounded">
                                     ID: ${hook.receiptId}
                                 </span>
-                                <span class="text-sm text-gray-500">
+                                <span class="text-sm text-gray-500 flex items-center gap-1">
+                                    <i data-lucide="clock" class="w-3 h-3"></i>
                                     ${formatTimestamp(hook.timestamp)}
                                 </span>
                             </div>
                             <div class="flex gap-2">
                                 <button onclick="copyEntireWebhook(${escapeJson(hook.body)}, event)"
-                                        class="px-3 py-1 text-blue-600 hover:bg-blue-50 rounded transition text-sm font-medium"
+                                        class="px-3 py-1 text-blue-600 hover:bg-blue-50 rounded transition text-sm font-medium flex items-center gap-1"
                                         title="Копировать весь объект">
-                                    📋 Копировать всё
+                                    <i data-lucide="copy" class="w-4 h-4"></i>
+                                    <span>Копировать всё</span>
                                 </button>
                                 <button onclick="deleteWebhook('${hook.receiptId}')"
-                                        class="px-3 py-1 text-red-600 hover:bg-red-50 rounded transition text-sm font-medium"
+                                        class="px-3 py-1 text-red-600 hover:bg-red-50 rounded transition text-sm font-medium flex items-center gap-1"
                                         title="Удалить">
-                                    🗑️ Удалить
+                                    <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                    <span>Удалить</span>
                                 </button>
                             </div>
                         </div>
                         <div class="bg-gray-50 p-4 rounded-lg overflow-x-auto border border-gray-200 hover:bg-white transition">
                             <pre class="text-sm font-mono">${syntaxHighlight(hook.body)}</pre>
                         </div>
-                        <div class="mt-2 text-xs text-gray-500 italic">
-                            💡 Нажмите на любой ключ или значение, чтобы скопировать
+                        <div class="mt-2 text-xs text-gray-500 italic flex items-center gap-1">
+                            <i data-lucide="info" class="w-3 h-3"></i>
+                            <span>Нажмите на любой ключ или значение, чтобы скопировать</span>
                         </div>
                     </div>
                 `).join("");
             }
 
+            initLucideIcons();
             renderPagination(totalPages);
         }
 
@@ -828,6 +852,8 @@
                     </button>
                 `;
             }).join('');
+
+            initLucideIcons();
         }
 
         window.goToPage = (page) => {
@@ -866,20 +892,22 @@
             };
 
             const icons = {
-                success: "✓",
-                error: "✕",
-                warning: "⚠"
+                success: "check-circle",
+                error: "x-circle",
+                warning: "alert-circle"
             };
 
             const alert = document.createElement("div");
             alert.className = `fixed top-20 right-6 px-5 py-3 rounded-lg border-l-4 ${colors[type]} shadow-2xl transition-all z-50 max-w-md fade-in`;
             alert.innerHTML = `
                 <div class="flex items-center gap-3">
-                    <span class="text-xl font-bold">${icons[type]}</span>
+                    <i data-lucide="${icons[type]}" class="w-5 h-5"></i>
                     <span class="font-medium">${message}</span>
                 </div>
             `;
             document.body.appendChild(alert);
+
+            initLucideIcons();
 
             setTimeout(() => {
                 alert.style.opacity = "0";
@@ -904,20 +932,24 @@
 
                 const webhookUrl = `${apiBase}/hook/${encodeURIComponent(id)}`;
                 roomStatus.innerHTML = `
-            <div class="font-semibold text-green-700 mb-2">✓ Комната активна</div>
+            <div class="font-semibold text-green-700 mb-2 flex items-center gap-2">
+                <i data-lucide="check-circle" class="w-4 h-4"></i>
+                <span>Комната активна</span>
+            </div>
             <div class="webhook-url-container text-xs break-all bg-white p-2 rounded border border-gray-200 group">
                 <div class="flex items-center justify-between gap-2">
                     <span class="flex-1">${webhookUrl}</span>
                     <button onclick="copyUrlToClipboard(event, '${webhookUrl}')"
-                            class="copy-btn-inline text-blue-600 hover:text-blue-800 text-lg"
+                            class="copy-btn-inline text-blue-600 hover:text-blue-800"
                             title="Копировать URL">
-                        📋
+                        <i data-lucide="copy" class="w-4 h-4"></i>
                     </button>
                 </div>
             </div>
         `;
 
                 await updateFakeErrorStatus();
+                initLucideIcons();
                 startFetchingHooks();
                 updateConnectionStatus(true);
                 showAlert("Комната создана успешно", "success");
@@ -944,7 +976,6 @@
         showRoomsBtn.addEventListener('click', openRoomsPanel);
         closeRoomsPanel.addEventListener('click', closeRoomsPanelFn);
 
-        // Загрузка списка комнат
         async function fetchAllRooms() {
             roomsList.innerHTML = '';
             roomsPanelEmpty.classList.add('hidden');
@@ -968,22 +999,28 @@
                     return;
                 }
 
-                // Рендер списка комнат
                 roomsList.innerHTML = rooms.map(r => `
             <div class="p-3 border border-gray-200 rounded-lg flex items-center justify-between hover:bg-gray-50">
                 <div class="flex flex-col">
                     <button class="text-left text-sm font-medium text-gray-800 room-select-btn" data-room-id="${r.roomId}">
                         ${r.roomId}
                     </button>
-                    <div class="text-xs text-gray-500">Вебхуков: ${r.webhooksCount}</div>
+                    <div class="text-xs text-gray-500 flex items-center gap-1">
+                        <i data-lucide="database" class="w-3 h-3"></i>
+                        <span>Вебхуков: ${r.webhooksCount}</span>
+                    </div>
                 </div>
                 <div class="flex flex-col items-end gap-2">
-                    <button class="px-3 py-1 bg-green-600 text-white rounded text-sm select-room-action" data-room-id="${r.roomId}">Открыть</button>
+                    <button class="px-3 py-1 bg-green-600 text-white rounded text-sm select-room-action flex items-center gap-1" data-room-id="${r.roomId}">
+                        <i data-lucide="log-in" class="w-3 h-3"></i>
+                        <span>Открыть</span>
+                    </button>
                 </div>
             </div>
         `).join('');
 
-                // навесим обработчики на все кнопки
+                initLucideIcons();
+
                 document.querySelectorAll('.select-room-action, .room-select-btn').forEach(el => {
                     el.addEventListener('click', async (e) => {
                         const rid = e.currentTarget.getAttribute('data-room-id');
@@ -999,7 +1036,6 @@
             }
         }
 
-        // Monitor online/offline status
         window.addEventListener('online', () => {
             updateConnectionStatus(true);
             if (currentRoomId) {
@@ -1014,6 +1050,7 @@
         });
 
         renderAllWebhooks();
+        initLucideIcons();
     </script>
 
     <script src="/auth-check.js"></script>
@@ -1059,6 +1096,8 @@
 
                 document.getElementById('auth-loading').classList.add('hidden');
                 document.getElementById('main-app').classList.remove('hidden');
+
+                initLucideIcons();
 
             } catch (error) {
                 console.error('❌ Auth check error:', error);

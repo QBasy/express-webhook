@@ -6,6 +6,7 @@
     <title>Регистрация - Webhook Viewer</title>
     <link rel="icon" href="/favicon" type="image/x-icon">
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
     <style>
         .gradient-green-bg {
             background: linear-gradient(135deg, #10b981 0%, #059669 50%, #047857 100%);
@@ -52,8 +53,9 @@
 
         <form id="registerForm" class="space-y-5">
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">
-                    Имя пользователя *
+                <label class="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+                    <i data-lucide="user" class="w-4 h-4 text-gray-500"></i>
+                    <span>Имя пользователя *</span>
                 </label>
                 <input
                         type="text"
@@ -64,12 +66,16 @@
                         class="input-focus w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none transition"
                         placeholder="Только латиница, цифры и _"
                 >
-                <p class="text-xs text-gray-500 mt-1">Минимум 3 символа</p>
+                <p class="text-xs text-gray-500 mt-1 flex items-center gap-1">
+                    <i data-lucide="info" class="w-3 h-3"></i>
+                    <span>Минимум 3 символа</span>
+                </p>
             </div>
 
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">
-                    Email *
+                <label class="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+                    <i data-lucide="mail" class="w-4 h-4 text-gray-500"></i>
+                    <span>Email *</span>
                 </label>
                 <input
                         type="email"
@@ -81,36 +87,49 @@
             </div>
 
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">
-                    Пароль *
+                <label class="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+                    <i data-lucide="lock" class="w-4 h-4 text-gray-500"></i>
+                    <span>Пароль *</span>
                 </label>
-                <input
-                        type="password"
-                        id="password"
-                        required
-                        minlength="6"
-                        class="input-focus w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none transition"
-                        placeholder="Минимум 6 символов"
-                >
+                <div class="relative">
+                    <input
+                            type="password"
+                            id="password"
+                            required
+                            minlength="6"
+                            class="input-focus w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none transition pr-12"
+                            placeholder="Минимум 6 символов"
+                    >
+                    <button type="button" id="togglePassword" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 transition">
+                        <i data-lucide="eye" class="w-5 h-5" id="eyeIcon"></i>
+                    </button>
+                </div>
             </div>
 
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">
-                    Подтвердите пароль *
+                <label class="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+                    <i data-lucide="shield-check" class="w-4 h-4 text-gray-500"></i>
+                    <span>Подтвердите пароль *</span>
                 </label>
-                <input
-                        type="password"
-                        id="confirmPassword"
-                        required
-                        minlength="6"
-                        class="input-focus w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none transition"
-                        placeholder="Повторите пароль"
-                >
+                <div class="relative">
+                    <input
+                            type="password"
+                            id="confirmPassword"
+                            required
+                            minlength="6"
+                            class="input-focus w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none transition pr-12"
+                            placeholder="Повторите пароль"
+                    >
+                    <button type="button" id="toggleConfirmPassword" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 transition">
+                        <i data-lucide="eye" class="w-5 h-5" id="eyeIconConfirm"></i>
+                    </button>
+                </div>
             </div>
 
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">
-                    Причина регистрации (опционально)
+                <label class="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+                    <i data-lucide="message-square" class="w-4 h-4 text-gray-500"></i>
+                    <span>Причина регистрации (опционально)</span>
                 </label>
                 <textarea
                         id="reason"
@@ -123,33 +142,34 @@
             <button
                     type="submit"
                     id="registerBtn"
-                    class="w-full bg-green-600 hover:bg-green-700 text-white py-3 rounded-lg font-semibold transition transform hover:scale-105 active:scale-95 shadow-md hover:shadow-lg"
+                    class="w-full bg-green-600 hover:bg-green-700 text-white py-3 rounded-lg font-semibold transition transform hover:scale-105 active:scale-95 shadow-md hover:shadow-lg flex items-center justify-center gap-2"
             >
-                Отправить заявку
+                <i data-lucide="user-plus" class="w-5 h-5"></i>
+                <span>Отправить заявку</span>
             </button>
         </form>
 
         <div class="mt-6 text-center">
-            <p class="text-sm text-gray-600">
-                Уже есть аккаунт?
-                <a href="/login.html" class="text-green-600 hover:text-green-800 font-semibold transition">
-                    Войти
+            <p class="text-sm text-gray-600 flex items-center justify-center gap-1">
+                <span>Уже есть аккаунт?</span>
+                <a href="/login.html" class="text-green-600 hover:text-green-800 font-semibold transition flex items-center gap-1">
+                    <span>Войти</span>
+                    <i data-lucide="arrow-right" class="w-4 h-4"></i>
                 </a>
             </p>
         </div>
 
         <div class="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-            <p class="text-sm text-blue-800">
-                <strong>ℹ️ Внимание:</strong> После отправки заявки администратор должен одобрить вашу регистрацию.
+            <p class="text-sm text-blue-800 flex items-start gap-2">
+                <i data-lucide="info" class="w-5 h-5 flex-shrink-0 mt-0.5"></i>
+                <span><strong>Внимание:</strong> После отправки заявки администратор должен одобрить вашу регистрацию.</span>
             </p>
         </div>
 
         <div class="mt-8 pt-6 border-t border-gray-200 text-center">
             <a href="https://green-api.com" target="_blank" class="inline-flex items-center gap-2 text-green-600 hover:text-green-800 font-semibold transition">
                 <span>GREEN-API</span>
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
-                </svg>
+                <i data-lucide="external-link" class="w-4 h-4"></i>
             </a>
             <p class="text-xs text-gray-500 mt-2">© 2025 Webhook Viewer</p>
         </div>
@@ -158,13 +178,56 @@
 
 <!-- Scripts -->
 <script>
+    // Initialize Lucide Icons
+    function initIcons() {
+        if (typeof lucide !== 'undefined') {
+            lucide.createIcons();
+        }
+    }
+
     // Загрузка navbar
     fetch('/navbar.html')
         .then(res => res.text())
         .then(html => {
             document.getElementById('navbar-container').innerHTML = html;
+            setTimeout(initIcons, 100);
         })
         .catch(err => console.error('Failed to load navbar:', err));
+
+    // Toggle password visibility
+    document.addEventListener('DOMContentLoaded', () => {
+        initIcons();
+
+        // Password toggle
+        const togglePassword = document.getElementById('togglePassword');
+        const passwordInput = document.getElementById('password');
+        const eyeIcon = document.getElementById('eyeIcon');
+
+        if (togglePassword && passwordInput && eyeIcon) {
+            togglePassword.addEventListener('click', () => {
+                const type = passwordInput.type === 'password' ? 'text' : 'password';
+                passwordInput.type = type;
+
+                eyeIcon.setAttribute('data-lucide', type === 'password' ? 'eye' : 'eye-off');
+                initIcons();
+            });
+        }
+
+        // Confirm password toggle
+        const toggleConfirmPassword = document.getElementById('toggleConfirmPassword');
+        const confirmPasswordInput = document.getElementById('confirmPassword');
+        const eyeIconConfirm = document.getElementById('eyeIconConfirm');
+
+        if (toggleConfirmPassword && confirmPasswordInput && eyeIconConfirm) {
+            toggleConfirmPassword.addEventListener('click', () => {
+                const type = confirmPasswordInput.type === 'password' ? 'text' : 'password';
+                confirmPasswordInput.type = type;
+
+                eyeIconConfirm.setAttribute('data-lucide', type === 'password' ? 'eye' : 'eye-off');
+                initIcons();
+            });
+        }
+    });
 </script>
 
 <script>
@@ -184,22 +247,25 @@
 
         // Валидация
         if (password !== confirmPassword) {
-            showAlert('❌ Пароли не совпадают', 'error');
+            showAlert('Пароли не совпадают', 'error');
             return;
         }
 
         if (password.length < 6) {
-            showAlert('❌ Пароль должен быть минимум 6 символов', 'error');
+            showAlert('Пароль должен быть минимум 6 символов', 'error');
             return;
         }
 
         if (!/^[a-zA-Z0-9_]+$/.test(username)) {
-            showAlert('❌ Имя пользователя может содержать только латиницу, цифры и _', 'error');
+            showAlert('Имя пользователя может содержать только латиницу, цифры и _', 'error');
             return;
         }
 
         registerBtn.disabled = true;
-        registerBtn.textContent = 'Отправка...';
+        registerBtn.innerHTML = `
+            <div class="inline-block animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+            <span>Отправка...</span>
+        `;
 
         try {
             const res = await fetch(`${apiBase}/auth/register`, {
@@ -214,7 +280,7 @@
                 throw new Error(data.error || 'Ошибка регистрации');
             }
 
-            showAlert('✅ Заявка успешно отправлена! Ожидайте одобрения администратором.', 'success');
+            showAlert('Заявка успешно отправлена! Ожидайте одобрения администратором.', 'success');
 
             // Очищаем форму
             registerForm.reset();
@@ -227,7 +293,11 @@
         } catch (error) {
             showAlert(error.message, 'error');
             registerBtn.disabled = false;
-            registerBtn.textContent = 'Отправить заявку';
+            registerBtn.innerHTML = `
+                <i data-lucide="user-plus" class="w-5 h-5"></i>
+                <span>Отправить заявку</span>
+            `;
+            initIcons();
         }
     });
 
@@ -238,9 +308,20 @@
             warning: 'bg-yellow-100 text-yellow-800 border-yellow-300'
         };
 
-        alertDiv.className = `p-4 rounded-lg border ${colors[type]} fade-in`;
-        alertDiv.textContent = message;
+        const icons = {
+            success: 'check-circle',
+            error: 'x-circle',
+            warning: 'alert-circle'
+        };
+
+        alertDiv.className = `p-4 rounded-lg border ${colors[type]} fade-in flex items-center gap-3`;
+        alertDiv.innerHTML = `
+            <i data-lucide="${icons[type]}" class="w-5 h-5"></i>
+            <span>${message}</span>
+        `;
         alertDiv.classList.remove('hidden');
+
+        initIcons();
 
         if (type !== 'success') {
             setTimeout(() => {

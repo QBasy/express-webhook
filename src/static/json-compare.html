@@ -6,6 +6,7 @@
   <title>JSON Compare - Webhook Viewer</title>
   <link rel="icon" href="/favicon" type="image/x-icon">
   <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
   <style>
     @keyframes fadeIn {
       from { opacity: 0; transform: translateY(-10px); }
@@ -98,7 +99,7 @@
   <div class="mb-8 fade-in">
     <div class="flex items-center gap-4 mb-4">
       <div class="w-16 h-16 bg-gradient-to-br from-green-500 to-green-700 rounded-xl flex items-center justify-center shadow-lg">
-        <span class="text-white text-3xl">⚖️</span>
+        <i data-lucide="scale" class="w-8 h-8 text-white"></i>
       </div>
       <div>
         <h1 class="text-3xl font-bold text-gray-900">JSON Compare</h1>
@@ -134,19 +135,19 @@
   <!-- Controls -->
   <div class="mb-6 flex flex-wrap gap-4">
     <button onclick="addJsonInput()" class="px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold transition shadow-md hover:shadow-lg flex items-center gap-2">
-      <span>➕</span>
+      <i data-lucide="plus" class="w-5 h-5"></i>
       <span>Добавить JSON</span>
     </button>
     <button onclick="compareAll()" class="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition shadow-md hover:shadow-lg flex items-center gap-2">
-      <span>⚖️</span>
+      <i data-lucide="git-compare" class="w-5 h-5"></i>
       <span>Сравнить</span>
     </button>
     <button onclick="clearAll()" class="px-6 py-3 bg-red-600 hover:bg-red-700 text-white rounded-lg font-semibold transition shadow-md hover:shadow-lg flex items-center gap-2">
-      <span>🗑️</span>
+      <i data-lucide="trash-2" class="w-5 h-5"></i>
       <span>Очистить всё</span>
     </button>
     <button onclick="loadExample()" class="px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-semibold transition shadow-md hover:shadow-lg flex items-center gap-2">
-      <span>💡</span>
+      <i data-lucide="lightbulb" class="w-5 h-5"></i>
       <span>Пример</span>
     </button>
   </div>
@@ -159,20 +160,23 @@
   <!-- Comparison Result -->
   <div id="comparisonResult" class="hidden fade-in">
     <h2 class="text-2xl font-bold text-gray-900 mb-4 flex items-center gap-2">
-      <span>📊</span>
+      <i data-lucide="bar-chart-3" class="w-6 h-6"></i>
       <span>Результат сравнения</span>
     </h2>
 
     <!-- Tabs -->
     <div class="flex flex-wrap gap-2 mb-4">
-      <button onclick="switchView('side-by-side')" id="tab-side-by-side" class="tab-btn active px-4 py-2 rounded-lg font-medium">
-        Рядом
+      <button onclick="switchView('side-by-side')" id="tab-side-by-side" class="tab-btn active px-4 py-2 rounded-lg font-medium flex items-center gap-2">
+        <i data-lucide="columns" class="w-4 h-4"></i>
+        <span>Рядом</span>
       </button>
-      <button onclick="switchView('unified')" id="tab-unified" class="tab-btn px-4 py-2 rounded-lg font-medium bg-gray-200 text-gray-700">
-        Объединенный
+      <button onclick="switchView('unified')" id="tab-unified" class="tab-btn px-4 py-2 rounded-lg font-medium bg-gray-200 text-gray-700 flex items-center gap-2">
+        <i data-lucide="file-text" class="w-4 h-4"></i>
+        <span>Объединенный</span>
       </button>
-      <button onclick="switchView('tree')" id="tab-tree" class="tab-btn px-4 py-2 rounded-lg font-medium bg-gray-200 text-gray-700">
-        Дерево различий
+      <button onclick="switchView('tree')" id="tab-tree" class="tab-btn px-4 py-2 rounded-lg font-medium bg-gray-200 text-gray-700 flex items-center gap-2">
+        <i data-lucide="git-branch" class="w-4 h-4"></i>
+        <span>Дерево различий</span>
       </button>
     </div>
 
@@ -192,19 +196,31 @@
     <!-- Statistics -->
     <div class="mt-6 grid grid-cols-2 md:grid-cols-4 gap-4">
       <div class="bg-green-50 border border-green-200 rounded-lg p-4">
-        <div class="text-3xl font-bold text-green-600" id="stat-matches">0</div>
+        <div class="flex items-center justify-between mb-2">
+          <i data-lucide="check-circle" class="w-5 h-5 text-green-600"></i>
+          <div class="text-3xl font-bold text-green-600" id="stat-matches">0</div>
+        </div>
         <div class="text-sm text-gray-600">Совпадений</div>
       </div>
       <div class="bg-red-50 border border-red-200 rounded-lg p-4">
-        <div class="text-3xl font-bold text-red-600" id="stat-missing">0</div>
+        <div class="flex items-center justify-between mb-2">
+          <i data-lucide="x-circle" class="w-5 h-5 text-red-600"></i>
+          <div class="text-3xl font-bold text-red-600" id="stat-missing">0</div>
+        </div>
         <div class="text-sm text-gray-600">Отсутствует</div>
       </div>
       <div class="bg-pink-50 border border-pink-200 rounded-lg p-4">
-        <div class="text-3xl font-bold text-pink-600" id="stat-different">0</div>
+        <div class="flex items-center justify-between mb-2">
+          <i data-lucide="alert-circle" class="w-5 h-5 text-pink-600"></i>
+          <div class="text-3xl font-bold text-pink-600" id="stat-different">0</div>
+        </div>
         <div class="text-sm text-gray-600">Различий</div>
       </div>
       <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-        <div class="text-3xl font-bold text-yellow-600" id="stat-type-errors">0</div>
+        <div class="flex items-center justify-between mb-2">
+          <i data-lucide="alert-triangle" class="w-5 h-5 text-yellow-600"></i>
+          <div class="text-3xl font-bold text-yellow-600" id="stat-type-errors">0</div>
+        </div>
         <div class="text-sm text-gray-600">Типов не совпадает</div>
       </div>
     </div>
@@ -222,10 +238,16 @@
   let jsonInputs = [];
   let currentView = 'side-by-side';
 
+  // Initialize Lucide Icons
+  function initLucideIcons() {
+    lucide.createIcons();
+  }
+
   // Initialize with 2 inputs
   window.onload = function() {
     addJsonInput();
     addJsonInput();
+    initLucideIcons();
   };
 
   function addJsonInput() {
@@ -236,7 +258,7 @@
 
   function removeJsonInput(id) {
     if (jsonInputs.length <= 2) {
-      showAlert('❌ Нужно минимум 2 JSON для сравнения', 'error');
+      showAlert('Нужно минимум 2 JSON для сравнения', 'error');
       return;
     }
     jsonInputs = jsonInputs.filter(input => input.id !== id);
@@ -248,26 +270,32 @@
     grid.innerHTML = jsonInputs.map((input, index) => `
             <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 fade-in">
                 <div class="flex items-center justify-between mb-4">
-                    <h3 class="text-lg font-bold text-gray-900">JSON ${index + 1}</h3>
+                    <h3 class="text-lg font-bold text-gray-900 flex items-center gap-2">
+                        <i data-lucide="file-json" class="w-5 h-5 text-green-600"></i>
+                        <span>JSON ${index + 1}</span>
+                    </h3>
                     <div class="flex gap-2">
-                        <label class="px-3 py-1 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-lg text-sm font-medium transition cursor-pointer">
-                            📁 Загрузить
+                        <label class="px-3 py-1 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-lg text-sm font-medium transition cursor-pointer flex items-center gap-1">
+                            <i data-lucide="upload" class="w-4 h-4"></i>
+                            <span>Загрузить</span>
                             <input type="file" accept=".json" onchange="loadFile(event, ${input.id})" class="hidden">
                         </label>
                         ${jsonInputs.length > 2 ? `
-                            <button onclick="removeJsonInput(${input.id})" class="px-3 py-1 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg text-sm font-medium transition">
-                                ✕ Удалить
+                            <button onclick="removeJsonInput(${input.id})" class="px-3 py-1 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg text-sm font-medium transition flex items-center gap-1">
+                                <i data-lucide="x" class="w-4 h-4"></i>
+                                <span>Удалить</span>
                             </button>
                         ` : ''}
                     </div>
                 </div>
 
                 <!-- Drop Zone -->
-                <div class="drop-zone mb-4 p-6 rounded-lg text-center text-sm text-gray-500"
+                <div class="drop-zone mb-4 p-6 rounded-lg text-center text-sm text-gray-500 flex flex-col items-center gap-2"
                      ondragover="handleDragOver(event)"
                      ondragleave="handleDragLeave(event)"
                      ondrop="handleDrop(event, ${input.id})">
-                    📂 Перетащите JSON файл сюда
+                    <i data-lucide="file-json" class="w-8 h-8 text-gray-400"></i>
+                    <span>Перетащите JSON файл сюда</span>
                 </div>
 
                 <!-- Text Area -->
@@ -279,11 +307,14 @@
                 >${input.content}</textarea>
 
                 <!-- Format Button -->
-                <button onclick="formatJson(${input.id})" class="mt-2 w-full px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium transition text-sm">
-                    ✨ Форматировать
+                <button onclick="formatJson(${input.id})" class="mt-2 w-full px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium transition text-sm flex items-center justify-center gap-2">
+                    <i data-lucide="sparkles" class="w-4 h-4"></i>
+                    <span>Форматировать</span>
                 </button>
             </div>
         `).join('');
+
+    initLucideIcons();
   }
 
   function updateJsonContent(id, content) {
@@ -303,7 +334,7 @@
         input.content = content;
         document.getElementById(`json-${id}`).value = content;
         formatJson(id);
-        showAlert('✅ Файл загружен успешно!', 'success');
+        showAlert('Файл загружен успешно!', 'success');
       }
     };
     reader.readAsText(file);
@@ -326,7 +357,7 @@
     if (!file) return;
 
     if (!file.name.endsWith('.json')) {
-      showAlert('❌ Можно загружать только JSON файлы', 'error');
+      showAlert('Можно загружать только JSON файлы', 'error');
       return;
     }
 
@@ -338,7 +369,7 @@
         input.content = content;
         document.getElementById(`json-${id}`).value = content;
         formatJson(id);
-        showAlert('✅ Файл загружен успешно!', 'success');
+        showAlert('Файл загружен успешно!', 'success');
       }
     };
     reader.readAsText(file);
@@ -358,9 +389,9 @@
       const input = jsonInputs.find(i => i.id === id);
       if (input) input.content = formatted;
 
-      showAlert('✅ JSON отформатирован', 'success');
+      showAlert('JSON отформатирован', 'success');
     } catch (e) {
-      showAlert('❌ Невалидный JSON: ' + e.message, 'error');
+      showAlert('Невалидный JSON: ' + e.message, 'error');
     }
   }
 
@@ -370,14 +401,14 @@
 
     for (let input of jsonInputs) {
       if (!input.content.trim()) {
-        showAlert('❌ Все поля должны быть заполнены', 'error');
+        showAlert('Все поля должны быть заполнены', 'error');
         return;
       }
 
       try {
         parsedJsons.push(JSON.parse(input.content));
       } catch (e) {
-        showAlert(`❌ Ошибка в JSON ${jsonInputs.indexOf(input) + 1}: ${e.message}`, 'error');
+        showAlert(`Ошибка в JSON ${jsonInputs.indexOf(input) + 1}: ${e.message}`, 'error');
         return;
       }
     }
@@ -387,7 +418,7 @@
     renderComparison(comparison);
 
     document.getElementById('comparisonResult').classList.remove('hidden');
-    showAlert('✅ Сравнение завершено!', 'success');
+    showAlert('Сравнение завершено!', 'success');
   }
 
   function compareJsonObjects(objects) {
@@ -517,6 +548,7 @@
     renderUnified(comparison);
     renderTree(comparison);
     renderStats(comparison.stats);
+    initLucideIcons();
   }
 
   function renderSideBySide(comparison) {
@@ -526,7 +558,10 @@
     // Base JSON
     html += `
             <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                <h3 class="text-lg font-bold text-gray-900 mb-4">JSON 1 (базовый)</h3>
+                <h3 class="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                    <i data-lucide="file-json" class="w-5 h-5 text-green-600"></i>
+                    <span>JSON 1 (базовый)</span>
+                </h3>
                 <pre class="text-sm overflow-x-auto">${syntaxHighlight(comparison.base)}</pre>
             </div>
         `;
@@ -535,7 +570,10 @@
     comparison.comparisons.forEach((comp, idx) => {
       html += `
                 <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                    <h3 class="text-lg font-bold text-gray-900 mb-4">JSON ${idx + 2}</h3>
+                    <h3 class="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                        <i data-lucide="file-json" class="w-5 h-5 text-blue-600"></i>
+                        <span>JSON ${idx + 2}</span>
+                    </h3>
                     <div class="space-y-2">
                         ${comp.map(diff => renderDiff(diff)).join('')}
                     </div>
@@ -544,6 +582,7 @@
     });
 
     container.innerHTML = html;
+    initLucideIcons();
   }
 
   function renderDiff(diff) {
@@ -556,19 +595,20 @@
     };
 
     const icons = {
-      'match': '✓',
-      'missing': '✗',
-      'extra': '+',
-      'value-mismatch': '≠',
-      'type-mismatch': '⚠'
+      'match': 'check',
+      'missing': 'x',
+      'extra': 'plus',
+      'value-mismatch': 'git-compare',
+      'type-mismatch': 'alert-triangle'
     };
 
     return `
             <div class="${classes[diff.type]} p-3 rounded text-sm">
-                <div class="font-mono font-semibold text-gray-800 mb-1">
-                    ${icons[diff.type]} ${diff.path}
+                <div class="font-mono font-semibold text-gray-800 mb-1 flex items-center gap-2">
+                    <i data-lucide="${icons[diff.type]}" class="w-4 h-4"></i>
+                    <span>${diff.path}</span>
                 </div>
-                <div class="ml-4 text-gray-600">
+                <div class="ml-6 text-gray-600">
                     <div>Базовый: <code>${JSON.stringify(diff.value1)}</code></div>
                     <div>Сравниваемый: <code>${JSON.stringify(diff.value2)}</code></div>
                 </div>
@@ -581,7 +621,10 @@
     let html = '<div class="space-y-3">';
 
     comparison.comparisons.forEach((comp, idx) => {
-      html += `<h3 class="text-lg font-bold text-gray-900 mt-4 mb-2">Сравнение с JSON ${idx + 2}</h3>`;
+      html += `<h3 class="text-lg font-bold text-gray-900 mt-4 mb-2 flex items-center gap-2">
+                <i data-lucide="file-diff" class="w-5 h-5"></i>
+                <span>Сравнение с JSON ${idx + 2}</span>
+              </h3>`;
       comp.forEach(diff => {
         html += renderDiff(diff);
       });
@@ -589,6 +632,7 @@
 
     html += '</div>';
     container.innerHTML = html;
+    initLucideIcons();
   }
 
   function renderTree(comparison) {
@@ -596,7 +640,11 @@
     let html = '<div class="font-mono text-sm">';
 
     comparison.comparisons.forEach((comp, idx) => {
-      html += `<div class="mb-6"><h3 class="text-lg font-bold text-gray-900 mb-3">Дерево различий с JSON ${idx + 2}</h3>`;
+      html += `<div class="mb-6">
+                <h3 class="text-lg font-bold text-gray-900 mb-3 flex items-center gap-2">
+                    <i data-lucide="git-branch" class="w-5 h-5"></i>
+                    <span>Дерево различий с JSON ${idx + 2}</span>
+                </h3>`;
 
       const tree = buildTree(comp);
       html += renderTreeNode(tree, 0);
@@ -606,6 +654,7 @@
 
     html += '</div>';
     container.innerHTML = html;
+    initLucideIcons();
   }
 
   function buildTree(diffs) {
@@ -685,10 +734,12 @@
     // Update views
     document.querySelectorAll('.view-container').forEach(v => v.classList.add('hidden'));
     document.getElementById(`view-${view}`).classList.remove('hidden');
+
+    initLucideIcons();
   }
 
   function clearAll() {
-    if (!confirm('🗑️ Очистить все JSON?')) return;
+    if (!confirm('Очистить все JSON?')) return;
 
     jsonInputs.forEach(input => {
       input.content = '';
@@ -697,7 +748,7 @@
     });
 
     document.getElementById('comparisonResult').classList.add('hidden');
-    showAlert('✅ Все поля очищены', 'success');
+    showAlert('Все поля очищены', 'success');
   }
 
   function loadExample() {
@@ -725,7 +776,7 @@
     });
 
     renderInputs();
-    showAlert('💡 Пример загружен!', 'success');
+    showAlert('Пример загружен!', 'success');
   }
 
   function showAlert(message, type) {
@@ -735,10 +786,21 @@
       warning: 'bg-yellow-100 text-yellow-800 border-yellow-300'
     };
 
+    const icons = {
+      success: 'check-circle',
+      error: 'x-circle',
+      warning: 'alert-circle'
+    };
+
     const alertDiv = document.getElementById('alert');
-    alertDiv.className = `p-4 rounded-lg border shadow-lg ${colors[type]} fade-in`;
-    alertDiv.textContent = message;
+    alertDiv.className = `p-4 rounded-lg border shadow-lg ${colors[type]} fade-in flex items-center gap-3`;
+    alertDiv.innerHTML = `
+      <i data-lucide="${icons[type]}" class="w-5 h-5"></i>
+      <span>${message}</span>
+    `;
     alertDiv.classList.remove('hidden');
+
+    initLucideIcons();
 
     setTimeout(() => {
       alertDiv.classList.add('hidden');

@@ -6,6 +6,7 @@
     <title>API Tester - Webhook Viewer</title>
     <link rel="icon" href="/favicon" type="image/x-icon">
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
     <style>
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(-10px); }
@@ -104,7 +105,7 @@
         <div class="flex items-center justify-between">
             <div class="flex items-center space-x-4">
                 <div class="bg-gradient-to-r from-green-600 to-emerald-600 w-12 h-12 rounded-full flex items-center justify-center">
-                    <span class="text-white text-xl font-bold">🧪</span>
+                    <i data-lucide="flask-conical" class="w-6 h-6 text-white"></i>
                 </div>
                 <div>
                     <h1 class="text-3xl font-bold text-gray-900">API Tester</h1>
@@ -112,9 +113,9 @@
                 </div>
             </div>
             <div class="flex items-center space-x-3">
-                <div class="text-sm text-gray-500">
-                    <span class="inline-block w-2 h-2 bg-green-500 rounded-full mr-2"></span>
-                    Готов к работе
+                <div class="text-sm text-gray-500 flex items-center gap-2">
+                    <span class="inline-block w-2 h-2 bg-green-500 rounded-full"></span>
+                    <span>Готов к работе</span>
                 </div>
             </div>
         </div>
@@ -126,29 +127,31 @@
             <!-- Environment Variables -->
             <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover-lift transition-all">
                 <div class="flex items-center justify-between mb-4">
-                    <h2 class="text-lg font-semibold text-gray-800 flex items-center">
-                        <span class="mr-2">⚙️</span>
-                        Переменные окружения
+                    <h2 class="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                        <i data-lucide="settings" class="w-5 h-5 text-green-600"></i>
+                        <span>Переменные окружения</span>
                     </h2>
-                    <button onclick="addVariable()" class="px-4 py-2 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 transition-all shadow-sm hover:shadow-md">
-                        + Добавить
+                    <button onclick="addVariable()" class="px-4 py-2 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 transition-all shadow-sm hover:shadow-md flex items-center gap-2">
+                        <i data-lucide="plus" class="w-4 h-4"></i>
+                        <span>Добавить</span>
                     </button>
                 </div>
                 <div id="variablesContainer" class="space-y-3">
                     <!-- Variables will be added here -->
                 </div>
                 <div class="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
-                    <div class="text-sm text-blue-800">
-                        <span class="font-semibold">💡 Совет:</span> Используйте {'{'}variable_name{'}'} в URL, заголовках или теле запроса
+                    <div class="text-sm text-blue-800 flex items-start gap-2">
+                        <i data-lucide="lightbulb" class="w-4 h-4 flex-shrink-0 mt-0.5"></i>
+                        <span><span class="font-semibold">Совет:</span> Используйте {'{'}variable_name{'}'} в URL, заголовках или теле запроса</span>
                     </div>
                 </div>
             </div>
 
             <!-- Request Builder -->
             <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover-lift transition-all">
-                <h2 class="text-lg font-semibold text-gray-800 mb-6 flex items-center">
-                    <span class="mr-2">🚀</span>
-                    Конструктор запроса
+                <h2 class="text-lg font-semibold text-gray-800 mb-6 flex items-center gap-2">
+                    <i data-lucide="rocket" class="w-5 h-5 text-green-600"></i>
+                    <span>Конструктор запроса</span>
                 </h2>
 
                 <!-- Method and URL -->
@@ -172,8 +175,9 @@
                     <button
                             onclick="sendRequest()"
                             id="sendButton"
-                            class="px-8 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-all font-semibold shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+                            class="px-8 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-all font-semibold shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                     >
+                        <i data-lucide="send" class="w-4 h-4"></i>
                         <span id="sendButtonText">Отправить</span>
                     </button>
                 </div>
@@ -181,17 +185,21 @@
                 <!-- Tabs -->
                 <div class="border-b border-gray-200 mb-6">
                     <div class="flex space-x-8">
-                        <button onclick="switchTab('headers')" id="tab-headers" class="pb-3 tab-active">
-                            Headers
+                        <button onclick="switchTab('headers')" id="tab-headers" class="pb-3 tab-active flex items-center gap-2">
+                            <i data-lucide="list" class="w-4 h-4"></i>
+                            <span>Headers</span>
                         </button>
-                        <button onclick="switchTab('params')" id="tab-params" class="pb-3 text-gray-500 hover:text-gray-700">
-                            Query Params
+                        <button onclick="switchTab('params')" id="tab-params" class="pb-3 text-gray-500 hover:text-gray-700 flex items-center gap-2">
+                            <i data-lucide="hash" class="w-4 h-4"></i>
+                            <span>Query Params</span>
                         </button>
-                        <button onclick="switchTab('body')" id="tab-body" class="pb-3 text-gray-500 hover:text-gray-700">
-                            Body
+                        <button onclick="switchTab('body')" id="tab-body" class="pb-3 text-gray-500 hover:text-gray-700 flex items-center gap-2">
+                            <i data-lucide="file-text" class="w-4 h-4"></i>
+                            <span>Body</span>
                         </button>
-                        <button onclick="switchTab('auth')" id="tab-auth" class="pb-3 text-gray-500 hover:text-gray-700">
-                            Auth
+                        <button onclick="switchTab('auth')" id="tab-auth" class="pb-3 text-gray-500 hover:text-gray-700 flex items-center gap-2">
+                            <i data-lucide="shield" class="w-4 h-4"></i>
+                            <span>Auth</span>
                         </button>
                     </div>
                 </div>
@@ -200,8 +208,9 @@
                 <div id="content-headers" class="space-y-3">
                     <div class="flex items-center justify-between mb-3">
                         <span class="text-sm font-medium text-gray-700">Заголовки запроса</span>
-                        <button onclick="addHeader()" class="text-green-600 hover:text-green-800 text-sm font-medium">
-                            + Добавить заголовок
+                        <button onclick="addHeader()" class="text-green-600 hover:text-green-800 text-sm font-medium flex items-center gap-1">
+                            <i data-lucide="plus-circle" class="w-4 h-4"></i>
+                            <span>Добавить заголовок</span>
                         </button>
                     </div>
                     <div id="headersContainer" class="space-y-3">
@@ -210,9 +219,7 @@
                             <input type="text" placeholder="Key" value="Content-Type" class="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500">
                             <input type="text" placeholder="Value" value="application/json" class="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500">
                             <button onclick="this.parentElement.remove(); updateCurlCommand();" class="text-red-500 hover:text-red-700 p-1">
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                                </svg>
+                                <i data-lucide="x" class="w-5 h-5"></i>
                             </button>
                         </div>
                     </div>
@@ -222,8 +229,9 @@
                 <div id="content-params" class="space-y-3 hidden">
                     <div class="flex items-center justify-between mb-3">
                         <span class="text-sm font-medium text-gray-700">Query параметры</span>
-                        <button onclick="addParam()" class="text-green-600 hover:text-green-800 text-sm font-medium">
-                            + Добавить параметр
+                        <button onclick="addParam()" class="text-green-600 hover:text-green-800 text-sm font-medium flex items-center gap-1">
+                            <i data-lucide="plus-circle" class="w-4 h-4"></i>
+                            <span>Добавить параметр</span>
                         </button>
                     </div>
                     <div id="paramsContainer" class="space-y-3">
@@ -254,8 +262,9 @@
   "userId": 1
 }</textarea>
                         <div id="formDataContainer" class="hidden space-y-3">
-                            <button onclick="addFormField()" class="text-green-600 hover:text-green-800 text-sm font-medium">
-                                + Добавить поле
+                            <button onclick="addFormField()" class="text-green-600 hover:text-green-800 text-sm font-medium flex items-center gap-1">
+                                <i data-lucide="plus-circle" class="w-4 h-4"></i>
+                                <span>Добавить поле</span>
                             </button>
                             <div id="formFields"></div>
                         </div>
@@ -281,9 +290,9 @@
         <!-- Right Panel: Response -->
         <div class="lg:col-span-1">
             <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 sticky top-24 hover-lift transition-all">
-                <h2 class="text-lg font-semibold text-gray-800 mb-6 flex items-center">
-                    <span class="mr-2">📥</span>
-                    Ответ сервера
+                <h2 class="text-lg font-semibold text-gray-800 mb-6 flex items-center gap-2">
+                    <i data-lucide="inbox" class="w-5 h-5 text-green-600"></i>
+                    <span>Ответ сервера</span>
                 </h2>
 
                 <!-- Response Status -->
@@ -291,21 +300,30 @@
 
                 <!-- Response Time & Size -->
                 <div class="flex gap-4 mb-4">
-                    <div id="responseTime" class="hidden text-sm text-gray-600 bg-gray-50 px-3 py-2 rounded-lg"></div>
-                    <div id="responseSize" class="hidden text-sm text-gray-600 bg-gray-50 px-3 py-2 rounded-lg"></div>
+                    <div id="responseTime" class="hidden text-sm text-gray-600 bg-gray-50 px-3 py-2 rounded-lg flex items-center gap-2">
+                        <i data-lucide="clock" class="w-4 h-4"></i>
+                        <span></span>
+                    </div>
+                    <div id="responseSize" class="hidden text-sm text-gray-600 bg-gray-50 px-3 py-2 rounded-lg flex items-center gap-2">
+                        <i data-lucide="package" class="w-4 h-4"></i>
+                        <span></span>
+                    </div>
                 </div>
 
                 <!-- Response Tabs -->
                 <div class="border-b border-gray-200 mb-4">
                     <div class="flex space-x-6">
-                        <button onclick="switchResponseTab('body')" id="resp-tab-body" class="pb-2 text-sm tab-active">
-                            Body
+                        <button onclick="switchResponseTab('body')" id="resp-tab-body" class="pb-2 text-sm tab-active flex items-center gap-1">
+                            <i data-lucide="file-json" class="w-4 h-4"></i>
+                            <span>Body</span>
                         </button>
-                        <button onclick="switchResponseTab('headers')" id="resp-tab-headers" class="pb-2 text-sm text-gray-500 hover:text-gray-700">
-                            Headers
+                        <button onclick="switchResponseTab('headers')" id="resp-tab-headers" class="pb-2 text-sm text-gray-500 hover:text-gray-700 flex items-center gap-1">
+                            <i data-lucide="list" class="w-4 h-4"></i>
+                            <span>Headers</span>
                         </button>
-                        <button onclick="switchResponseTab('curl')" id="resp-tab-curl" class="pb-2 text-sm text-gray-500 hover:text-gray-700">
-                            cURL
+                        <button onclick="switchResponseTab('curl')" id="resp-tab-curl" class="pb-2 text-sm text-gray-500 hover:text-gray-700 flex items-center gap-1">
+                            <i data-lucide="terminal" class="w-4 h-4"></i>
+                            <span>cURL</span>
                         </button>
                     </div>
                 </div>
@@ -314,7 +332,7 @@
                 <div id="response-content-body">
                     <div id="responseBody" class="bg-gray-50 rounded-lg min-h-[400px] max-h-[600px] overflow-auto custom-scrollbar">
                         <div class="text-gray-400 text-center py-16">
-                            <div class="text-4xl mb-4">📭</div>
+                            <i data-lucide="inbox" class="w-16 h-16 mx-auto mb-4 text-gray-300"></i>
                             <p class="text-lg font-medium">Готов к запросу</p>
                             <p class="text-sm mt-2">Нажмите "Отправить" для выполнения запроса</p>
                         </div>
@@ -337,8 +355,9 @@
                             <p>cURL команда появится здесь</p>
                         </div>
                     </div>
-                    <button onclick="copyCurl()" class="mt-3 w-full px-4 py-2 bg-gray-800 text-white rounded-lg hover:bg-gray-700 transition text-sm">
-                        📋 Копировать cURL
+                    <button onclick="copyCurl()" class="mt-3 w-full px-4 py-2 bg-gray-800 text-white rounded-lg hover:bg-gray-700 transition text-sm flex items-center justify-center gap-2">
+                        <i data-lucide="copy" class="w-4 h-4"></i>
+                        <span>Копировать cURL</span>
                     </button>
                 </div>
             </div>
@@ -348,12 +367,13 @@
     <!-- Saved Requests -->
     <div class="mt-8 bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover-lift transition-all">
         <div class="flex items-center justify-between mb-6">
-            <h2 class="text-lg font-semibold text-gray-800 flex items-center">
-                <span class="mr-2">💾</span>
-                Сохраненные запросы
+            <h2 class="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                <i data-lucide="save" class="w-5 h-5 text-green-600"></i>
+                <span>Сохраненные запросы</span>
             </h2>
-            <button onclick="saveRequest()" class="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-all text-sm font-medium shadow-sm hover:shadow-md">
-                💾 Сохранить текущий
+            <button onclick="saveRequest()" class="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-all text-sm font-medium shadow-sm hover:shadow-md flex items-center gap-2">
+                <i data-lucide="save" class="w-4 h-4"></i>
+                <span>Сохранить текущий</span>
             </button>
         </div>
         <div id="savedRequests" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -363,6 +383,13 @@
 </main>
 
 <script>
+    // Initialize Lucide Icons
+    function initIcons() {
+        if (typeof lucide !== 'undefined') {
+            lucide.createIcons();
+        }
+    }
+
     // State management
     let variables = {};
     let savedRequests = JSON.parse(localStorage.getItem('apiTesterRequests')) || [];
@@ -374,6 +401,7 @@
         loadSavedVariables();
         renderSavedRequests();
         updateCurlCommand();
+        setTimeout(initIcons, 100);
     });
 
     // Variable management
@@ -386,12 +414,11 @@
       <input type="text" placeholder="Variable name" class="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500" onchange="updateVariables()">
       <input type="text" placeholder="Value" class="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500" onchange="updateVariables()">
       <button onclick="this.parentElement.remove(); updateVariables();" class="text-red-500 hover:text-red-700 p-1">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-        </svg>
+        <i data-lucide="x" class="w-5 h-5"></i>
       </button>
     `;
         container.appendChild(div);
+        initIcons();
     }
 
     function updateVariables() {
@@ -440,13 +467,12 @@
         <input type="text" placeholder="Variable name" value="${key}" class="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500" onchange="updateVariables()">
         <input type="text" placeholder="Value" value="${value}" class="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500" onchange="updateVariables()">
         <button onclick="this.parentElement.remove(); updateVariables();" class="text-red-500 hover:text-red-700 p-1">
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-          </svg>
+          <i data-lucide="x" class="w-5 h-5"></i>
         </button>
       `;
             container.appendChild(div);
         });
+        initIcons();
     }
 
     function replaceVariables(text) {
@@ -469,12 +495,11 @@
       <input type="text" placeholder="Key" class="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500">
       <input type="text" placeholder="Value" class="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500">
       <button onclick="this.parentElement.remove(); updateCurlCommand();" class="text-red-500 hover:text-red-700 p-1">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-        </svg>
+        <i data-lucide="x" class="w-5 h-5"></i>
       </button>
     `;
         container.appendChild(div);
+        initIcons();
         updateCurlCommand();
     }
 
@@ -504,12 +529,11 @@
       <input type="text" placeholder="Key" class="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500">
       <input type="text" placeholder="Value" class="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500">
       <button onclick="this.parentElement.remove(); updateCurlCommand();" class="text-red-500 hover:text-red-700 p-1">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-        </svg>
+        <i data-lucide="x" class="w-5 h-5"></i>
       </button>
     `;
         container.appendChild(div);
+        initIcons();
         updateCurlCommand();
     }
 
@@ -539,12 +563,11 @@
       <input type="text" placeholder="Key" class="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500">
       <input type="text" placeholder="Value" class="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500">
       <button onclick="this.parentElement.remove(); updateCurlCommand();" class="text-red-500 hover:text-red-700 p-1">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-        </svg>
+        <i data-lucide="x" class="w-5 h-5"></i>
       </button>
     `;
         container.appendChild(div);
+        initIcons();
         updateCurlCommand();
     }
 
@@ -674,6 +697,7 @@
         document.getElementById(`tab-${tab}`).classList.add('tab-active');
         document.getElementById(`tab-${tab}`).classList.remove('text-gray-500');
         document.getElementById(`content-${tab}`).classList.remove('hidden');
+        initIcons();
     }
 
     function switchResponseTab(tab) {
@@ -686,6 +710,7 @@
         document.getElementById(`resp-tab-${tab}`).classList.add('tab-active');
         document.getElementById(`resp-tab-${tab}`).classList.remove('text-gray-500');
         document.getElementById(`response-content-${tab}`).classList.remove('hidden');
+        initIcons();
     }
 
     // Send request
@@ -778,7 +803,7 @@
             // Show response status
             const statusClass = response.ok ? 'status-success' : 'status-error';
             showResponseStatus(`${response.status} ${response.statusText}`, statusClass);
-            showResponseTime(`⏱️ ${duration}ms`);
+            showResponseTime(`${duration}ms`);
 
             // Get response body
             const contentType = response.headers.get('content-type');
@@ -796,7 +821,7 @@
                 displayResponseBody(responseData, 'text');
             }
 
-            showResponseSize(`📦 ${formatBytes(responseSize)}`);
+            showResponseSize(`${formatBytes(responseSize)}`);
 
             displayResponseHeaders(response.headers);
 
@@ -809,13 +834,14 @@
             const duration = endTime - startTime;
 
             showResponseStatus('❌ Ошибка запроса', 'status-error');
-            showResponseTime(`⏱️ ${duration}ms`);
+            showResponseTime(`${duration}ms`);
             displayResponseBody(`Error: ${error.message}\n\nВозможные причины:\n- CORS блокировка (попробуйте использовать CORS proxy)\n- Сетевая ошибка\n- Неверный URL\n- Сервер недоступен`, 'text');
 
             showAlert('Ошибка: ' + error.message, 'error');
         } finally {
             isRequestInProgress = false;
             updateSendButton(false);
+            initIcons();
         }
     }
 
@@ -843,13 +869,15 @@
 
     function showResponseTime(text) {
         const timeEl = document.getElementById('responseTime');
-        timeEl.textContent = text;
+        const span = timeEl.querySelector('span');
+        if (span) span.textContent = text;
         timeEl.classList.remove('hidden');
     }
 
     function showResponseSize(text) {
         const sizeEl = document.getElementById('responseSize');
-        sizeEl.textContent = text;
+        const span = sizeEl.querySelector('span');
+        if (span) span.textContent = text;
         sizeEl.classList.remove('hidden');
     }
 
@@ -1007,9 +1035,7 @@
         <input type="text" placeholder="Key" value="${key}" class="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500">
         <input type="text" placeholder="Value" value="${value}" class="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500">
         <button onclick="this.parentElement.remove(); updateCurlCommand();" class="text-red-500 hover:text-red-700 p-1">
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-          </svg>
+          <i data-lucide="x" class="w-5 h-5"></i>
         </button>
       `;
             headersContainer.appendChild(div);
@@ -1025,9 +1051,7 @@
         <input type="text" placeholder="Key" value="${key}" class="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500">
         <input type="text" placeholder="Value" value="${value}" class="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500">
         <button onclick="this.parentElement.remove(); updateCurlCommand();" class="text-red-500 hover:text-red-700 p-1">
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-          </svg>
+          <i data-lucide="x" class="w-5 h-5"></i>
         </button>
       `;
             paramsContainer.appendChild(div);
@@ -1036,6 +1060,7 @@
         handleBodyTypeChange();
         handleAuthTypeChange();
         updateCurlCommand();
+        initIcons();
 
         showAlert('Запрос загружен!', 'success');
     }
@@ -1053,7 +1078,12 @@
         const container = document.getElementById('savedRequests');
 
         if (savedRequests.length === 0) {
-            container.innerHTML = '<div class="col-span-full text-center text-gray-400 py-12"><div class="text-4xl mb-2">📂</div><p>Нет сохраненных запросов</p><p class="text-sm mt-2">Сохраните текущий запрос для быстрого доступа</p></div>';
+            container.innerHTML = `<div class="col-span-full text-center text-gray-400 py-12">
+                <i data-lucide="folder-open" class="w-16 h-16 mx-auto mb-4 text-gray-300"></i>
+                <p>Нет сохраненных запросов</p>
+                <p class="text-sm mt-2">Сохраните текущий запрос для быстрого доступа</p>
+            </div>`;
+            setTimeout(initIcons, 50);
             return;
         }
 
@@ -1066,27 +1096,34 @@
               <span class="px-2 py-1 rounded text-white text-xs font-semibold method-${req.method}">${req.method}</span>
               <span class="text-gray-500 truncate flex-1">${escapeHtml(req.url)}</span>
             </div>
-            <div class="text-xs text-gray-400">
-              ${req.createdAt ? new Date(req.createdAt).toLocaleDateString('ru-RU') : 'Дата не указана'}
+            <div class="text-xs text-gray-400 flex items-center gap-1">
+              <i data-lucide="calendar" class="w-3 h-3"></i>
+              <span>${req.createdAt ? new Date(req.createdAt).toLocaleDateString('ru-RU') : 'Дата не указана'}</span>
             </div>
           </div>
           <button onclick="event.stopPropagation(); deleteRequest(${req.id})" class="text-red-500 hover:text-red-700 ml-2 p-1">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
-            </svg>
+            <i data-lucide="trash-2" class="w-5 h-5"></i>
           </button>
         </div>
       </div>
     `).join('');
+
+        setTimeout(initIcons, 50);
     }
 
     function showAlert(message, type) {
         const alert = document.getElementById('alert');
         const bgColor = type === 'success' ? 'bg-green-500' : 'bg-red-500';
+        const icon = type === 'success' ? 'check-circle' : 'x-circle';
 
-        alert.className = `fixed top-20 right-4 z-50 p-4 rounded-lg shadow-lg max-w-md text-white ${bgColor} fade-in`;
-        alert.textContent = message;
+        alert.className = `fixed top-20 right-4 z-50 p-4 rounded-lg shadow-lg max-w-md text-white ${bgColor} fade-in flex items-center gap-3`;
+        alert.innerHTML = `
+            <i data-lucide="${icon}" class="w-5 h-5"></i>
+            <span>${message}</span>
+        `;
         alert.classList.remove('hidden');
+
+        initIcons();
 
         setTimeout(() => {
             alert.classList.add('hidden');
