@@ -33,7 +33,7 @@ export async function registerRoutes(fastify: FastifyInstance) {
         });
     });
 
-    const jsFiles = ["auth-check.js", "navbar-loader.js"];
+    const jsFiles = ["auth-check.js", "navbar-loader.js", "main-script.js"];
 
     jsFiles.forEach(script => {
         fastify.get(`/${script}`, async (_, reply) => {

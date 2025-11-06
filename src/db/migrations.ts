@@ -17,12 +17,12 @@ export async function runMigrations(db: Db) {
             email: 'admin@webhook-viewer.local',
             password: hashedPassword,
             role: 'admin',
-            status: 'approved', // ← ВАЖНО: должен быть approved
+            status: 'approved',
             webhookTTL: 43200,
             createdAt: new Date(),
-            approvedAt: new Date() // ← Сразу одобрен
+            approvedAt: new Date()
         });
-        logger.info('✅ Admin user created (username: admin, password: admin)');
+        logger.info('Admin user created (username: admin, password: admin)');
     } else {
         if (!adminExists.status || adminExists.isActive !== undefined) {
             logger.info('🔄 Updating admin user structure...');
@@ -36,14 +36,14 @@ export async function runMigrations(db: Db) {
                         approvedAt: adminExists.approvedAt || new Date()
                     },
                     $unset: {
-                        isActive: '' // Удаляем старое поле
+                        isActive: ''
                     }
                 }
             );
 
-            logger.info('✅ Admin user structure updated');
+            logger.info('Admin user structure updated');
         } else {
-            logger.info('✅ Admin user already exists with correct structure');
+            logger.info('Admin user already exists with correct structure');
         }
     }
 
@@ -56,20 +56,17 @@ export async function runMigrations(db: Db) {
     }).toArray();
 
     if (usersWithOldStructure.length > 0) {
-        logger.info(`🔄 Migrating ${usersWithOldStructure.length} users to new structure...`);
+        logger.info(`Migrating ${usersWithOldStructure.length} users to new structure...`);
 
         for (const user of usersWithOldStructure) {
             const updates: any = {};
             const unsets: any = {};
 
-            // Удаляем isActive
             if (user.isActive !== undefined) {
                 unsets.isActive = '';
             }
 
-            // Добавляем status если его нет
             if (!user.status) {
-                // Если был isActive: true - делаем approved, иначе pending
                 updates.status = user.isActive === true ? 'approved' : 'pending';
 
                 if (updates.status === 'approved' && !user.approvedAt) {
@@ -77,7 +74,6 @@ export async function runMigrations(db: Db) {
                 }
             }
 
-            // Добавляем email если его нет
             if (!user.email) {
                 updates.email = `${user.username}@webhook-viewer.local`;
             }
@@ -94,10 +90,37 @@ export async function runMigrations(db: Db) {
             }
         }
 
-        logger.info('✅ All users migrated to new structure');
+        logger.info('All users migrated to new structure');
     }
 
-    // Migration 3: Ensure indexes exist
+    const webhooksWithoutMetadata = await db.collection('webhooks').find({
+        metadata: { $exists: false }
+    }).toArray();
+
+    if (webhooksWithoutMetadata.length > 0) {
+        logger.info(`Adding metadata to ${webhooksWithoutMetadata.length} webhooks...`);
+
+        for (const webhook of webhooksWithoutMetadata) {
+            const defaultMetadata = {
+                method: 'POST',
+                url: 'https://webhook-viewer.local/hook/' + webhook.roomId,
+                headers: {},
+                query: {},
+                host: 'webhook-viewer.local',
+                ip: 'unknown',
+                userAgent: 'Legacy Webhook',
+                contentType: 'application/json'
+            };
+
+            await db.collection('webhooks').updateOne(
+                { _id: webhook._id },
+                { $set: { metadata: defaultMetadata } }
+            );
+        }
+
+        logger.info('All webhooks updated with metadata');
+    }
+
     try {
         // Webhooks TTL index
         await db.collection('webhooks').createIndex(
@@ -144,7 +167,7 @@ export async function runMigrations(db: Db) {
             { name: 'user_status_index' }
         );
 
-        logger.info('✅ All indexes created/verified');
+        logger.info('All indexes created/verified');
     } catch (error: any) {
         if (error.code === 11000 || error.codeName === 'IndexOptionsConflict') {
             logger.warn('Some indexes already exist with different options, skipping...');
@@ -153,5 +176,5 @@ export async function runMigrations(db: Db) {
         }
     }
 
-    logger.info('✅ Migrations completed successfully');
+    logger.info('Migrations completed successfully');
 }
