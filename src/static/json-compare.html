@@ -1,0 +1,811 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>JSON Compare - Webhook Viewer</title>
+  <link rel="icon" href="/favicon" type="image/x-icon">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .fade-in {
+      animation: fadeIn 0.3s ease-out;
+    }
+
+    /* Цветовая схема для различий */
+    .diff-missing {
+      background: #fee2e2;
+      border-left: 3px solid #ef4444;
+    }
+    .diff-extra {
+      background: #dbeafe;
+      border-left: 3px solid #3b82f6;
+    }
+    .diff-type-mismatch {
+      background: #fef3c7;
+      border-left: 3px solid #f59e0b;
+    }
+    .diff-value-mismatch {
+      background: #fce7f3;
+      border-left: 3px solid #ec4899;
+    }
+    .diff-match {
+      background: #f0fdf4;
+      border-left: 3px solid #22c55e;
+    }
+
+    .json-editor {
+      font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    .legend-item {
+      transition: all 0.2s;
+    }
+    .legend-item:hover {
+      transform: scale(1.05);
+    }
+
+    .drop-zone {
+      border: 2px dashed #d1d5db;
+      transition: all 0.3s;
+    }
+    .drop-zone.drag-over {
+      border-color: #10b981;
+      background: #f0fdf4;
+    }
+
+    .tab-btn {
+      transition: all 0.2s;
+    }
+    .tab-btn.active {
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      color: white;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.3);
+    }
+
+    .json-key {
+      color: #0066cc;
+      font-weight: 600;
+    }
+    .json-string {
+      color: #22863a;
+    }
+    .json-number {
+      color: #005cc5;
+    }
+    .json-boolean {
+      color: #d73a49;
+    }
+    .json-null {
+      color: #6f42c1;
+    }
+  </style>
+</head>
+<body class="bg-gradient-to-br from-gray-50 to-gray-100 min-h-screen">
+
+<!-- Navbar -->
+<div id="navbar-container"></div>
+
+<!-- Main Content -->
+<main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+  <!-- Header -->
+  <div class="mb-8 fade-in">
+    <div class="flex items-center gap-4 mb-4">
+      <div class="w-16 h-16 bg-gradient-to-br from-green-500 to-green-700 rounded-xl flex items-center justify-center shadow-lg">
+        <i data-lucide="scale" class="w-8 h-8 text-white"></i>
+      </div>
+      <div>
+        <h1 class="text-3xl font-bold text-gray-900">JSON Compare</h1>
+        <p class="text-gray-600">Сравнение и визуализация различий в JSON объектах</p>
+      </div>
+    </div>
+
+    <!-- Legend -->
+    <div class="grid grid-cols-2 md:grid-cols-5 gap-3 mt-4">
+      <div class="legend-item diff-match p-3 rounded-lg flex items-center gap-2">
+        <div class="w-3 h-3 bg-green-500 rounded-full"></div>
+        <span class="text-sm font-medium text-gray-700">Совпадает</span>
+      </div>
+      <div class="legend-item diff-missing p-3 rounded-lg flex items-center gap-2">
+        <div class="w-3 h-3 bg-red-500 rounded-full"></div>
+        <span class="text-sm font-medium text-gray-700">Отсутствует</span>
+      </div>
+      <div class="legend-item diff-extra p-3 rounded-lg flex items-center gap-2">
+        <div class="w-3 h-3 bg-blue-500 rounded-full"></div>
+        <span class="text-sm font-medium text-gray-700">Лишнее</span>
+      </div>
+      <div class="legend-item diff-value-mismatch p-3 rounded-lg flex items-center gap-2">
+        <div class="w-3 h-3 bg-pink-500 rounded-full"></div>
+        <span class="text-sm font-medium text-gray-700">Не совпадает</span>
+      </div>
+      <div class="legend-item diff-type-mismatch p-3 rounded-lg flex items-center gap-2">
+        <div class="w-3 h-3 bg-yellow-500 rounded-full"></div>
+        <span class="text-sm font-medium text-gray-700">Разные типы</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Controls -->
+  <div class="mb-6 flex flex-wrap gap-4">
+    <button onclick="addJsonInput()" class="px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold transition shadow-md hover:shadow-lg flex items-center gap-2">
+      <i data-lucide="plus" class="w-5 h-5"></i>
+      <span>Добавить JSON</span>
+    </button>
+    <button onclick="compareAll()" class="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition shadow-md hover:shadow-lg flex items-center gap-2">
+      <i data-lucide="git-compare" class="w-5 h-5"></i>
+      <span>Сравнить</span>
+    </button>
+    <button onclick="clearAll()" class="px-6 py-3 bg-red-600 hover:bg-red-700 text-white rounded-lg font-semibold transition shadow-md hover:shadow-lg flex items-center gap-2">
+      <i data-lucide="trash-2" class="w-5 h-5"></i>
+      <span>Очистить всё</span>
+    </button>
+    <button onclick="loadExample()" class="px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-semibold transition shadow-md hover:shadow-lg flex items-center gap-2">
+      <i data-lucide="lightbulb" class="w-5 h-5"></i>
+      <span>Пример</span>
+    </button>
+  </div>
+
+  <!-- JSON Inputs Grid -->
+  <div id="jsonInputsGrid" class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+    <!-- Будут динамически добавляться -->
+  </div>
+
+  <!-- Comparison Result -->
+  <div id="comparisonResult" class="hidden fade-in">
+    <h2 class="text-2xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+      <i data-lucide="bar-chart-3" class="w-6 h-6"></i>
+      <span>Результат сравнения</span>
+    </h2>
+
+    <!-- Tabs -->
+    <div class="flex flex-wrap gap-2 mb-4">
+      <button onclick="switchView('side-by-side')" id="tab-side-by-side" class="tab-btn active px-4 py-2 rounded-lg font-medium flex items-center gap-2">
+        <i data-lucide="columns" class="w-4 h-4"></i>
+        <span>Рядом</span>
+      </button>
+      <button onclick="switchView('unified')" id="tab-unified" class="tab-btn px-4 py-2 rounded-lg font-medium bg-gray-200 text-gray-700 flex items-center gap-2">
+        <i data-lucide="file-text" class="w-4 h-4"></i>
+        <span>Объединенный</span>
+      </button>
+      <button onclick="switchView('tree')" id="tab-tree" class="tab-btn px-4 py-2 rounded-lg font-medium bg-gray-200 text-gray-700 flex items-center gap-2">
+        <i data-lucide="git-branch" class="w-4 h-4"></i>
+        <span>Дерево различий</span>
+      </button>
+    </div>
+
+    <!-- Views -->
+    <div id="view-side-by-side" class="view-container">
+      <div id="sideBySideView" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+    </div>
+
+    <div id="view-unified" class="view-container hidden">
+      <div id="unifiedView" class="bg-white rounded-lg shadow-sm border border-gray-200 p-6"></div>
+    </div>
+
+    <div id="view-tree" class="view-container hidden">
+      <div id="treeView" class="bg-white rounded-lg shadow-sm border border-gray-200 p-6"></div>
+    </div>
+
+    <!-- Statistics -->
+    <div class="mt-6 grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div class="bg-green-50 border border-green-200 rounded-lg p-4">
+        <div class="flex items-center justify-between mb-2">
+          <i data-lucide="check-circle" class="w-5 h-5 text-green-600"></i>
+          <div class="text-3xl font-bold text-green-600" id="stat-matches">0</div>
+        </div>
+        <div class="text-sm text-gray-600">Совпадений</div>
+      </div>
+      <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+        <div class="flex items-center justify-between mb-2">
+          <i data-lucide="x-circle" class="w-5 h-5 text-red-600"></i>
+          <div class="text-3xl font-bold text-red-600" id="stat-missing">0</div>
+        </div>
+        <div class="text-sm text-gray-600">Отсутствует</div>
+      </div>
+      <div class="bg-pink-50 border border-pink-200 rounded-lg p-4">
+        <div class="flex items-center justify-between mb-2">
+          <i data-lucide="alert-circle" class="w-5 h-5 text-pink-600"></i>
+          <div class="text-3xl font-bold text-pink-600" id="stat-different">0</div>
+        </div>
+        <div class="text-sm text-gray-600">Различий</div>
+      </div>
+      <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+        <div class="flex items-center justify-between mb-2">
+          <i data-lucide="alert-triangle" class="w-5 h-5 text-yellow-600"></i>
+          <div class="text-3xl font-bold text-yellow-600" id="stat-type-errors">0</div>
+        </div>
+        <div class="text-sm text-gray-600">Типов не совпадает</div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- Alert -->
+<div id="alert" class="hidden fixed top-20 right-4 z-50 p-4 rounded-lg shadow-lg max-w-md"></div>
+
+<!-- Scripts -->
+<script src="/auth-check.js"></script>
+<script src="/navbar-loader.js"></script>
+
+<script>
+  let jsonInputs = [];
+  let currentView = 'side-by-side';
+
+  // Initialize Lucide Icons
+  function initLucideIcons() {
+    lucide.createIcons();
+  }
+
+  // Initialize with 2 inputs
+  window.onload = function() {
+    addJsonInput();
+    addJsonInput();
+    initLucideIcons();
+  };
+
+  function addJsonInput() {
+    const id = Date.now();
+    jsonInputs.push({ id, content: '' });
+    renderInputs();
+  }
+
+  function removeJsonInput(id) {
+    if (jsonInputs.length <= 2) {
+      showAlert('Нужно минимум 2 JSON для сравнения', 'error');
+      return;
+    }
+    jsonInputs = jsonInputs.filter(input => input.id !== id);
+    renderInputs();
+  }
+
+  function renderInputs() {
+    const grid = document.getElementById('jsonInputsGrid');
+    grid.innerHTML = jsonInputs.map((input, index) => `
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 fade-in">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-bold text-gray-900 flex items-center gap-2">
+                        <i data-lucide="file-json" class="w-5 h-5 text-green-600"></i>
+                        <span>JSON ${index + 1}</span>
+                    </h3>
+                    <div class="flex gap-2">
+                        <label class="px-3 py-1 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-lg text-sm font-medium transition cursor-pointer flex items-center gap-1">
+                            <i data-lucide="upload" class="w-4 h-4"></i>
+                            <span>Загрузить</span>
+                            <input type="file" accept=".json" onchange="loadFile(event, ${input.id})" class="hidden">
+                        </label>
+                        ${jsonInputs.length > 2 ? `
+                            <button onclick="removeJsonInput(${input.id})" class="px-3 py-1 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg text-sm font-medium transition flex items-center gap-1">
+                                <i data-lucide="x" class="w-4 h-4"></i>
+                                <span>Удалить</span>
+                            </button>
+                        ` : ''}
+                    </div>
+                </div>
+
+                <!-- Drop Zone -->
+                <div class="drop-zone mb-4 p-6 rounded-lg text-center text-sm text-gray-500 flex flex-col items-center gap-2"
+                     ondragover="handleDragOver(event)"
+                     ondragleave="handleDragLeave(event)"
+                     ondrop="handleDrop(event, ${input.id})">
+                    <i data-lucide="file-json" class="w-8 h-8 text-gray-400"></i>
+                    <span>Перетащите JSON файл сюда</span>
+                </div>
+
+                <!-- Text Area -->
+                <textarea
+                    id="json-${input.id}"
+                    class="json-editor w-full h-96 p-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 resize-none"
+                    placeholder='Вставьте JSON здесь...\n\nПример:\n{\n  "name": "John",\n  "age": 30\n}'
+                    oninput="updateJsonContent(${input.id}, this.value)"
+                >${input.content}</textarea>
+
+                <!-- Format Button -->
+                <button onclick="formatJson(${input.id})" class="mt-2 w-full px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium transition text-sm flex items-center justify-center gap-2">
+                    <i data-lucide="sparkles" class="w-4 h-4"></i>
+                    <span>Форматировать</span>
+                </button>
+            </div>
+        `).join('');
+
+    initLucideIcons();
+  }
+
+  function updateJsonContent(id, content) {
+    const input = jsonInputs.find(i => i.id === id);
+    if (input) input.content = content;
+  }
+
+  function loadFile(event, id) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      const content = e.target.result;
+      const input = jsonInputs.find(i => i.id === id);
+      if (input) {
+        input.content = content;
+        document.getElementById(`json-${id}`).value = content;
+        formatJson(id);
+        showAlert('Файл загружен успешно!', 'success');
+      }
+    };
+    reader.readAsText(file);
+  }
+
+  function handleDragOver(e) {
+    e.preventDefault();
+    e.currentTarget.classList.add('drag-over');
+  }
+
+  function handleDragLeave(e) {
+    e.currentTarget.classList.remove('drag-over');
+  }
+
+  function handleDrop(e, id) {
+    e.preventDefault();
+    e.currentTarget.classList.remove('drag-over');
+
+    const file = e.dataTransfer.files[0];
+    if (!file) return;
+
+    if (!file.name.endsWith('.json')) {
+      showAlert('Можно загружать только JSON файлы', 'error');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = function(event) {
+      const content = event.target.result;
+      const input = jsonInputs.find(i => i.id === id);
+      if (input) {
+        input.content = content;
+        document.getElementById(`json-${id}`).value = content;
+        formatJson(id);
+        showAlert('Файл загружен успешно!', 'success');
+      }
+    };
+    reader.readAsText(file);
+  }
+
+  function formatJson(id) {
+    const textarea = document.getElementById(`json-${id}`);
+    const content = textarea.value.trim();
+
+    if (!content) return;
+
+    try {
+      const parsed = JSON.parse(content);
+      const formatted = JSON.stringify(parsed, null, 2);
+      textarea.value = formatted;
+
+      const input = jsonInputs.find(i => i.id === id);
+      if (input) input.content = formatted;
+
+      showAlert('JSON отформатирован', 'success');
+    } catch (e) {
+      showAlert('Невалидный JSON: ' + e.message, 'error');
+    }
+  }
+
+  function compareAll() {
+    // Validate all inputs
+    const parsedJsons = [];
+
+    for (let input of jsonInputs) {
+      if (!input.content.trim()) {
+        showAlert('Все поля должны быть заполнены', 'error');
+        return;
+      }
+
+      try {
+        parsedJsons.push(JSON.parse(input.content));
+      } catch (e) {
+        showAlert(`Ошибка в JSON ${jsonInputs.indexOf(input) + 1}: ${e.message}`, 'error');
+        return;
+      }
+    }
+
+    // Compare
+    const comparison = compareJsonObjects(parsedJsons);
+    renderComparison(comparison);
+
+    document.getElementById('comparisonResult').classList.remove('hidden');
+    showAlert('Сравнение завершено!', 'success');
+  }
+
+  function compareJsonObjects(objects) {
+    if (objects.length < 2) return null;
+
+    const base = objects[0];
+    const comparisons = [];
+
+    for (let i = 1; i < objects.length; i++) {
+      comparisons.push(deepCompare(base, objects[i], '', i));
+    }
+
+    return {
+      base,
+      objects,
+      comparisons,
+      stats: calculateStats(comparisons)
+    };
+  }
+
+  function deepCompare(obj1, obj2, path = '', index = 1) {
+    const diffs = [];
+
+    const allKeys = new Set([
+      ...Object.keys(obj1 || {}),
+      ...Object.keys(obj2 || {})
+    ]);
+
+    allKeys.forEach(key => {
+      const fullPath = path ? `${path}.${key}` : key;
+      const val1 = obj1?.[key];
+      const val2 = obj2?.[key];
+
+      if (val1 === undefined && val2 !== undefined) {
+        diffs.push({
+          path: fullPath,
+          type: 'missing',
+          value1: undefined,
+          value2: val2,
+          index
+        });
+      } else if (val1 !== undefined && val2 === undefined) {
+        diffs.push({
+          path: fullPath,
+          type: 'extra',
+          value1: val1,
+          value2: undefined,
+          index
+        });
+      } else if (typeof val1 !== typeof val2) {
+        diffs.push({
+          path: fullPath,
+          type: 'type-mismatch',
+          value1: val1,
+          value2: val2,
+          type1: typeof val1,
+          type2: typeof val2,
+          index
+        });
+      } else if (typeof val1 === 'object' && val1 !== null && val2 !== null) {
+        if (Array.isArray(val1) && Array.isArray(val2)) {
+          if (JSON.stringify(val1) !== JSON.stringify(val2)) {
+            diffs.push({
+              path: fullPath,
+              type: 'value-mismatch',
+              value1: val1,
+              value2: val2,
+              index
+            });
+          } else {
+            diffs.push({
+              path: fullPath,
+              type: 'match',
+              value1: val1,
+              value2: val2,
+              index
+            });
+          }
+        } else {
+          const nested = deepCompare(val1, val2, fullPath, index);
+          diffs.push(...nested);
+        }
+      } else if (val1 !== val2) {
+        diffs.push({
+          path: fullPath,
+          type: 'value-mismatch',
+          value1: val1,
+          value2: val2,
+          index
+        });
+      } else {
+        diffs.push({
+          path: fullPath,
+          type: 'match',
+          value1: val1,
+          value2: val2,
+          index
+        });
+      }
+    });
+
+    return diffs;
+  }
+
+  function calculateStats(comparisons) {
+    const stats = {
+      matches: 0,
+      missing: 0,
+      different: 0,
+      typeErrors: 0
+    };
+
+    comparisons.forEach(comp => {
+      comp.forEach(diff => {
+        if (diff.type === 'match') stats.matches++;
+        else if (diff.type === 'missing' || diff.type === 'extra') stats.missing++;
+        else if (diff.type === 'value-mismatch') stats.different++;
+        else if (diff.type === 'type-mismatch') stats.typeErrors++;
+      });
+    });
+
+    return stats;
+  }
+
+  function renderComparison(comparison) {
+    renderSideBySide(comparison);
+    renderUnified(comparison);
+    renderTree(comparison);
+    renderStats(comparison.stats);
+    initLucideIcons();
+  }
+
+  function renderSideBySide(comparison) {
+    const container = document.getElementById('sideBySideView');
+    let html = '';
+
+    // Base JSON
+    html += `
+            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                <h3 class="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                    <i data-lucide="file-json" class="w-5 h-5 text-green-600"></i>
+                    <span>JSON 1 (базовый)</span>
+                </h3>
+                <pre class="text-sm overflow-x-auto">${syntaxHighlight(comparison.base)}</pre>
+            </div>
+        `;
+
+    // Comparisons
+    comparison.comparisons.forEach((comp, idx) => {
+      html += `
+                <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                    <h3 class="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                        <i data-lucide="file-json" class="w-5 h-5 text-blue-600"></i>
+                        <span>JSON ${idx + 2}</span>
+                    </h3>
+                    <div class="space-y-2">
+                        ${comp.map(diff => renderDiff(diff)).join('')}
+                    </div>
+                </div>
+            `;
+    });
+
+    container.innerHTML = html;
+    initLucideIcons();
+  }
+
+  function renderDiff(diff) {
+    const classes = {
+      'match': 'diff-match',
+      'missing': 'diff-missing',
+      'extra': 'diff-extra',
+      'value-mismatch': 'diff-value-mismatch',
+      'type-mismatch': 'diff-type-mismatch'
+    };
+
+    const icons = {
+      'match': 'check',
+      'missing': 'x',
+      'extra': 'plus',
+      'value-mismatch': 'git-compare',
+      'type-mismatch': 'alert-triangle'
+    };
+
+    return `
+            <div class="${classes[diff.type]} p-3 rounded text-sm">
+                <div class="font-mono font-semibold text-gray-800 mb-1 flex items-center gap-2">
+                    <i data-lucide="${icons[diff.type]}" class="w-4 h-4"></i>
+                    <span>${diff.path}</span>
+                </div>
+                <div class="ml-6 text-gray-600">
+                    <div>Базовый: <code>${JSON.stringify(diff.value1)}</code></div>
+                    <div>Сравниваемый: <code>${JSON.stringify(diff.value2)}</code></div>
+                </div>
+            </div>
+        `;
+  }
+
+  function renderUnified(comparison) {
+    const container = document.getElementById('unifiedView');
+    let html = '<div class="space-y-3">';
+
+    comparison.comparisons.forEach((comp, idx) => {
+      html += `<h3 class="text-lg font-bold text-gray-900 mt-4 mb-2 flex items-center gap-2">
+                <i data-lucide="file-diff" class="w-5 h-5"></i>
+                <span>Сравнение с JSON ${idx + 2}</span>
+              </h3>`;
+      comp.forEach(diff => {
+        html += renderDiff(diff);
+      });
+    });
+
+    html += '</div>';
+    container.innerHTML = html;
+    initLucideIcons();
+  }
+
+  function renderTree(comparison) {
+    const container = document.getElementById('treeView');
+    let html = '<div class="font-mono text-sm">';
+
+    comparison.comparisons.forEach((comp, idx) => {
+      html += `<div class="mb-6">
+                <h3 class="text-lg font-bold text-gray-900 mb-3 flex items-center gap-2">
+                    <i data-lucide="git-branch" class="w-5 h-5"></i>
+                    <span>Дерево различий с JSON ${idx + 2}</span>
+                </h3>`;
+
+      const tree = buildTree(comp);
+      html += renderTreeNode(tree, 0);
+
+      html += '</div>';
+    });
+
+    html += '</div>';
+    container.innerHTML = html;
+    initLucideIcons();
+  }
+
+  function buildTree(diffs) {
+    const tree = {};
+
+    diffs.forEach(diff => {
+      const parts = diff.path.split('.');
+      let current = tree;
+
+      parts.forEach((part, idx) => {
+        if (!current[part]) {
+          current[part] = idx === parts.length - 1 ? diff : {};
+        }
+        current = current[part];
+      });
+    });
+
+    return tree;
+  }
+
+  function renderTreeNode(node, level) {
+    let html = '';
+    const indent = '  '.repeat(level);
+
+    Object.keys(node).forEach(key => {
+      if (node[key].type) {
+        // Leaf node (diff)
+        const diff = node[key];
+        const classes = {
+          'match': 'text-green-600',
+          'missing': 'text-red-600',
+          'extra': 'text-blue-600',
+          'value-mismatch': 'text-pink-600',
+          'type-mismatch': 'text-yellow-600'
+        };
+
+        html += `<div class="${classes[diff.type]} py-1">${indent}${key}: ${JSON.stringify(diff.value1)} → ${JSON.stringify(diff.value2)}</div>`;
+      } else {
+        // Branch node
+        html += `<div class="text-gray-800 py-1 font-semibold">${indent}${key}:</div>`;
+        html += renderTreeNode(node[key], level + 1);
+      }
+    });
+
+    return html;
+  }
+
+  function renderStats(stats) {
+    document.getElementById('stat-matches').textContent = stats.matches;
+    document.getElementById('stat-missing').textContent = stats.missing;
+    document.getElementById('stat-different').textContent = stats.different;
+    document.getElementById('stat-type-errors').textContent = stats.typeErrors;
+  }
+
+  function syntaxHighlight(obj) {
+    let json = JSON.stringify(obj, null, 2);
+    json = json.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    return json.replace(/"([^"]+)"(\s*:\s*)/g, '<span class="json-key">"$1"</span>$2')
+            .replace(/:\s*"([^"]*)"/g, ': <span class="json-string">"$1"</span>')
+            .replace(/:\s*(\d+)/g, ': <span class="json-number">$1</span>')
+            .replace(/:\s*(true|false)/g, ': <span class="json-boolean">$1</span>')
+            .replace(/:\s*null/g, ': <span class="json-null">null</span>');
+  }
+
+  function switchView(view) {
+    currentView = view;
+
+    // Update tabs
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.classList.remove('active', 'bg-gradient-to-br', 'from-green-500', 'to-green-700', 'text-white', 'shadow-lg');
+      btn.classList.add('bg-gray-200', 'text-gray-700');
+    });
+
+    document.getElementById(`tab-${view}`).classList.add('active');
+    document.getElementById(`tab-${view}`).classList.remove('bg-gray-200', 'text-gray-700');
+
+    // Update views
+    document.querySelectorAll('.view-container').forEach(v => v.classList.add('hidden'));
+    document.getElementById(`view-${view}`).classList.remove('hidden');
+
+    initLucideIcons();
+  }
+
+  function clearAll() {
+    if (!confirm('Очистить все JSON?')) return;
+
+    jsonInputs.forEach(input => {
+      input.content = '';
+      const textarea = document.getElementById(`json-${input.id}`);
+      if (textarea) textarea.value = '';
+    });
+
+    document.getElementById('comparisonResult').classList.add('hidden');
+    showAlert('Все поля очищены', 'success');
+  }
+
+  function loadExample() {
+    const examples = [
+      {
+        name: "John Doe",
+        age: 30,
+        email: "john@example.com",
+        active: true,
+        roles: ["user", "admin"]
+      },
+      {
+        name: "John Doe",
+        age: "30",
+        email: "john@example.com",
+        status: "active",
+        roles: ["user"]
+      }
+    ];
+
+    jsonInputs.forEach((input, idx) => {
+      if (examples[idx]) {
+        input.content = JSON.stringify(examples[idx], null, 2);
+      }
+    });
+
+    renderInputs();
+    showAlert('Пример загружен!', 'success');
+  }
+
+  function showAlert(message, type) {
+    const colors = {
+      success: 'bg-green-100 text-green-800 border-green-300',
+      error: 'bg-red-100 text-red-800 border-red-300',
+      warning: 'bg-yellow-100 text-yellow-800 border-yellow-300'
+    };
+
+    const icons = {
+      success: 'check-circle',
+      error: 'x-circle',
+      warning: 'alert-circle'
+    };
+
+    const alertDiv = document.getElementById('alert');
+    alertDiv.className = `p-4 rounded-lg border shadow-lg ${colors[type]} fade-in flex items-center gap-3`;
+    alertDiv.innerHTML = `
+      <i data-lucide="${icons[type]}" class="w-5 h-5"></i>
+      <span>${message}</span>
+    `;
+    alertDiv.classList.remove('hidden');
+
+    initLucideIcons();
+
+    setTimeout(() => {
+      alertDiv.classList.add('hidden');
+    }, 5000);
+  }
+</script>
+</body>
+</html>

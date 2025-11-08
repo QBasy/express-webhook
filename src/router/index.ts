@@ -19,7 +19,7 @@ export async function registerRoutes(fastify: FastifyInstance) {
     fastify.register(webhookRoutes, { prefix: "/hook" });
 
     const htmlPages = [
-        "/", "login", "login.html", "register", "register.html",
+        "/", "login", "login.html", "register", "register.html", "json-compare.html",
         "admin", "admin.html", "docs", "tester", "tester.html", "navbar.html"
     ];
 
@@ -33,7 +33,7 @@ export async function registerRoutes(fastify: FastifyInstance) {
         });
     });
 
-    const jsFiles = ["auth-check.js", "navbar-loader.js"];
+    const jsFiles = ["auth-check.js", "navbar-loader.js", "main-script.js"];
 
     jsFiles.forEach(script => {
         fastify.get(`/${script}`, async (_, reply) => {

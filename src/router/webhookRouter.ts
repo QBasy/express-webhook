@@ -1,8 +1,44 @@
-import { FastifyInstance } from "fastify";
-import { logger } from "../utils/logger";
+import {FastifyInstance, FastifyRequest} from "fastify";
+import {logger} from "../utils/logger";
+import {WebhookMetadata} from "../repository/webhooksRepo";
+
+// Функция для извлечения метаданных из запроса
+function extractMetadata(request: FastifyRequest): WebhookMetadata {
+    const headers: Record<string, string | string[]> = {};
+
+    // Собираем все заголовки
+    Object.keys(request.headers).forEach(key => {
+        const value = request.headers[key];
+        if (value !== undefined) {
+            headers[key] = value;
+        }
+    });
+
+    // Извлекаем IP адрес (с учетом прокси)
+    const ip =
+        (request.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() ||
+        (request.headers['x-real-ip'] as string) ||
+        request.ip ||
+        'unknown';
+
+    return {
+        method: request.method,
+        url: request.protocol + '://' + request.hostname + request.url,
+        headers,
+        query: request.query as Record<string, string | string[]>,
+        host: request.hostname,
+        ip,
+        userAgent: request.headers['user-agent'] as string,
+        contentType: request.headers['content-type'] as string,
+        contentLength: request.headers['content-length']
+            ? parseInt(request.headers['content-length'] as string, 10)
+            : undefined
+    };
+}
 
 export async function webhookRoutes(fastify: FastifyInstance) {
-    fastify.get("/:id", async (request, reply) => {
+
+    fastify.get("/all/:id", async (request, reply) => {
         const { id } = request.params as { id: string };
 
         const room = await fastify.roomRepo.getRoom(id);
@@ -15,9 +51,33 @@ export async function webhookRoutes(fastify: FastifyInstance) {
         return reply.status(200).send(webhooks);
     });
 
-    fastify.post("/:id", async (request, reply) => {
+    fastify.get("/:room_id/:webhook_id", async (request, reply) => {
+        const { room_id, webhook_id } = request.params as {
+            room_id: string;
+            webhook_id: string;
+        };
+
+        const room = await fastify.roomRepo.getRoom(room_id);
+        if (!room) {
+            logger.warn(`Attempt to get webhook from non-existent room ${room_id}`);
+            return reply.status(404).send({ error: "Room not found" });
+        }
+
+        const webhook = await fastify.webhookRepo.getWebhook(room_id, webhook_id);
+        if (!webhook) {
+            logger.warn(`Webhook ${webhook_id} not found in room ${room_id}`);
+            return reply.status(404).send({ error: "Webhook not found" });
+        }
+
+        return reply.status(200).send(webhook);
+    });
+
+    fastify.all("/:id", async (request, reply) => {
         const { id } = request.params as { id: string };
-        const webhook = request.body as any;
+
+        if (request.method === 'GET') {
+            return;
+        }
 
         const room = await fastify.roomRepo.getRoom(id);
         if (!room) {
@@ -32,22 +92,29 @@ export async function webhookRoutes(fastify: FastifyInstance) {
             });
         }
 
-        // ← ИСПРАВЛЕНО: передаём TTL из комнаты
+        const metadata = extractMetadata(request);
+
+        const webhook = request.body || {};
+
         const receiptId = await fastify.webhookRepo.addWebhook(
             id,
             webhook,
-            room.webhookTTL
+            room.webhookTTL,
+            metadata
         );
 
         await fastify.roomRepo.updateActivity(id);
 
+        logger.info(`Webhook received: ${request.method} ${metadata.url} -> receiptId: ${receiptId}`);
+
         return {
             status: "ok",
-            receiptId
+            receiptId,
+            method: request.method
         };
     });
 
-    fastify.delete("/:id", async (request, reply) => {
+    fastify.delete("/delete/:id", async (request, reply) => {
         const { id } = request.params as { id: string };
 
         const room = await fastify.roomRepo.getRoom(id);
@@ -79,7 +146,6 @@ export async function webhookRoutes(fastify: FastifyInstance) {
         }
 
         const deleted = await fastify.webhookRepo.deleteWebhook(room_id, webhook_id);
-
         if (deleted) {
             logger.info(`Webhook ${webhook_id} deleted from room ${room_id}`);
             return reply.status(200).send({

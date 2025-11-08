@@ -6,6 +6,7 @@
     <title>Админ панель - Webhook Viewer</title>
     <link rel="icon" href="/favicon" type="image/x-icon">
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
     <style>
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(-20px); }
@@ -32,7 +33,7 @@
     <div class="mb-8">
         <div class="flex items-center gap-4 mb-4">
             <div class="w-16 h-16 bg-green-600 rounded-xl flex items-center justify-center shadow-md">
-                <span class="text-white text-3xl">👑</span>
+                <i data-lucide="crown" class="w-8 h-8 text-white"></i>
             </div>
             <div>
                 <h1 class="text-3xl font-bold text-gray-900">Админ панель</h1>
@@ -45,18 +46,21 @@
         <div class="border-b border-gray-200">
             <nav class="-mb-px flex space-x-8">
                 <button onclick="switchTab('pending')" id="tab-pending"
-                        class="tab-btn border-b-2 border-green-600 text-green-600 py-4 px-1 font-medium">
-                    Ожидают одобрения
+                        class="tab-btn border-b-2 border-green-600 text-green-600 py-4 px-1 font-medium flex items-center gap-2">
+                    <i data-lucide="clock" class="w-4 h-4"></i>
+                    <span>Ожидают одобрения</span>
                     <span id="pending-count" class="ml-2 bg-green-100 text-green-600 px-2.5 py-1 rounded-full text-xs font-semibold">0</span>
                 </button>
                 <button onclick="switchTab('approved')" id="tab-approved"
-                        class="tab-btn border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 py-4 px-1 font-medium">
-                    Одобренные
+                        class="tab-btn border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 py-4 px-1 font-medium flex items-center gap-2">
+                    <i data-lucide="check-circle" class="w-4 h-4"></i>
+                    <span>Одобренные</span>
                     <span id="approved-count" class="ml-2 bg-gray-100 text-gray-600 px-2.5 py-1 rounded-full text-xs font-semibold">0</span>
                 </button>
                 <button onclick="switchTab('rejected')" id="tab-rejected"
-                        class="tab-btn border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 py-4 px-1 font-medium">
-                    Отклоненные
+                        class="tab-btn border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 py-4 px-1 font-medium flex items-center gap-2">
+                    <i data-lucide="x-circle" class="w-4 h-4"></i>
+                    <span>Отклоненные</span>
                     <span id="rejected-count" class="ml-2 bg-gray-100 text-gray-600 px-2.5 py-1 rounded-full text-xs font-semibold">0</span>
                 </button>
             </nav>
@@ -71,19 +75,30 @@
     <div id="users-container" class="hidden space-y-4"></div>
 
     <div id="empty-state" class="hidden text-center py-12">
-        <div class="text-6xl mb-4">📭</div>
+        <i data-lucide="inbox" class="w-16 h-16 text-gray-300 mx-auto mb-4"></i>
         <p class="text-gray-600 text-lg">Нет пользователей в этой категории</p>
     </div>
 </main>
 
 <script src="/auth-check.js"></script>
 <script>
+    // Initialize Lucide Icons
+    function initIcons() {
+        if (typeof lucide !== 'undefined') {
+            lucide.createIcons();
+        }
+    }
+
     fetch('/navbar.html')
         .then(res => res.text())
         .then(html => {
             document.getElementById('navbar-container').innerHTML = html;
+            setTimeout(initIcons, 100);
         })
         .catch(err => console.error('Failed to load navbar:', err));
+
+    // Initial icons load
+    setTimeout(initIcons, 100);
 </script>
 
 <script>
@@ -170,6 +185,7 @@
         if (filteredUsers.length === 0) {
             container.classList.add('hidden');
             emptyState.classList.remove('hidden');
+            initIcons();
             return;
         }
 
@@ -187,32 +203,36 @@
                             <div>
                                 <h3 class="text-lg font-bold text-gray-800">${user.username}</h3>
                                 <div class="flex items-center gap-2 mt-1">
-                                    <span class="px-2.5 py-1 text-xs font-semibold rounded-full ${getStatusBadge(user.status)}">
+                                    <span class="px-2.5 py-1 text-xs font-semibold rounded-full ${getStatusBadge(user.status)} flex items-center gap-1">
+                                        <i data-lucide="${getStatusIcon(user.status)}" class="w-3 h-3"></i>
                                         ${getStatusText(user.status)}
                                     </span>
-                                    ${user.role === 'admin' ? '<span class="px-2.5 py-1 text-xs font-semibold bg-purple-100 text-purple-800 rounded-full">👑 Admin</span>' : ''}
+                                    ${user.role === 'admin' ? '<span class="px-2.5 py-1 text-xs font-semibold bg-purple-100 text-purple-800 rounded-full flex items-center gap-1"><i data-lucide="crown" class="w-3 h-3"></i> Admin</span>' : ''}
                                 </div>
                             </div>
                         </div>
 
                         <div class="space-y-2 text-sm text-gray-600 ml-14">
                             <div class="flex items-center gap-2">
-                                <span>📧</span>
+                                <i data-lucide="mail" class="w-4 h-4"></i>
                                 <span class="font-medium">${user.email || 'Не указан'}</span>
                             </div>
                             <div class="flex items-center gap-2">
-                                <span>📅</span>
+                                <i data-lucide="calendar" class="w-4 h-4"></i>
                                 <span>Зарегистрирован: <strong>${formatDate(user.createdAt)}</strong></span>
                             </div>
                             <div class="flex items-center gap-2">
-                                <span>🕐</span>
+                                <i data-lucide="clock" class="w-4 h-4"></i>
                                 <span>TTL вебхуков: <strong>${user.webhookTTL}с (${(user.webhookTTL / 3600).toFixed(1)}ч)</strong></span>
                             </div>
                         </div>
 
                         ${user.reason ? `
                             <div class="mt-4 p-4 bg-blue-50 rounded-lg border border-blue-200 ml-14">
-                                <p class="text-xs font-semibold text-blue-800 mb-1">💬 Причина регистрации:</p>
+                                <p class="text-xs font-semibold text-blue-800 mb-1 flex items-center gap-1">
+                                    <i data-lucide="message-circle" class="w-3 h-3"></i>
+                                    Причина регистрации:
+                                </p>
                                 <p class="text-sm text-gray-700">${user.reason}</p>
                             </div>
                         ` : ''}
@@ -221,40 +241,48 @@
                     <div class="flex flex-col space-y-2 ml-4">
                         ${currentTab === 'pending' ? `
                             <button onclick="approveUser('${user._id}')"
-                                    class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition text-sm font-semibold shadow-sm hover:shadow-md">
-                                ✓ Одобрить
+                                    class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition text-sm font-semibold shadow-sm hover:shadow-md flex items-center justify-center gap-2">
+                                <i data-lucide="check" class="w-4 h-4"></i>
+                                <span>Одобрить</span>
                             </button>
                             <button onclick="rejectUser('${user._id}')"
-                                    class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition text-sm font-semibold shadow-sm hover:shadow-md">
-                                ✗ Отклонить
+                                    class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition text-sm font-semibold shadow-sm hover:shadow-md flex items-center justify-center gap-2">
+                                <i data-lucide="x" class="w-4 h-4"></i>
+                                <span>Отклонить</span>
                             </button>
                         ` : ''}
 
                         ${currentTab === 'approved' ? `
                             <button onclick="updateTTL('${user._id}')"
-                                    class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm font-semibold shadow-sm hover:shadow-md">
-                                ⚙️ Изменить TTL
+                                    class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm font-semibold shadow-sm hover:shadow-md flex items-center justify-center gap-2">
+                                <i data-lucide="settings" class="w-4 h-4"></i>
+                                <span>Изменить TTL</span>
                             </button>
                             <button onclick="deleteUser('${user._id}')"
-                                    class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition text-sm font-semibold shadow-sm hover:shadow-md">
-                                🗑️ Удалить
+                                    class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition text-sm font-semibold shadow-sm hover:shadow-md flex items-center justify-center gap-2">
+                                <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                <span>Удалить</span>
                             </button>
                         ` : ''}
 
                         ${currentTab === 'rejected' ? `
                             <button onclick="approveUser('${user._id}')"
-                                    class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition text-sm font-semibold shadow-sm hover:shadow-md">
-                                ✓ Одобрить
+                                    class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition text-sm font-semibold shadow-sm hover:shadow-md flex items-center justify-center gap-2">
+                                <i data-lucide="check" class="w-4 h-4"></i>
+                                <span>Одобрить</span>
                             </button>
                             <button onclick="deleteUser('${user._id}')"
-                                    class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition text-sm font-semibold shadow-sm hover:shadow-md">
-                                🗑️ Удалить
+                                    class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition text-sm font-semibold shadow-sm hover:shadow-md flex items-center justify-center gap-2">
+                                <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                <span>Удалить</span>
                             </button>
                         ` : ''}
                     </div>
                 </div>
             </div>
         `).join('');
+
+        initIcons();
     }
 
     async function approveUser(userId) {
@@ -267,7 +295,7 @@
 
             if (!res.ok) throw new Error('Ошибка одобрения');
 
-            showAlert('✅ Пользователь одобрен!', 'success');
+            showAlert('Пользователь одобрен!', 'success');
             await loadUsers();
         } catch (error) {
             showAlert(error.message, 'error');
@@ -287,7 +315,7 @@
 
             if (!res.ok) throw new Error('Ошибка отклонения');
 
-            showAlert('❌ Пользователь отклонен', 'success');
+            showAlert('Пользователь отклонен', 'success');
             await loadUsers();
         } catch (error) {
             showAlert(error.message, 'error');
@@ -304,7 +332,7 @@
 
             if (!res.ok) throw new Error('Ошибка удаления');
 
-            showAlert('🗑️ Пользователь удален', 'success');
+            showAlert('Пользователь удален', 'success');
             await loadUsers();
         } catch (error) {
             showAlert(error.message, 'error');
@@ -317,7 +345,7 @@
 
         const ttl = parseInt(newTTL);
         if (isNaN(ttl) || ttl < 60 || ttl > 86400) {
-            showAlert('❌ TTL должен быть от 60 до 86400 секунд', 'error');
+            showAlert('TTL должен быть от 60 до 86400 секунд', 'error');
             return;
         }
 
@@ -330,7 +358,7 @@
 
             if (!res.ok) throw new Error('Ошибка обновления TTL');
 
-            showAlert('✅ TTL обновлен!', 'success');
+            showAlert('TTL обновлен!', 'success');
             await loadUsers();
         } catch (error) {
             showAlert(error.message, 'error');
@@ -346,11 +374,20 @@
         return badges[status] || 'bg-gray-100 text-gray-800';
     }
 
+    function getStatusIcon(status) {
+        const icons = {
+            pending: 'clock',
+            approved: 'check-circle',
+            rejected: 'x-circle'
+        };
+        return icons[status] || 'circle';
+    }
+
     function getStatusText(status) {
         const texts = {
-            pending: '⏳ Ожидает',
-            approved: '✅ Одобрен',
-            rejected: '❌ Отклонен'
+            pending: 'Ожидает',
+            approved: 'Одобрен',
+            rejected: 'Отклонен'
         };
         return texts[status] || status;
     }
@@ -372,10 +409,21 @@
             warning: 'bg-yellow-100 text-yellow-800 border-yellow-300'
         };
 
+        const icons = {
+            success: 'check-circle',
+            error: 'x-circle',
+            warning: 'alert-circle'
+        };
+
         const alertDiv = document.getElementById('alert');
-        alertDiv.className = `p-4 rounded-lg border shadow-lg ${colors[type]} fade-in`;
-        alertDiv.textContent = message;
+        alertDiv.className = `p-4 rounded-lg border shadow-lg ${colors[type]} fade-in flex items-center gap-3`;
+        alertDiv.innerHTML = `
+            <i data-lucide="${icons[type]}" class="w-5 h-5"></i>
+            <span>${message}</span>
+        `;
         alertDiv.classList.remove('hidden');
+
+        initIcons();
 
         setTimeout(() => {
             alertDiv.classList.add('hidden');

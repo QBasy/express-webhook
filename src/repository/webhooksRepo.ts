@@ -1,20 +1,38 @@
 import { Collection, ObjectId } from 'mongodb';
 import { logger } from '../utils/logger';
 
+export interface WebhookMetadata {
+    method: string;
+    url: string;
+    headers: Record<string, string | string[]>;
+    query: Record<string, string | string[]>;
+    host: string;
+    ip: string;
+    userAgent?: string;
+    contentType?: string;
+    contentLength?: number;
+}
+
 export interface Webhook {
     _id?: ObjectId;
     receiptId: string;
     roomId: string;
     body: any;
+    metadata: WebhookMetadata;
     timestamp: string;
     createdAt: Date;
-    expiresAt: Date; // ← ДОБАВЛЕНО для TTL
+    expiresAt: Date;
 }
 
 export class WebhookRepository {
     constructor(private webhooksCollection: Collection) {}
 
-    async addWebhook(roomId: string, body: any, ttlSeconds: number): Promise<string> {
+    async addWebhook(
+        roomId: string,
+        body: any,
+        ttlSeconds: number,
+        metadata: WebhookMetadata
+    ): Promise<string> {
         const receiptId = new ObjectId().toString();
         const now = new Date();
         const expiresAt = new Date(now.getTime() + ttlSeconds * 1000);
@@ -23,9 +41,10 @@ export class WebhookRepository {
             receiptId,
             roomId,
             body,
+            metadata,
             timestamp: now.toISOString(),
             createdAt: now,
-            expiresAt // ← TTL будет работать
+            expiresAt
         });
 
         logger.debug(`Webhook ${receiptId} added to room ${roomId}, expires at ${expiresAt.toISOString()}`);
