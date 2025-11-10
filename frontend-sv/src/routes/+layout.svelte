@@ -44,6 +44,10 @@
     });
 </script>
 
+<svelte:head>
+    <link rel="icon" href="/favicon.ico" type="image/x-icon" />
+</svelte:head>
+
 <div class="min-h-screen bg-gray-50">
     {#if $page.url.pathname !== '/login' && $page.url.pathname !== '/register'}
         <Navbar />
