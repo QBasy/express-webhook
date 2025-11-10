@@ -32,8 +32,16 @@ export async function roomRoutes(fastify: FastifyInstance) {
         const userId = user._id.toString();
         const isAdmin = user.role === 'admin';
 
-        const rooms = await fastify.roomRepo.getUserRooms(userId, isAdmin);
-        return { rooms };
+        const { page = 1, limit = 10 } = request.query as any;
+
+        const data = await fastify.roomRepo.getUserRooms(
+            userId,
+            isAdmin,
+            Number(page),
+            Number(limit)
+        );
+
+        return reply.status(200).send(data);
     });
 
     fastify.delete('/:id', {
@@ -57,40 +65,42 @@ export async function roomRoutes(fastify: FastifyInstance) {
         return { message: 'Room closed successfully', roomId: id };
     });
 
+
     fastify.get('/all', {
         preHandler: requireAdmin
     }, async (request, reply) => {
-        const rooms = await fastify.roomRepo.getAllRooms();
-        return { rooms };
+        const { page = 1, limit = 10 } = request.query as any;
+
+        const data = await fastify.roomRepo.getAllRooms(Number(page), Number(limit));
+        return reply.status(200).send(data);
     });
 
     fastify.post('/:id/fake-error', {
         preHandler: authenticate
     }, async (request, reply) => {
         const { id } = request.params as { id: string };
-        const { enabled, statusCode } = request.body as { enabled: boolean; statusCode?: number };
+        const { enabled, statusCode, force } = request.body as { enabled: boolean; statusCode?: number; force?: boolean };
         const user = request.user as unknown as User;
 
         const room = await fastify.roomRepo.getRoom(id);
-        if (!room) {
-            return reply.status(404).send({ error: 'Room not found' });
-        }
+        if (!room) return reply.status(404).send({ error: 'Room not found' });
 
         if (user.role !== 'admin' && room.userId !== user._id.toString()) {
             return reply.status(403).send({ error: 'Access denied' });
         }
 
-        await fastify.roomRepo.setFakeError(id, enabled, statusCode);
+        await fastify.roomRepo.setFakeError(id, enabled, statusCode, force);
         const current = await fastify.roomRepo.getFakeErrorStatus(id);
 
         return reply.status(200).send({
             roomId: id,
             ...current,
             message: current.enabled
-                ? `Fake error ${current.statusCode} enabled`
+                ? `Fake error ${current.statusCode} enabled (force=${current.force})`
                 : 'Fake error disabled',
         });
     });
+
 
     fastify.get('/:id/fake-error', {
         preHandler: authenticate

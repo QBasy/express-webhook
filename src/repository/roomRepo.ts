@@ -39,15 +39,39 @@ export class RoomRepository {
         return await this.roomsCollection.findOne({ roomId }) as Room | null;
     }
 
-    async getUserRooms(userId: string, isAdmin: boolean): Promise<Room[]> {
+    async getUserRooms(
+        userId: string,
+        isAdmin: boolean,
+        page = 1,
+        limit = 10
+    ): Promise<{ rooms: Room[]; total: number; page: number; totalPages: number }> {
         const filter = isAdmin ? {} : { userId };
-        return await this.roomsCollection
+
+        const total = await this.roomsCollection.countDocuments(filter);
+        const rooms = await this.roomsCollection
             .find(filter)
             .sort({ createdAt: -1 })
+            .skip((page - 1) * limit)
+            .limit(limit)
             .toArray() as Room[];
+
+        return {
+            rooms,
+            total,
+            page,
+            totalPages: Math.ceil(total / limit)
+        };
     }
 
-    async getAllRooms(): Promise<Array<{ roomId: string; webhooksCount: number }>> {
+    async getAllRooms(
+        page = 1,
+        limit = 10
+    ): Promise<{
+        rooms: Array<{ roomId: string; webhooksCount: number }>;
+        total: number;
+        page: number;
+        totalPages: number;
+    }> {
         const pipeline = [
             {
                 $lookup: {
@@ -62,10 +86,24 @@ export class RoomRepository {
                     roomId: 1,
                     webhooksCount: { $size: '$webhooks' }
                 }
-            }
+            },
+            { $sort: { roomId: 1 } },
+            { $skip: (page - 1) * limit },
+            { $limit: limit }
         ];
 
-        return await this.roomsCollection.aggregate(pipeline).toArray() as any[];
+        const rooms = (await this.roomsCollection
+            .aggregate(pipeline)
+            .toArray()) as Array<{ roomId: string; webhooksCount: number }>;
+
+        const total = await this.roomsCollection.countDocuments();
+
+        return {
+            rooms,
+            total,
+            page,
+            totalPages: Math.ceil(total / limit)
+        };
     }
 
     async closeRoom(roomId: string): Promise<void> {
@@ -83,25 +121,28 @@ export class RoomRepository {
         );
     }
 
-    async setFakeError(roomId: string, enabled: boolean, statusCode?: number): Promise<void> {
+    async setFakeError(roomId: string, enabled: boolean, statusCode?: number, force?: boolean): Promise<void> {
         await this.fakeErrorsCollection.updateOne(
             { roomId },
             {
                 $set: {
                     enabled,
                     statusCode: enabled ? (statusCode || 500) : null,
+                    force: enabled ? !!force : false,
                     updatedAt: new Date()
                 }
             },
             { upsert: true }
         );
-        logger.info(`Fake error for ${roomId}: ${enabled ? `ON (${statusCode || 500})` : "OFF"}`);
+        logger.info(
+            `Fake error for ${roomId}: ${enabled ? `ON (${statusCode || 500}) force=${!!force}` : "OFF"}`
+        );
     }
 
-    async getFakeErrorStatus(roomId: string): Promise<{ enabled: boolean; statusCode: number | null }> {
+    async getFakeErrorStatus(roomId: string): Promise<{ enabled: boolean; statusCode: number | null; force: boolean }> {
         const result = await this.fakeErrorsCollection.findOne({ roomId });
         return result
-            ? { enabled: result.enabled, statusCode: result.statusCode }
-            : { enabled: false, statusCode: null };
+            ? { enabled: result.enabled, statusCode: result.statusCode, force: !!result.force }
+            : { enabled: false, statusCode: null, force: false };
     }
 }

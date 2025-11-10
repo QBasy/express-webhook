@@ -58,6 +58,19 @@ export class WebhookRepository {
             .toArray() as Webhook[];
     }
 
+    async getWebhooksPaginated(roomId: string, skip: number, limit: number): Promise<Webhook[]> {
+        return await this.webhooksCollection
+            .find({ roomId })
+            .sort({ createdAt: -1 })
+            .skip(skip)
+            .limit(limit)
+            .toArray() as Webhook[];
+    }
+
+    async countWebhooks(roomId: string): Promise<number> {
+        return await this.webhooksCollection.countDocuments({ roomId });
+    }
+
     async getWebhook(roomId: string, receiptId: string): Promise<Webhook | null> {
         return await this.webhooksCollection.findOne({
             roomId,

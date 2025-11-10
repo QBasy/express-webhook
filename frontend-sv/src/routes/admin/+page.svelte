@@ -1,259 +1,301 @@
 <script lang="ts">
     import { onMount } from 'svelte';
     import { goto } from '$app/navigation';
-    import { authStore, isAdmin } from '$stores/auth';
-    import { fetchWithAuth } from '$stores/auth';
-    import { Crown, Clock, CheckCircle, XCircle, Inbox, RefreshCw } from 'lucide-svelte';
-    import Alert from '$components/Alert.svelte';
+    import { Check, X, Trash2, Shield, Clock, UserCheck, UserX, RefreshCw } from 'lucide-svelte';
+    import { api } from '$lib/api';
+    import { currentUser, showAlert } from '$lib/stores';
+    import { isAdmin } from '$lib/auth';
+    import type { User } from '$lib/types';
 
-    interface User {
-        username: string;
-        role: string;
-        status: 'pending' | 'approved' | 'rejected';
-        createdAt: string;
-    }
+    let users = $state<User[]>([]);
+    let loading = $state(false);
 
-    let allUsers: User[] = [];
-    let currentTab: 'pending' | 'approved' | 'rejected' = 'pending';
-    let isLoading = true;
-
-    let alertVisible = false;
-    let alertMessage = '';
-    let alertType: 'success' | 'error' | 'warning' = 'success';
-
-    function showAlert(message: string, type: 'success' | 'error' | 'warning') {
-        alertMessage = message;
-        alertType = type;
-        alertVisible = true;
-        setTimeout(() => { alertVisible = false; }, 5000);
-    }
-
-    onMount(async () => {
-        // Проверяем права админа
-        if (!$isAdmin) {
-            alert('❌ Доступ запрещен! Только для администраторов.');
+    onMount(() => {
+        if (!$currentUser || !isAdmin($currentUser)) {
+            showAlert('Доступ запрещен', 'error');
             goto('/');
             return;
         }
-
-        await loadUsers();
+        loadUsers();
     });
 
     async function loadUsers() {
-        isLoading = true;
         try {
-            const res = await fetchWithAuth('/admin/users');
-
-            if (res.status === 401 || res.status === 403) {
-                authStore.forceLogout();
-                return;
-            }
-
-            if (!res.ok) throw new Error('Ошибка загрузки пользователей');
-
-            const data = await res.json();
-            allUsers = data.users.filter((u: User) => u.username !== 'admin');
+            loading = true;
+            const data: any = await api.auth.getUsers();
+            users = data.users || [];
         } catch (error: any) {
-            showAlert(error.message, 'error');
+            showAlert(error.message || 'Ошибка загрузки пользователей', 'error');
         } finally {
-            isLoading = false;
+            loading = false;
         }
     }
 
-    async function updateUserStatus(username: string, status: 'approved' | 'rejected') {
+    async function approveUser(userId: string) {
         try {
-            const res = await fetchWithAuth(`/admin/users/${username}`, {
-                method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ status })
-            });
-
-            if (!res.ok) throw new Error('Ошибка обновления статуса');
-
-            showAlert(`Пользователь ${status === 'approved' ? 'одобрен' : 'отклонен'}`, 'success');
+            await api.auth.approveUser(userId);
+            showAlert('Пользователь одобрен', 'success');
             await loadUsers();
         } catch (error: any) {
-            showAlert(error.message, 'error');
+            showAlert(error.message || 'Ошибка одобрения пользователя', 'error');
         }
     }
 
-    async function deleteUser(username: string) {
-        if (!confirm(`Удалить пользователя ${username}?`)) return;
+    async function rejectUser(userId: string) {
+        if (!confirm('Вы уверены что хотите отклонить этого пользователя?')) return;
 
         try {
-            const res = await fetchWithAuth(`/admin/users/${username}`, {
-                method: 'DELETE'
-            });
+            await api.auth.rejectUser(userId);
+            showAlert('Пользователь отклонен', 'success');
+            await loadUsers();
+        } catch (error: any) {
+            showAlert(error.message || 'Ошибка отклонения пользователя', 'error');
+        }
+    }
 
-            if (!res.ok) throw new Error('Ошибка удаления пользователя');
+    async function deleteUser(userId: string) {
+        if (!confirm('Вы уверены что хотите удалить этого пользователя?')) return;
 
+        try {
+            await api.auth.deleteUser(userId);
             showAlert('Пользователь удален', 'success');
             await loadUsers();
         } catch (error: any) {
-            showAlert(error.message, 'error');
+            showAlert(error.message || 'Ошибка удаления пользователя', 'error');
         }
     }
 
-    $: filteredUsers = allUsers.filter(u => u.status === currentTab);
-    $: pendingCount = allUsers.filter(u => u.status === 'pending').length;
-    $: approvedCount = allUsers.filter(u => u.status === 'approved').length;
-    $: rejectedCount = allUsers.filter(u => u.status === 'rejected').length;
-
-    function formatDate(dateStr: string): string {
-        const date = new Date(dateStr);
-        return date.toLocaleString('ru-RU', {
-            day: '2-digit',
-            month: '2-digit',
-            year: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit'
-        });
+    function getStatusBadge(status: string) {
+        const badges = {
+            active: { bg: 'bg-green-100', text: 'text-green-800', icon: UserCheck, label: 'Активен' },
+            pending: { bg: 'bg-yellow-100', text: 'text-yellow-800', icon: Clock, label: 'Ожидает' },
+            rejected: { bg: 'bg-red-100', text: 'text-red-800', icon: UserX, label: 'Отклонен' }
+        };
+        return badges[status as keyof typeof badges] || badges.pending;
     }
+
+    function getRoleBadge(role: string) {
+        return role === 'admin'
+            ? { bg: 'bg-purple-100', text: 'text-purple-800', label: 'Админ' }
+            : { bg: 'bg-blue-100', text: 'text-blue-800', label: 'Пользователь' };
+    }
+
+    let pendingUsers = $derived(users.filter(u => u.status === 'pending'));
+    let activeUsers = $derived(users.filter(u => u.status === 'active'));
+    let rejectedUsers = $derived(users.filter(u => u.status === 'rejected'));
 </script>
 
 <svelte:head>
     <title>Админ панель - Webhook Viewer</title>
 </svelte:head>
 
-<div class="bg-gray-50 min-h-screen">
-    <!-- Alert -->
-    {#if alertVisible}
-        <div class="fixed top-20 right-4 z-50 max-w-md">
-            <Alert {alertMessage} type={alertType} visible={alertVisible} />
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div class="mb-8 flex items-center justify-between">
+        <div>
+            <h1 class="text-3xl font-bold text-gray-800 flex items-center gap-3">
+                <Shield size={32} class="text-purple-600" />
+                <span>Панель администратора</span>
+            </h1>
+            <p class="text-gray-600 mt-2">Управление пользователями и их доступом</p>
         </div>
-    {/if}
 
-    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <!-- Header -->
-        <div class="mb-8">
+        <button
+                onclick={loadUsers}
+                disabled={loading}
+                class="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition disabled:opacity-50"
+        >
+            <RefreshCw size={18} class={loading ? 'animate-spin' : ''} />
+            <span>Обновить</span>
+        </button>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div class="bg-gradient-to-br from-yellow-50 to-yellow-100 border border-yellow-200 rounded-lg p-6">
             <div class="flex items-center justify-between">
-                <div class="flex items-center gap-4">
-                    <div class="w-16 h-16 bg-green-600 rounded-xl flex items-center justify-center shadow-md">
-                        <Crown size={32} class="text-white" />
+                <div>
+                    <p class="text-yellow-800 text-sm font-medium">Ожидают одобрения</p>
+                    <p class="text-3xl font-bold text-yellow-900 mt-2">{pendingUsers.length}</p>
+                </div>
+                <Clock size={40} class="text-yellow-600" />
+            </div>
+        </div>
+
+        <div class="bg-gradient-to-br from-green-50 to-green-100 border border-green-200 rounded-lg p-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-green-800 text-sm font-medium">Активные</p>
+                    <p class="text-3xl font-bold text-green-900 mt-2">{activeUsers.length}</p>
+                </div>
+                <UserCheck size={40} class="text-green-600" />
+            </div>
+        </div>
+
+        <div class="bg-gradient-to-br from-red-50 to-red-100 border border-red-200 rounded-lg p-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-red-800 text-sm font-medium">Отклоненные</p>
+                    <p class="text-3xl font-bold text-red-900 mt-2">{rejectedUsers.length}</p>
+                </div>
+                <UserX size={40} class="text-red-600" />
+            </div>
+        </div>
+    </div>
+
+    {#if loading && users.length === 0}
+        <div class="bg-white rounded-lg shadow-md p-12 text-center">
+            <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mb-4"></div>
+            <p class="text-gray-500">Загрузка пользователей...</p>
+        </div>
+    {:else if users.length === 0}
+        <div class="bg-white rounded-lg shadow-md p-12 text-center">
+            <p class="text-gray-500">Нет пользователей</p>
+        </div>
+    {:else}
+        <div class="space-y-6">
+            {#if pendingUsers.length > 0}
+                <div class="bg-white rounded-lg shadow-md overflow-hidden">
+                    <div class="bg-yellow-50 border-b border-yellow-200 px-6 py-4">
+                        <h2 class="text-lg font-semibold text-yellow-900 flex items-center gap-2">
+                            <Clock size={20} />
+                            <span>Ожидают одобрения ({pendingUsers.length})</span>
+                        </h2>
                     </div>
-                    <div>
-                        <h1 class="text-3xl font-bold text-gray-900">Админ панель</h1>
-                        <p class="text-gray-600">Управление пользователями и системой</p>
+                    <div class="divide-y divide-gray-200">
+                        {#each pendingUsers as user (user.id)}
+                            <div class="p-6 hover:bg-gray-50 transition">
+                                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                                    <div class="flex-1">
+                                        <div class="flex items-center gap-3 mb-2">
+                                            <div class="w-12 h-12 rounded-full bg-gradient-to-br from-yellow-400 to-yellow-600 flex items-center justify-center text-white font-bold text-lg shadow-md">
+                                                {user.username.charAt(0).toUpperCase()}
+                                            </div>
+                                            <div>
+                                                <p class="font-semibold text-gray-800">{user.username}</p>
+                                                <p class="text-sm text-gray-500">
+                                                    Зарегистрирован: {new Date(user.createdAt).toLocaleString('ru-RU')}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="flex gap-2">
+                                        <button
+                                                onclick={() => approveUser(user.id)}
+                                                class="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition"
+                                        >
+                                            <Check size={18} />
+                                            <span>Одобрить</span>
+                                        </button>
+                                        <button
+                                                onclick={() => rejectUser(user.id)}
+                                                class="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition"
+                                        >
+                                            <X size={18} />
+                                            <span>Отклонить</span>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        {/each}
                     </div>
                 </div>
-                <button on:click={loadUsers} class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition flex items-center gap-2">
-                    <RefreshCw size={16} />
-                    <span>Обновить</span>
-                </button>
-            </div>
-        </div>
+            {/if}
 
-        <!-- Tabs -->
-        <div class="mb-6">
-            <div class="border-b border-gray-200">
-                <nav class="-mb-px flex space-x-8">
-                    <button
-                            on:click={() => currentTab = 'pending'}
-                            class="py-4 px-1 font-medium flex items-center gap-2 transition {currentTab === 'pending' ? 'border-b-2 border-green-600 text-green-600' : 'border-b-2 border-transparent text-gray-500 hover:text-gray-700'}"
-                    >
-                        <Clock size={16} />
-                        <span>Ожидают одобрения</span>
-                        <span class="ml-2 bg-green-100 text-green-600 px-2.5 py-1 rounded-full text-xs font-semibold">{pendingCount}</span>
-                    </button>
-                    <button
-                            on:click={() => currentTab = 'approved'}
-                            class="py-4 px-1 font-medium flex items-center gap-2 transition {currentTab === 'approved' ? 'border-b-2 border-green-600 text-green-600' : 'border-b-2 border-transparent text-gray-500 hover:text-gray-700'}"
-                    >
-                        <CheckCircle size={16} />
-                        <span>Одобренные</span>
-                        <span class="ml-2 bg-gray-100 text-gray-600 px-2.5 py-1 rounded-full text-xs font-semibold">{approvedCount}</span>
-                    </button>
-                    <button
-                            on:click={() => currentTab = 'rejected'}
-                            class="py-4 px-1 font-medium flex items-center gap-2 transition {currentTab === 'rejected' ? 'border-b-2 border-green-600 text-green-600' : 'border-b-2 border-transparent text-gray-500 hover:text-gray-700'}"
-                    >
-                        <XCircle size={16} />
-                        <span>Отклоненные</span>
-                        <span class="ml-2 bg-gray-100 text-gray-600 px-2.5 py-1 rounded-full text-xs font-semibold">{rejectedCount}</span>
-                    </button>
-                </nav>
-            </div>
-        </div>
-
-        <!-- Loading -->
-        {#if isLoading}
-            <div class="text-center py-12">
-                <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
-                <p class="mt-4 text-gray-600">Загрузка пользователей...</p>
-            </div>
-        {:else if filteredUsers.length === 0}
-            <!-- Empty State -->
-            <div class="text-center py-12">
-                <Inbox size={64} class="text-gray-300 mx-auto mb-4" />
-                <p class="text-gray-600 text-lg">Нет пользователей в этой категории</p>
-            </div>
-        {:else}
-            <!-- Users List -->
-            <div class="space-y-4">
-                {#each filteredUsers as user}
-                    <div class="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition">
-                        <div class="flex items-center justify-between">
-                            <div class="flex items-center gap-4">
-                                <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
-                                    <span class="text-green-600 font-bold text-lg">{user.username[0].toUpperCase()}</span>
-                                </div>
-                                <div>
-                                    <h3 class="text-lg font-semibold text-gray-900">{user.username}</h3>
-                                    <p class="text-sm text-gray-600">Роль: <span class="font-medium">{user.role}</span></p>
-                                    <p class="text-xs text-gray-500 mt-1">Создан: {formatDate(user.createdAt)}</p>
-                                </div>
-                            </div>
-
-                            <div class="flex items-center gap-3">
-                                {#if currentTab === 'pending'}
-                                    <button
-                                            on:click={() => updateUserStatus(user.username, 'approved')}
-                                            class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition flex items-center gap-2"
-                                    >
-                                        <CheckCircle size={16} />
-                                        <span>Одобрить</span>
-                                    </button>
-                                    <button
-                                            on:click={() => updateUserStatus(user.username, 'rejected')}
-                                            class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition flex items-center gap-2"
-                                    >
-                                        <XCircle size={16} />
-                                        <span>Отклонить</span>
-                                    </button>
-                                {:else if currentTab === 'rejected'}
-                                    <button
-                                            on:click={() => updateUserStatus(user.username, 'approved')}
-                                            class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition flex items-center gap-2"
-                                    >
-                                        <CheckCircle size={16} />
-                                        <span>Одобрить</span>
-                                    </button>
-                                    <button
-                                            on:click={() => deleteUser(user.username)}
-                                            class="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition"
-                                    >
-                                        Удалить
-                                    </button>
-                                {:else}
-                                    <button
-                                            on:click={() => updateUserStatus(user.username, 'rejected')}
-                                            class="px-4 py-2 bg-yellow-500 hover:bg-yellow-600 text-white rounded-lg transition flex items-center gap-2"
-                                    >
-                                        <XCircle size={16} />
-                                        <span>Отозвать</span>
-                                    </button>
-                                    <button
-                                            on:click={() => deleteUser(user.username)}
-                                            class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition"
-                                    >
-                                        Удалить
-                                    </button>
-                                {/if}
-                            </div>
-                        </div>
+            {#if activeUsers.length > 0}
+                <div class="bg-white rounded-lg shadow-md overflow-hidden">
+                    <div class="bg-green-50 border-b border-green-200 px-6 py-4">
+                        <h2 class="text-lg font-semibold text-green-900 flex items-center gap-2">
+                            <UserCheck size={20} />
+                            <span>Активные пользователи ({activeUsers.length})</span>
+                        </h2>
                     </div>
-                {/each}
-            </div>
-        {/if}
-    </main>
+                    <div class="divide-y divide-gray-200">
+                        {#each activeUsers as user (user.id)}
+                            <div class="p-6 hover:bg-gray-50 transition">
+                                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                                    <div class="flex-1">
+                                        <div class="flex items-center gap-3 mb-2">
+                                            <div class="w-12 h-12 rounded-full bg-gradient-to-br from-green-400 to-green-600 flex items-center justify-center text-white font-bold text-lg shadow-md">
+                                                {user.username.charAt(0).toUpperCase()}
+                                            </div>
+                                            <div>
+                                                <div class="flex items-center gap-2">
+                                                    <p class="font-semibold text-gray-800">{user.username}</p>
+                                                    {#if user.role === 'admin'}
+                                                        <span class="px-2 py-1 rounded-full text-xs font-medium {getRoleBadge(user.role).bg} {getRoleBadge(user.role).text}">
+                                                            <Shield size={12} class="inline mr-1" />
+                                                            {getRoleBadge(user.role).label}
+                                                        </span>
+                                                    {/if}
+                                                </div>
+                                                <p class="text-sm text-gray-500">
+                                                    Зарегистрирован: {new Date(user.createdAt).toLocaleString('ru-RU')}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {#if user.id !== $currentUser?.id}
+                                        <button
+                                                onclick={() => deleteUser(user.id)}
+                                                class="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition"
+                                        >
+                                            <Trash2 size={18} />
+                                            <span>Удалить</span>
+                                        </button>
+                                    {/if}
+                                </div>
+                            </div>
+                        {/each}
+                    </div>
+                </div>
+            {/if}
+
+            {#if rejectedUsers.length > 0}
+                <div class="bg-white rounded-lg shadow-md overflow-hidden">
+                    <div class="bg-red-50 border-b border-red-200 px-6 py-4">
+                        <h2 class="text-lg font-semibold text-red-900 flex items-center gap-2">
+                            <UserX size={20} />
+                            <span>Отклоненные пользователи ({rejectedUsers.length})</span>
+                        </h2>
+                    </div>
+                    <div class="divide-y divide-gray-200">
+                        {#each rejectedUsers as user (user.id)}
+                            <div class="p-6 hover:bg-gray-50 transition">
+                                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                                    <div class="flex-1">
+                                        <div class="flex items-center gap-3 mb-2">
+                                            <div class="w-12 h-12 rounded-full bg-gradient-to-br from-red-400 to-red-600 flex items-center justify-center text-white font-bold text-lg shadow-md">
+                                                {user.username.charAt(0).toUpperCase()}
+                                            </div>
+                                            <div>
+                                                <p class="font-semibold text-gray-800">{user.username}</p>
+                                                <p class="text-sm text-gray-500">
+                                                    Зарегистрирован: {new Date(user.createdAt).toLocaleString('ru-RU')}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="flex gap-2">
+                                        <button
+                                                onclick={() => approveUser(user.id)}
+                                                class="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition"
+                                        >
+                                            <Check size={18} />
+                                            <span>Одобрить</span>
+                                        </button>
+                                        <button
+                                                onclick={() => deleteUser(user.id)}
+                                                class="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition"
+                                        >
+                                            <Trash2 size={18} />
+                                            <span>Удалить</span>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        {/each}
+                    </div>
+                </div>
+            {/if}
+        </div>
+    {/if}
 </div>

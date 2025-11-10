@@ -16,13 +16,6 @@ export default defineConfig({
         }
     },
     server: {
-        port: 5173,
-        proxy: {
-            '/auth': 'https://webhook-ga.onrender.com',
-            '/room': 'https://webhook-ga.onrender.com',
-            '/hook': 'https://webhook-ga.onrender.com',
-            '/admin': 'https://webhook-ga.onrender.com',
-            '/health': 'https://webhook-ga.onrender.com'
-        }
+        port: 5173
     }
 });

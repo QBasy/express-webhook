@@ -40,6 +40,7 @@ export async function webhookRoutes(fastify: FastifyInstance) {
 
     fastify.get("/all/:id", async (request, reply) => {
         const { id } = request.params as { id: string };
+        const { page = "1", limit = "10" } = request.query as { page?: string; limit?: string };
 
         const room = await fastify.roomRepo.getRoom(id);
         if (!room) {
@@ -47,9 +48,23 @@ export async function webhookRoutes(fastify: FastifyInstance) {
             return reply.status(404).send({ error: "Room not found" });
         }
 
-        const webhooks = await fastify.webhookRepo.getWebhooks(id);
-        return reply.status(200).send(webhooks);
+        const pageNum = Math.max(1, parseInt(page));
+        const limitNum = Math.max(1, parseInt(limit));
+        const skip = (pageNum - 1) * limitNum;
+
+        const total = await fastify.webhookRepo.countWebhooks(id);
+
+        const webhooks = await fastify.webhookRepo.getWebhooksPaginated(id, skip, limitNum);
+
+        return reply.status(200).send({
+            page: pageNum,
+            limit: limitNum,
+            total,
+            totalPages: Math.ceil(total / limitNum),
+            webhooks
+        });
     });
+
 
     fastify.get("/:room_id/:webhook_id", async (request, reply) => {
         const { room_id, webhook_id } = request.params as {
@@ -74,10 +89,7 @@ export async function webhookRoutes(fastify: FastifyInstance) {
 
     fastify.all("/:id", async (request, reply) => {
         const { id } = request.params as { id: string };
-
-        if (request.method === 'GET') {
-            return;
-        }
+        if (request.method === 'GET') return;
 
         const room = await fastify.roomRepo.getRoom(id);
         if (!room) {
@@ -86,32 +98,32 @@ export async function webhookRoutes(fastify: FastifyInstance) {
         }
 
         const fake = await fastify.roomRepo.getFakeErrorStatus(id);
-        if (fake.enabled && fake.statusCode) {
-            return reply.status(fake.statusCode).send({
-                error: `Simulated ${fake.statusCode}`
-            });
+        const metadata = extractMetadata(request);
+        const webhook = request.body || {};
+        let receiptId: string | null = null;
+
+        if (!fake.enabled || !fake.statusCode) {
+            receiptId = await fastify.webhookRepo.addWebhook(id, webhook, room.webhookTTL, metadata);
+            await fastify.roomRepo.updateActivity(id);
+
+            logger.info(`Webhook received: ${request.method} ${metadata.url} -> receiptId: ${receiptId}`);
+            return reply.status(200).send({ status: "ok", receiptId, method: request.method });
         }
 
-        const metadata = extractMetadata(request);
+        if (!fake.force) {
+            receiptId = await fastify.webhookRepo.addWebhook(id, webhook, room.webhookTTL, metadata);
+            await fastify.roomRepo.updateActivity(id);
+            logger.info(`Webhook saved under fake error (force=false): ${receiptId}`);
+        } else {
+            logger.info(`Fake error (force=true): webhook from ${id} not saved`);
+        }
 
-        const webhook = request.body || {};
-
-        const receiptId = await fastify.webhookRepo.addWebhook(
-            id,
-            webhook,
-            room.webhookTTL,
-            metadata
-        );
-
-        await fastify.roomRepo.updateActivity(id);
-
-        logger.info(`Webhook received: ${request.method} ${metadata.url} -> receiptId: ${receiptId}`);
-
-        return {
-            status: "ok",
-            receiptId,
-            method: request.method
-        };
+        return reply.status(fake.statusCode).send({
+            error: `Simulated ${fake.statusCode}`,
+            force: fake.force,
+            saved: !fake.force,
+            ...(receiptId ? { receiptId } : {})
+        });
     });
 
     fastify.delete("/delete/:id", async (request, reply) => {

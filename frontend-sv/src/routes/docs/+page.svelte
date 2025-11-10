@@ -1,236 +1,320 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
-	import { Book, Home, ExternalLink } from 'lucide-svelte';
+    import { Code, Book, Send, Key, Lock, CheckCircle } from 'lucide-svelte';
+    import { browser } from '$app/environment';
+
+    let baseUrl = $state('');
+
+    $effect(() => {
+        if (browser) {
+            baseUrl = window.location.origin;
+        }
+    });
 </script>
 
 <svelte:head>
-	<title>Документация - Webhook Viewer | GREEN-API QA TEAM</title>
+    <title>Документация - Webhook Viewer</title>
 </svelte:head>
 
-<div class="bg-gradient-to-br from-gray-50 to-gray-100 min-h-screen">
-	<!-- Header -->
-	<header class="bg-white shadow-md border-b border-gray-200 sticky top-0 z-50">
-		<div class="max-w-6xl mx-auto px-4 py-4 sm:px-6 lg:px-8">
-			<div class="flex items-center justify-between">
-				<div class="flex items-center gap-4">
-					<svg width="50" height="50" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-						<rect width="100" height="100" rx="12" fill="#3B9702"/>
-						<text x="50" y="70" font-family="Arial, sans-serif" font-size="60" font-weight="bold" fill="white" text-anchor="middle">G</text>
-					</svg>
-					<div>
-						<h1 class="text-2xl font-bold text-gray-900">Webhook Viewer API</h1>
-						<p class="text-xs text-green-600 font-semibold">Documentation</p>
-					</div>
-				</div>
-				<div class="flex items-center gap-4">
-					<a href="/" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg text-sm font-medium transition">
-						← Viewer
-					</a>
-					<a href="https://green-api.com" target="_blank" class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium transition shadow-sm">
-						GREEN-API →
-					</a>
-				</div>
-			</div>
-		</div>
-	</header>
+<div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div class="mb-8">
+        <h1 class="text-4xl font-bold text-gray-800 flex items-center gap-3">
+            <Book size={36} class="text-green-600" />
+            <span>Документация API</span>
+        </h1>
+        <p class="text-gray-600 mt-3 text-lg">Полное руководство по использованию Webhook Viewer API</p>
+    </div>
 
-	<!-- Main Content -->
-	<main class="max-w-6xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
-		<!-- Introduction -->
-		<section class="bg-white rounded-lg shadow-md p-8 mb-8 animate-fade-in">
-			<h2 class="text-3xl font-bold text-gray-900 mb-4">Добро пожаловать в Webhook Viewer API</h2>
-			<p class="text-gray-700 mb-4 text-lg">
-				Webhook Viewer — это инструмент для тестирования и отладки webhook'ов, созданный командой <span class="text-green-600 font-semibold">GREEN-API QA TEAM</span>.
-			</p>
-			<p class="text-gray-600 mb-6">
-				С помощью этого API вы можете создавать временные комнаты для приема webhook'ов, просматривать их содержимое, симулировать ошибки и управлять данными.
-			</p>
+    <div class="space-y-8">
+        <section class="bg-white rounded-lg shadow-md p-6">
+            <h2 class="text-2xl font-bold text-gray-800 mb-4 flex items-center gap-2">
+                <Key size={24} class="text-green-600" />
+                <span>Аутентификация</span>
+            </h2>
 
-			<div class="bg-blue-50 border-l-4 border-blue-500 p-4 rounded">
-				<h3 class="font-semibold text-blue-900 mb-2">🚀 Быстрый старт</h3>
-				<ol class="list-decimal list-inside text-blue-800 space-y-2">
-					<li>Создайте комнату через POST запрос на <code class="bg-blue-100 px-2 py-1 rounded">/room/&#123;id&#125;</code></li>
-					<li>Получите URL для приема webhook'ов</li>
-					<li>Отправляйте webhook'ы на полученный URL</li>
-					<li>Просматривайте результаты через GET запрос на <code class="bg-blue-100 px-2 py-1 rounded">/hook/&#123;id&#125;</code></li>
-				</ol>
-			</div>
-		</section>
+            <div class="space-y-4">
+                <div class="bg-blue-50 border-l-4 border-blue-500 p-4">
+                    <p class="text-sm text-blue-800">
+                        <strong>Важно:</strong> Для доступа к защищенным эндпоинтам необходимо передавать JWT токен в заголовке Authorization.
+                    </p>
+                </div>
 
-		<!-- Room Management -->
-		<section class="bg-white rounded-lg shadow-md p-8 mb-8">
-			<h2 class="text-2xl font-bold text-gray-900 mb-6">🏠 Управление комнатами</h2>
+                <div>
+                    <h3 class="font-semibold text-gray-800 mb-2">POST /auth/register</h3>
+                    <p class="text-sm text-gray-600 mb-3">Регистрация нового пользователя</p>
+                    <div class="bg-gray-900 rounded-lg p-4 overflow-x-auto">
+                        <pre class="text-green-400 text-sm"><code>{`{
+  "username": "string",
+  "password": "string"
+}`}</code></pre>
+                    </div>
+                    <p class="text-sm text-gray-600 mt-2">
+                        <strong>Ответ:</strong> После регистрации пользователь получает статус "pending" и должен ждать одобрения администратора.
+                    </p>
+                </div>
 
-			<!-- Create Room -->
-			<div class="mb-8 border-b pb-8">
-				<div class="flex items-center gap-3 mb-4">
-					<span class="px-3 py-1 bg-blue-600 text-white rounded text-sm font-semibold">POST</span>
-					<code class="text-lg font-mono text-gray-800">/room/&#123;id&#125;</code>
-				</div>
-				<p class="text-gray-600 mb-4">Создает новую комнату для приема webhook'ов.</p>
-				
-				<div class="bg-gray-900 text-gray-100 p-4 rounded-lg overflow-x-auto">
-					<pre class="text-sm"><code>curl -X POST http://localhost:6005/room/my-test-room \
-  -H "Authorization: Bearer YOUR_TOKEN"</code></pre>
-				</div>
+                <div>
+                    <h3 class="font-semibold text-gray-800 mb-2">POST /auth/login</h3>
+                    <p class="text-sm text-gray-600 mb-3">Вход в систему</p>
+                    <div class="bg-gray-900 rounded-lg p-4 overflow-x-auto">
+                        <pre class="text-green-400 text-sm"><code>{`{
+  "username": "string",
+  "password": "string"
+}`}</code></pre>
+                    </div>
+                    <p class="text-sm text-gray-600 mt-2">
+                        <strong>Ответ:</strong>
+                    </p>
+                    <div class="bg-gray-900 rounded-lg p-4 overflow-x-auto mt-2">
+                        <pre class="text-green-400 text-sm"><code>{`{
+  "token": "jwt_token_here",
+  "user": {
+    "id": "string",
+    "username": "string",
+    "role": "admin | user",
+    "status": "active | pending | rejected"
+  }
+}`}</code></pre>
+                    </div>
+                </div>
 
-				<div class="mt-4 bg-green-50 p-4 rounded-lg">
-					<p class="text-sm font-semibold text-green-900 mb-2">✓ Response 200:</p>
-					<pre class="text-sm text-green-800"><code>&#123;
-  "message": "Room created",
-  "roomId": "my-test-room",
-  "webhookUrl": "http://localhost:6005/hook/my-test-room"
-&#125;</code></pre>
-				</div>
-			</div>
+                <div>
+                    <h3 class="font-semibold text-gray-800 mb-2">GET /auth/me</h3>
+                    <p class="text-sm text-gray-600 mb-3">Получить информацию о текущем пользователе</p>
+                    <div class="bg-gray-900 rounded-lg p-4 overflow-x-auto">
+                        <pre class="text-green-400 text-sm"><code>Authorization: Bearer &lt;token&gt;</code></pre>
+                    </div>
+                </div>
+            </div>
+        </section>
 
-			<!-- Delete Room -->
-			<div class="mb-8">
-				<div class="flex items-center gap-3 mb-4">
-					<span class="px-3 py-1 bg-red-600 text-white rounded text-sm font-semibold">DELETE</span>
-					<code class="text-lg font-mono text-gray-800">/room/&#123;id&#125;</code>
-				</div>
-				<p class="text-gray-600 mb-4">Удаляет комнату и все связанные webhook'и.</p>
-				
-				<div class="bg-gray-900 text-gray-100 p-4 rounded-lg overflow-x-auto">
-					<pre class="text-sm"><code>curl -X DELETE http://localhost:6005/room/my-test-room \
-  -H "Authorization: Bearer YOUR_TOKEN"</code></pre>
-				</div>
-			</div>
-		</section>
+        <section class="bg-white rounded-lg shadow-md p-6">
+            <h2 class="text-2xl font-bold text-gray-800 mb-4 flex items-center gap-2">
+                <Lock size={24} class="text-purple-600" />
+                <span>Управление пользователями (Только для администраторов)</span>
+            </h2>
 
-		<!-- Webhooks -->
-		<section class="bg-white rounded-lg shadow-md p-8 mb-8">
-			<h2 class="text-2xl font-bold text-gray-900 mb-6">📨 Работа с Webhook'ами</h2>
+            <div class="space-y-4">
+                <div>
+                    <h3 class="font-semibold text-gray-800 mb-2">GET /auth/users</h3>
+                    <p class="text-sm text-gray-600 mb-3">Получить список всех пользователей</p>
+                    <div class="bg-gray-900 rounded-lg p-4 overflow-x-auto">
+                        <pre class="text-green-400 text-sm"><code>Authorization: Bearer &lt;admin_token&gt;</code></pre>
+                    </div>
+                </div>
 
-			<!-- Send Webhook -->
-			<div class="mb-8 border-b pb-8">
-				<div class="flex items-center gap-3 mb-4">
-					<span class="px-3 py-1 bg-blue-600 text-white rounded text-sm font-semibold">POST</span>
-					<code class="text-lg font-mono text-gray-800">/hook/&#123;roomId&#125;</code>
-				</div>
-				<p class="text-gray-600 mb-4">Отправляет webhook в комнату.</p>
-				
-				<div class="bg-gray-900 text-gray-100 p-4 rounded-lg overflow-x-auto">
-					<pre class="text-sm"><code>curl -X POST http://localhost:6005/hook/my-test-room \
-  -H "Content-Type: application/json" \
-  -d '&#123;"message": "Hello World", "timestamp": "2025-01-01T00:00:00Z"&#125;'</code></pre>
-				</div>
-			</div>
+                <div>
+                    <h3 class="font-semibold text-gray-800 mb-2">POST /auth/users/:userId/approve</h3>
+                    <p class="text-sm text-gray-600 mb-3">Одобрить пользователя</p>
+                    <div class="bg-gray-900 rounded-lg p-4 overflow-x-auto">
+                        <pre class="text-green-400 text-sm"><code>Authorization: Bearer &lt;admin_token&gt;</code></pre>
+                    </div>
+                </div>
 
-			<!-- Get All Webhooks -->
-			<div class="mb-8 border-b pb-8">
-				<div class="flex items-center gap-3 mb-4">
-					<span class="px-3 py-1 bg-green-600 text-white rounded text-sm font-semibold">GET</span>
-					<code class="text-lg font-mono text-gray-800">/hook/all/&#123;roomId&#125;</code>
-				</div>
-				<p class="text-gray-600 mb-4">Получает все webhook'и из комнаты.</p>
-				
-				<div class="bg-gray-900 text-gray-100 p-4 rounded-lg overflow-x-auto">
-					<pre class="text-sm"><code>curl http://localhost:6005/hook/all/my-test-room \
-  -H "Authorization: Bearer YOUR_TOKEN"</code></pre>
-				</div>
-			</div>
+                <div>
+                    <h3 class="font-semibold text-gray-800 mb-2">POST /auth/users/:userId/reject</h3>
+                    <p class="text-sm text-gray-600 mb-3">Отклонить пользователя</p>
+                    <div class="bg-gray-900 rounded-lg p-4 overflow-x-auto">
+                        <pre class="text-green-400 text-sm"><code>Authorization: Bearer &lt;admin_token&gt;</code></pre>
+                    </div>
+                </div>
 
-			<!-- Delete Webhooks -->
-			<div class="mb-8">
-				<div class="flex items-center gap-3 mb-4">
-					<span class="px-3 py-1 bg-red-600 text-white rounded text-sm font-semibold">DELETE</span>
-					<code class="text-lg font-mono text-gray-800">/hook/delete/&#123;roomId&#125;</code>
-				</div>
-				<p class="text-gray-600 mb-4">Удаляет все webhook'и из комнаты.</p>
-				
-				<div class="bg-gray-900 text-gray-100 p-4 rounded-lg overflow-x-auto">
-					<pre class="text-sm"><code>curl -X DELETE http://localhost:6005/hook/delete/my-test-room \
-  -H "Authorization: Bearer YOUR_TOKEN"</code></pre>
-				</div>
-			</div>
-		</section>
+                <div>
+                    <h3 class="font-semibold text-gray-800 mb-2">DELETE /auth/users/:userId</h3>
+                    <p class="text-sm text-gray-600 mb-3">Удалить пользователя</p>
+                    <div class="bg-gray-900 rounded-lg p-4 overflow-x-auto">
+                        <pre class="text-green-400 text-sm"><code>Authorization: Bearer &lt;admin_token&gt;</code></pre>
+                    </div>
+                </div>
+            </div>
+        </section>
 
-		<!-- Fake Errors -->
-		<section class="bg-white rounded-lg shadow-md p-8 mb-8">
-			<h2 class="text-2xl font-bold text-gray-900 mb-6">⚠️ Симуляция ошибок</h2>
+        <section class="bg-white rounded-lg shadow-md p-6">
+            <h2 class="text-2xl font-bold text-gray-800 mb-4 flex items-center gap-2">
+                <Code size={24} class="text-green-600" />
+                <span>Работа с комнатами</span>
+            </h2>
 
-			<div class="mb-8">
-				<div class="flex items-center gap-3 mb-4">
-					<span class="px-3 py-1 bg-blue-600 text-white rounded text-sm font-semibold">POST</span>
-					<code class="text-lg font-mono text-gray-800">/room/&#123;id&#125;/fake-error</code>
-				</div>
-				<p class="text-gray-600 mb-4">Включает симуляцию HTTP ошибок для webhook'ов.</p>
-				
-				<div class="bg-gray-900 text-gray-100 p-4 rounded-lg overflow-x-auto">
-					<pre class="text-sm"><code>curl -X POST http://localhost:6005/room/my-test-room/fake-error \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer YOUR_TOKEN" \
-  -d '&#123;"enabled": true, "statusCode": 500&#125;'</code></pre>
-				</div>
+            <div class="space-y-4">
+                <div>
+                    <h3 class="font-semibold text-gray-800 mb-2">GET /room/list</h3>
+                    <p class="text-sm text-gray-600 mb-3">Получить список комнат пользователя</p>
+                    <div class="bg-gray-900 rounded-lg p-4 overflow-x-auto">
+                        <pre class="text-green-400 text-sm"><code>Authorization: Bearer &lt;token&gt;</code></pre>
+                    </div>
+                    <p class="text-sm text-gray-600 mt-2">
+                        <strong>Ответ:</strong>
+                    </p>
+                    <div class="bg-gray-900 rounded-lg p-4 overflow-x-auto mt-2">
+                        <pre class="text-green-400 text-sm"><code>{`{
+  "rooms": [
+    {
+      "id": "string",
+      "name": "string",
+      "createdAt": "ISO8601",
+      "userId": "string"
+    }
+  ]
+}`}</code></pre>
+                    </div>
+                </div>
 
-				<div class="mt-4 bg-yellow-50 p-4 rounded-lg">
-					<p class="text-sm text-yellow-900">
-						<strong>Примечание:</strong> После включения симуляции, все webhook'и будут возвращать указанный HTTP код.
-					</p>
-				</div>
-			</div>
-		</section>
+                <div>
+                    <h3 class="font-semibold text-gray-800 mb-2">POST /room/create</h3>
+                    <p class="text-sm text-gray-600 mb-3">Создать новую комнату</p>
+                    <div class="bg-gray-900 rounded-lg p-4 overflow-x-auto">
+                        <pre class="text-green-400 text-sm"><code>{`Authorization: Bearer <token>
 
-		<!-- Auth -->
-		<section class="bg-white rounded-lg shadow-md p-8">
-			<h2 class="text-2xl font-bold text-gray-900 mb-6">🔐 Авторизация</h2>
+{
+  "name": "string"
+}`}</code></pre>
+                    </div>
+                </div>
 
-			<div class="mb-6">
-				<h3 class="text-lg font-semibold text-gray-800 mb-3">Регистрация</h3>
-				<div class="flex items-center gap-3 mb-4">
-					<span class="px-3 py-1 bg-blue-600 text-white rounded text-sm font-semibold">POST</span>
-					<code class="text-lg font-mono text-gray-800">/auth/register</code>
-				</div>
-				
-				<div class="bg-gray-900 text-gray-100 p-4 rounded-lg overflow-x-auto">
-					<pre class="text-sm"><code>curl -X POST http://localhost:6005/auth/register \
-  -H "Content-Type: application/json" \
-  -d '&#123;"username": "user", "password": "pass"&#125;'</code></pre>
-				</div>
-			</div>
+                <div>
+                    <h3 class="font-semibold text-gray-800 mb-2">DELETE /room/:roomId</h3>
+                    <p class="text-sm text-gray-600 mb-3">Удалить комнату</p>
+                    <div class="bg-gray-900 rounded-lg p-4 overflow-x-auto">
+                        <pre class="text-green-400 text-sm"><code>Authorization: Bearer &lt;token&gt;</code></pre>
+                    </div>
+                </div>
 
-			<div class="mb-6">
-				<h3 class="text-lg font-semibold text-gray-800 mb-3">Вход</h3>
-				<div class="flex items-center gap-3 mb-4">
-					<span class="px-3 py-1 bg-blue-600 text-white rounded text-sm font-semibold">POST</span>
-					<code class="text-lg font-mono text-gray-800">/auth/login</code>
-				</div>
-				
-				<div class="bg-gray-900 text-gray-100 p-4 rounded-lg overflow-x-auto">
-					<pre class="text-sm"><code>curl -X POST http://localhost:6005/auth/login \
-  -H "Content-Type: application/json" \
-  -d '&#123;"username": "user", "password": "pass"&#125;'</code></pre>
-				</div>
+                <div>
+                    <h3 class="font-semibold text-gray-800 mb-2">GET /room/:roomId/webhooks</h3>
+                    <p class="text-sm text-gray-600 mb-3">Получить вебхуки комнаты</p>
+                    <div class="bg-gray-900 rounded-lg p-4 overflow-x-auto">
+                        <pre class="text-green-400 text-sm"><code>Authorization: Bearer &lt;token&gt;</code></pre>
+                    </div>
+                    <p class="text-sm text-gray-600 mt-2">
+                        <strong>Ответ:</strong>
+                    </p>
+                    <div class="bg-gray-900 rounded-lg p-4 overflow-x-auto mt-2">
+                        <pre class="text-green-400 text-sm"><code>{`{
+  "webhooks": [
+    {
+      "id": "string",
+      "roomId": "string",
+      "payload": {},
+      "receivedAt": "ISO8601"
+    }
+  ]
+}`}</code></pre>
+                    </div>
+                </div>
 
-				<div class="mt-4 bg-green-50 p-4 rounded-lg">
-					<p class="text-sm font-semibold text-green-900 mb-2">✓ Response:</p>
-					<pre class="text-sm text-green-800"><code>&#123;
-  "token": "eyJhbGci...",
-  "user": &#123;
-    "username": "user",
-    "role": "user"
-  &#125;
-&#125;</code></pre>
-				</div>
-			</div>
-		</section>
-	</main>
+                <div>
+                    <h3 class="font-semibold text-gray-800 mb-2">POST /room/:roomId/clear</h3>
+                    <p class="text-sm text-gray-600 mb-3">Очистить все вебхуки комнаты</p>
+                    <div class="bg-gray-900 rounded-lg p-4 overflow-x-auto">
+                        <pre class="text-green-400 text-sm"><code>Authorization: Bearer &lt;token&gt;</code></pre>
+                    </div>
+                </div>
+            </div>
+        </section>
 
-	<!-- Footer -->
-	<footer class="bg-white border-t border-gray-200 mt-8">
-		<div class="max-w-6xl mx-auto px-4 py-6 sm:px-6 lg:px-8">
-			<div class="text-center text-gray-600">
-				<p class="mb-2">
-					<span class="text-green-600 font-semibold">GREEN-API QA TEAM</span> © 2025
-				</p>
-				<div class="flex items-center justify-center gap-4 text-sm">
-					<a href="/" class="hover:text-green-600 transition">Главная</a>
-					<span>|</span>
-					<a href="https://green-api.com" target="_blank" class="hover:text-green-600 transition">GREEN-API</a>
-				</div>
-			</div>
-		</div>
-	</footer>
+        <section class="bg-white rounded-lg shadow-md p-6">
+            <h2 class="text-2xl font-bold text-gray-800 mb-4 flex items-center gap-2">
+                <Send size={24} class="text-blue-600" />
+                <span>Отправка вебхуков</span>
+            </h2>
+
+            <div class="space-y-4">
+                <div class="bg-green-50 border-l-4 border-green-500 p-4">
+                    <p class="text-sm text-green-800">
+                        <strong>Публичный эндпоинт:</strong> Для отправки вебхуков авторизация не требуется.
+                    </p>
+                </div>
+
+                <div>
+                    <h3 class="font-semibold text-gray-800 mb-2">POST /hook/:roomId</h3>
+                    <p class="text-sm text-gray-600 mb-3">Отправить вебхук в комнату</p>
+                    <div class="bg-gray-900 rounded-lg p-4 overflow-x-auto">
+                        <pre class="text-green-400 text-sm"><code>{`POST ${baseUrl}/hook/{roomId}
+Content-Type: application/json
+
+{
+  "any": "json",
+  "data": "here",
+  "nested": {
+    "objects": "supported"
+  }
+}`}</code></pre>
+                    </div>
+                    <p class="text-sm text-gray-600 mt-3">
+                        <strong>Пример с cURL:</strong>
+                    </p>
+                    <div class="bg-gray-900 rounded-lg p-4 overflow-x-auto mt-2">
+                        <pre class="text-green-400 text-sm"><code>{`curl -X POST ${baseUrl}/hook/{roomId} \\
+  -H "Content-Type: application/json" \\
+  -d '{"message": "Hello World", "timestamp": "2025-01-01T00:00:00Z"}'`}</code></pre>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="bg-white rounded-lg shadow-md p-6">
+            <h2 class="text-2xl font-bold text-gray-800 mb-4 flex items-center gap-2">
+                <CheckCircle size={24} class="text-green-600" />
+                <span>Быстрый старт</span>
+            </h2>
+
+            <div class="space-y-4">
+                <div class="space-y-3">
+                    <div class="flex gap-3">
+                        <div class="flex-shrink-0 w-8 h-8 rounded-full bg-green-600 text-white flex items-center justify-center font-bold">1</div>
+                        <div>
+                            <p class="font-medium text-gray-800">Зарегистрируйтесь</p>
+                            <p class="text-sm text-gray-600">Создайте аккаунт и дождитесь одобрения администратором</p>
+                        </div>
+                    </div>
+
+                    <div class="flex gap-3">
+                        <div class="flex-shrink-0 w-8 h-8 rounded-full bg-green-600 text-white flex items-center justify-center font-bold">2</div>
+                        <div>
+                            <p class="font-medium text-gray-800">Войдите в систему</p>
+                            <p class="text-sm text-gray-600">Получите JWT токен для доступа к API</p>
+                        </div>
+                    </div>
+
+                    <div class="flex gap-3">
+                        <div class="flex-shrink-0 w-8 h-8 rounded-full bg-green-600 text-white flex items-center justify-center font-bold">3</div>
+                        <div>
+                            <p class="font-medium text-gray-800">Создайте комнату</p>
+                            <p class="text-sm text-gray-600">Создайте комнату для получения вебхуков</p>
+                        </div>
+                    </div>
+
+                    <div class="flex gap-3">
+                        <div class="flex-shrink-0 w-8 h-8 rounded-full bg-green-600 text-white flex items-center justify-center font-bold">4</div>
+                        <div>
+                            <p class="font-medium text-gray-800">Отправьте вебхук</p>
+                            <p class="text-sm text-gray-600">Используйте полученный URL для отправки POST запросов</p>
+                        </div>
+                    </div>
+
+                    <div class="flex gap-3">
+                        <div class="flex-shrink-0 w-8 h-8 rounded-full bg-green-600 text-white flex items-center justify-center font-bold">5</div>
+                        <div>
+                            <p class="font-medium text-gray-800">Просматривайте результаты</p>
+                            <p class="text-sm text-gray-600">Все вебхуки отображаются в реальном времени</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="bg-gradient-to-r from-green-50 to-green-100 border border-green-200 rounded-lg p-6">
+            <h3 class="text-lg font-semibold text-green-900 mb-2">Нужна помощь?</h3>
+            <p class="text-sm text-green-800 mb-4">
+                Если у вас возникли вопросы или проблемы, используйте страницу "Тестер" для проверки работы API или свяжитесь с администратором.
+            </p>
+            <div class="flex gap-3">
+                <a href="/tester" class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition text-sm font-medium">
+                    Перейти к тестеру
+                </a>
+                <a href="https://green-api.com" target="_blank" class="px-4 py-2 bg-white hover:bg-gray-50 text-green-700 border border-green-300 rounded-lg transition text-sm font-medium">
+                    GREEN-API
+                </a>
+            </div>
+        </section>
+    </div>
 </div>

@@ -1,32 +1,39 @@
 <script lang="ts">
-    import { CheckCircle, XCircle, AlertCircle } from 'lucide-svelte';
-    import { fade, fly } from 'svelte/transition';
+    import { CheckCircle, XCircle, AlertCircle, Info } from 'lucide-svelte';
+    import type { AlertType } from '$lib/types';
 
-    export let type: 'success' | 'error' | 'warning' = 'success';
-    export let message: string;
-    export let visible: boolean = true;
+    let { message, type }: { message: string; type: AlertType } = $props();
 
-    const icons = {
-        success: CheckCircle,
-        error: XCircle,
-        warning: AlertCircle
+    const config = {
+        success: { bg: 'bg-green-100', text: 'text-green-800', border: 'border-green-300', Icon: CheckCircle },
+        error: { bg: 'bg-red-100', text: 'text-red-800', border: 'border-red-300', Icon: XCircle },
+        warning: { bg: 'bg-yellow-100', text: 'text-yellow-800', border: 'border-yellow-300', Icon: AlertCircle },
+        info: { bg: 'bg-blue-100', text: 'text-blue-800', border: 'border-blue-300', Icon: Info }
     };
 
-    const colors = {
-        success: 'bg-green-100 text-green-800 border-green-300',
-        error: 'bg-red-100 text-red-800 border-red-300',
-        warning: 'bg-yellow-100 text-yellow-800 border-yellow-300'
-    };
-
-    const IconComponent = icons[type];
+    const { bg, text, border, Icon } = config[type];
 </script>
 
-{#if visible}
-    <div
-            transition:fly={{ y: -20, duration: 300 }}
-            class="p-4 rounded-lg border {colors[type]} flex items-center gap-3"
-    >
-        <svelte:component this={IconComponent} size={20} />
+<div class="fixed top-20 right-4 z-50 animate-slide-in">
+    <div class="flex items-center gap-3 p-4 rounded-lg border {bg} {text} {border} shadow-lg max-w-md">
+        <Icon size={20} />
         <span>{message}</span>
     </div>
-{/if}
+</div>
+
+<style>
+    @keyframes slide-in {
+        from {
+            transform: translateX(400px);
+            opacity: 0;
+        }
+        to {
+            transform: translateX(0);
+            opacity: 1;
+        }
+    }
+
+    .animate-slide-in {
+        animation: slide-in 0.3s ease-out;
+    }
+</style>
