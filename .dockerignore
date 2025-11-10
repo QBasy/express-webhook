@@ -35,6 +35,12 @@ README.md
 docker-compose*.yml
 Dockerfile*
 
+frontend-sv/
+frontend-sv/**
+frontend-sv/node_modules
+frontend-sv/dist
+frontend-sv/build
+
 # Environment
 .env
 .env.*

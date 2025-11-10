@@ -1,0 +1,31 @@
+# Node
+node_modules
+npm-debug.log
+yarn-error.log
+
+# Build
+build
+dist
+.svelte-kit
+
+# Logs
+logs
+*.log
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# IDE
+.vscode
+.idea
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Git
+.git
+.gitignore
