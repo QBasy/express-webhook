@@ -34,8 +34,8 @@ export const api = {
         async login(username: string, password: string) {
             const response = await fetch(`${API_BASE}/auth/login`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ username, password })
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({username, password})
             });
             return handleResponse(response);
         },
@@ -43,8 +43,8 @@ export const api = {
         async register(username: string, password: string) {
             const response = await fetch(`${API_BASE}/auth/register`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ username, password })
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({username, password})
             });
             return handleResponse(response);
         },
@@ -57,14 +57,14 @@ export const api = {
         },
 
         async getUsers() {
-            const response = await fetch(`${API_BASE}/auth/users`, {
+            const response = await fetch(`${API_BASE}/admin/users`, {
                 headers: getAuthHeaders()
             });
             return handleResponse(response);
         },
 
         async approveUser(userId: string) {
-            const response = await fetch(`${API_BASE}/auth/users/${userId}/approve`, {
+            const response = await fetch(`${API_BASE}/admin/users/${userId}/approve`, {
                 method: 'POST',
                 headers: getAuthHeaders()
             });
@@ -72,7 +72,7 @@ export const api = {
         },
 
         async rejectUser(userId: string) {
-            const response = await fetch(`${API_BASE}/auth/users/${userId}/reject`, {
+            const response = await fetch(`${API_BASE}/admin/users/${userId}/reject`, {
                 method: 'POST',
                 headers: getAuthHeaders()
             });
@@ -80,12 +80,24 @@ export const api = {
         },
 
         async deleteUser(userId: string) {
-            const response = await fetch(`${API_BASE}/auth/users/${userId}`, {
+            const response = await fetch(`${API_BASE}/admin/users/${userId}`, {
                 method: 'DELETE',
                 headers: getAuthHeaders()
             });
             return handleResponse(response);
-        }
+        },
+
+        async updateUserTTL(userId: string, ttl: number) {
+            const response = await fetch(`${API_BASE}/admin/users/${userId}/ttl`, {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...getAuthHeaders()
+                },
+                body: JSON.stringify({ttl})
+            });
+            return handleResponse(response);
+        },
     },
 
     rooms: {

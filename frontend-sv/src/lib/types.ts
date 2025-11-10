@@ -2,7 +2,10 @@ export interface User {
     id: string;
     username: string;
     role: 'admin' | 'user';
-    status: 'active' | 'pending' | 'rejected';
+    status: 'approved' | 'pending' | 'rejected';
+    webhookTTL: number;
+    email: string;
+    reason?: string;
     createdAt: string;
 }
 
