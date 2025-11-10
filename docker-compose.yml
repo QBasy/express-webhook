@@ -24,43 +24,32 @@ services:
       start_period: 30s
 
   backend:
-    container_name: webhook-backend-test
+    container_name: webhook-backend
     build:
       context: ./backend
-      dockerfile: Dockerfile.dev
+      dockerfile: Dockerfile
     restart: unless-stopped
     environment:
-      - NODE_ENV=development
+      - NODE_ENV=production
       - PORT=6005
-      - MONGODB_URI=mongodb://webhook_user:${MONGO_USER_PASSWORD:-user123}@mongodb:27017/webhook_viewer_test?authSource=webhook_viewer_test
-      - JWT_SECRET=${JWT_SECRET:-dev-secret-key-please-change}
-      - JWT_EXPIRES_IN=7d
-      - ADMIN_TOKEN=${ADMIN_TOKEN:-dev-admin-token}
-      - DEFAULT_WEBHOOK_TTL=43200
-      - LOG_LEVEL=debug
-    volumes:
-      - ./backend/src:/app/src
-      - ./backend/logs:/app/logs
-      - /app/node_modules
-    ports:
-      - "6005:6005"
+      - MONGODB_URI=mongodb://webhook_user:${MONGO_USER_PASSWORD:-user123}@mongodb:27017/webhook_viewer?authSource=webhook_viewer
+      - JWT_SECRET=${JWT_SECRET:-super-secret}
+      - ADMIN_TOKEN=${ADMIN_TOKEN:-admin-token}
     depends_on:
       mongodb:
         condition: service_healthy
+    ports:
+      - "6005:6005"
     networks:
       - webhook-network
-    healthcheck:
-      test: ["CMD", "wget", "--quiet", "--spider", "http://localhost:6005/health"]
-      interval: 20s
-      timeout: 5s
-      retries: 3
-      start_period: 10s
+    volumes:
+      - ./backend/logs:/app/logs
 
   frontend:
     container_name: webhook-frontend-test
     build:
       context: ./frontend-sv
-      dockerfile: Dockerfile.dev
+      dockerfile: Dockerfile
     restart: unless-stopped
     environment:
       - NODE_ENV=development
@@ -70,7 +59,7 @@ services:
       - /app/node_modules
       - /app/.svelte-kit
     ports:
-      - "3000:3000"
+      - "5173:3000"
     depends_on:
       - backend
     networks:
