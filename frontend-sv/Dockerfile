@@ -6,7 +6,7 @@ COPY svelte.config.js tsconfig.json vite.config.ts ./
 COPY src ./src
 COPY static ./static
 
-RUN npm ci
+RUN npm install
 RUN npm run build
 
 FROM node:20-alpine
