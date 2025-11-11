@@ -130,7 +130,7 @@
             await api.rooms.getRoom(id);
 
             if (browser) {
-                webhookUrl = `${window.location.origin}/hook/${encodeURIComponent(id)}`;
+                webhookUrl = `${"https://webhook-ga.onrender.com"}/hook/${encodeURIComponent(id)}`;
             }
 
             await loadFakeErrorStatus();
