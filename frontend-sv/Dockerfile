@@ -13,10 +13,10 @@ FROM node:20-alpine
 WORKDIR /app
 
 COPY --from=builder /app/build ./build
-COPY --from=builder /app/package*.json ./
+COPY package*.json ./
 
-RUN npm ci
+RUN npm install --omit=dev
 
 EXPOSE 3000
 
-CMD ["node", "build/index.js"]
+CMD ["node", "build"]
