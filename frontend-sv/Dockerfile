@@ -15,8 +15,8 @@ WORKDIR /app
 COPY --from=builder /app/build ./build
 COPY --from=builder /app/package*.json ./
 
-RUN npm ci --only=production
+RUN npm ci
 
 EXPOSE 3000
 
-CMD ["node", "build"]
+CMD ["node", "build/index.js"]
