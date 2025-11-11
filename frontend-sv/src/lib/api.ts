@@ -1,7 +1,7 @@
 import { browser } from '$app/environment';
 import { goto } from '$app/navigation';
 
-export const API_BASE = import.meta.env.VITE_API_URL;
+export const API_BASE = "https://webhook-ga.onrender.com";
 
 function getToken(): string | null {
     if (!browser) return null;
