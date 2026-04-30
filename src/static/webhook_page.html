@@ -349,6 +349,9 @@
         <div id="duplicatesPanelNoRoom" class="text-center text-gray-500 py-6 hidden">Сначала откройте комнату</div>
     </div>
 </div>
+
+<script>
+    const apiBase = `${window.location.origin}`;
     let currentRoomId = null;
     let hookInterval = null;
     let lastIds = new Set();
