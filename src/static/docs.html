@@ -322,6 +322,53 @@
             </div>
         </div>
 
+        <!-- Find Duplicates -->
+        <div class="mb-8 border-b pb-8">
+            <div class="flex items-center gap-3 mb-4">
+                <span class="method-badge method-get">GET</span>
+                <code class="text-lg font-mono text-gray-800">/hook/{id}/duplicates</code>
+            </div>
+            <p class="text-gray-700 mb-4">
+                Возвращает группы дублирующихся вебхуков в комнате. Сравнение идёт по содержимому
+                <code class="bg-gray-100 px-1.5 py-0.5 rounded">body</code> (с канонизацией ключей объектов —
+                порядок ключей не влияет на сравнение, порядок элементов массивов сохраняется).
+                Возвращаются только группы с количеством элементов <strong>≥ 2</strong>.
+            </p>
+
+            <h4 class="font-semibold text-gray-900 mb-2">Пример запроса:</h4>
+            <div class="code-block mb-4">
+                curl https://express-webhook-mqmg.onrender.com/hook/my-test-room/duplicates
+            </div>
+
+            <h4 class="font-semibold text-gray-900 mb-2">Пример ответа:</h4>
+            <div class="code-block">
+                {
+                "roomId": "my-test-room",
+                "groupsCount": 2,
+                "totalDuplicateWebhooks": 5,
+                "totalWebhooks": 8,
+                "groups": [
+                {
+                "bodyHash": "a3f1c9e2b740",
+                "count": 3,
+                "body": { "event": "message.received", "data": { "text": "Hello" } },
+                "webhooks": [
+                { "receiptId": "1", "timestamp": "...", "body": { ... } },
+                { "receiptId": "4", "timestamp": "...", "body": { ... } },
+                { "receiptId": "7", "timestamp": "...", "body": { ... } }
+                ]
+                },
+                {
+                "bodyHash": "b18de40af991",
+                "count": 2,
+                "body": { ... },
+                "webhooks": [ ... ]
+                }
+                ]
+                }
+            </div>
+        </div>
+
         <!-- Delete Single Webhook -->
         <div>
             <div class="flex items-center gap-3 mb-4">

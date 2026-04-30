@@ -44,6 +44,26 @@ export async function webhookRoutes(fastify: FastifyInstance) {
         return { status: "cleared" };
     });
 
+    fastify.get("/:id/duplicates", async (request, reply) => {
+        const { id } = request.params as { id: string };
+        const repo = await roomRepository.getRoomRepo(id);
+        if (!repo) {
+            logger.warn(`Attempt to scan duplicates in non-existent room ${id}`);
+            return reply.status(404).send({ error: "Room not found" });
+        }
+
+        const groups = repo.getDuplicates();
+        const totalDuplicateWebhooks = groups.reduce((s, g) => s + g.count, 0);
+
+        return reply.status(200).send({
+            roomId: id,
+            groupsCount: groups.length,
+            totalDuplicateWebhooks,
+            totalWebhooks: repo.getWebhooks().length,
+            groups,
+        });
+    });
+
     fastify.delete("/:room_id/:webhook_id", async (request, reply) => {
         const { room_id, webhook_id } = request.params as { room_id: string, webhook_id: string };
         const repo = await roomRepository.getRoomRepo(room_id);

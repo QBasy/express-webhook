@@ -1,9 +1,17 @@
 import { logger } from "../utils/logger";
+import crypto from "crypto";
 
 export interface IWebhook {
     receiptId: string;
     body: any;
     timestamp?: string;
+}
+
+export interface IDuplicateGroup {
+    bodyHash: string;
+    count: number;
+    body: any;
+    webhooks: IWebhook[];
 }
 
 export interface IWebhookRepository {
@@ -12,7 +20,23 @@ export interface IWebhookRepository {
     getWebhooks(): readonly IWebhook[];
     getWebhook(id: string): IWebhook | undefined;
     deleteWebhook(id: string): void;
+    getDuplicates(): IDuplicateGroup[];
     fakeError?: boolean;
+}
+
+/**
+ * Канонизированная сериализация: сортируем ключи объектов рекурсивно,
+ * чтобы {a:1,b:2} и {b:2,a:1} давали одинаковый ключ.
+ * Массивы сохраняют порядок (это семантически важно).
+ */
+function canonicalStringify(value: any): string {
+    if (value === null || value === undefined) return JSON.stringify(value ?? null);
+    if (typeof value !== "object") return JSON.stringify(value);
+    if (Array.isArray(value)) {
+        return "[" + value.map(canonicalStringify).join(",") + "]";
+    }
+    const keys = Object.keys(value).sort();
+    return "{" + keys.map(k => JSON.stringify(k) + ":" + canonicalStringify(value[k])).join(",") + "}";
 }
 
 export class InMemoryWebhookRepository implements IWebhookRepository {
@@ -57,5 +81,36 @@ export class InMemoryWebhookRepository implements IWebhookRepository {
 
     getWebhooks(): readonly IWebhook[] {
         return this.webhooks;
+    }
+
+    /**
+     * Группирует вебхуки по содержимому body и возвращает только те группы,
+     * где хотя бы 2 одинаковых хука. Самые "частые" дубликаты — первыми.
+     */
+    getDuplicates(): IDuplicateGroup[] {
+        const buckets = new Map<string, IWebhook[]>();
+
+        for (const wh of this.webhooks) {
+            const key = canonicalStringify(wh.body);
+            const arr = buckets.get(key);
+            if (arr) arr.push(wh);
+            else buckets.set(key, [wh]);
+        }
+
+        const groups: IDuplicateGroup[] = [];
+        for (const [key, webhooks] of buckets.entries()) {
+            if (webhooks.length < 2) continue;
+            const bodyHash = crypto.createHash("sha1").update(key).digest("hex").slice(0, 12);
+            groups.push({
+                bodyHash,
+                count: webhooks.length,
+                body: webhooks[0].body,
+                webhooks,
+            });
+        }
+
+        groups.sort((a, b) => b.count - a.count);
+        logger.info(`Duplicate scan: ${groups.length} group(s) found across ${this.webhooks.length} webhook(s)`);
+        return groups;
     }
 }
