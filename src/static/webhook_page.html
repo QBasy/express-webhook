@@ -242,12 +242,20 @@
     <main class="flex-1 p-6 overflow-y-auto">
         <!-- Search and Filter Bar -->
         <div class="bg-white p-4 rounded-lg shadow-md mb-6">
-            <div class="flex gap-3 items-center">
-                <div class="flex-1 relative">
-                    <input id="searchInput" type="text" placeholder="Поиск по содержимому вебхука..."
-                           class="w-full p-3 pl-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition">
-                    <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">🔍</span>
+            <div class="flex gap-3 items-center flex-wrap">
+                <div class="flex-1 relative min-w-[260px]">
+                    <textarea id="searchInput" rows="1" placeholder="Поиск: подстрока (по умолч.) или вставь JSON и переключи в Exact"
+                              class="w-full p-3 pl-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition resize-y font-mono text-sm"></textarea>
+                    <span class="absolute left-3 top-3 text-gray-400">🔍</span>
                 </div>
+                <select id="searchMode" class="p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 text-sm" title="Режим поиска">
+                    <option value="substring">Подстрока</option>
+                    <option value="exact">Точное совпадение JSON</option>
+                </select>
+                <button id="searchBtn" class="px-4 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium transition">
+                    Искать
+                </button>
+                <button id="clearSearchBtn" class="px-3 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-sm font-medium transition" title="Сбросить">✕</button>
                 <select id="itemsPerPage" class="p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 text-sm">
                     <option value="10">10 / страница</option>
                     <option value="25" selected>25 / страница</option>
@@ -255,6 +263,7 @@
                     <option value="100">100 / страница</option>
                 </select>
             </div>
+            <div id="searchHint" class="mt-2 text-xs text-gray-500 hidden"></div>
         </div>
 
         <!-- Webhooks List -->
@@ -647,11 +656,72 @@
         showAlert("Экспорт завершён", "success");
     });
 
-    // Search and Sort
-    searchInput.addEventListener("input", (e) => {
-        searchTerm = e.target.value.toLowerCase();
+    // ===== Поиск (серверный) =====
+    // searchActive=true означает что мы показываем результаты поиска вместо обычного списка.
+    // serverSearchResults содержит хуки, найденные сервером, и не пересекается с allHooks.
+    let searchActive = false;
+    let serverSearchResults = [];
+    let searchMode = "substring";
+    const searchModeSelect = document.getElementById("searchMode");
+    const searchBtn = document.getElementById("searchBtn");
+    const clearSearchBtn = document.getElementById("clearSearchBtn");
+    const searchHint = document.getElementById("searchHint");
+
+    async function runServerSearch() {
+        const raw = searchInput.value.trim();
+        if (!currentRoomId) return showAlert("Сначала откройте комнату", "warning");
+        if (!raw) return showAlert("Введите запрос для поиска", "warning");
+
+        searchMode = searchModeSelect.value === "exact" ? "exact" : "substring";
+
+        searchHint.classList.remove("hidden");
+        searchHint.textContent = `Ищем (${searchMode === "exact" ? "точное JSON" : "подстрока"})...`;
+
+        try {
+            const res = await fetch(`${apiBase}/hook/${encodeURIComponent(currentRoomId)}/search`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ mode: searchMode, query: raw, offset: 0, limit: 500 }),
+            });
+
+            const data = await res.json();
+            if (!res.ok) {
+                searchHint.textContent = "Ошибка: " + (data.error || res.status) + (data.detail ? " — " + data.detail : "");
+                searchHint.className = "mt-2 text-xs text-red-600";
+                return;
+            }
+
+            searchActive = true;
+            serverSearchResults = data.matches || [];
+            currentPage = 1;
+            const shown = serverSearchResults.length;
+            const total = data.total ?? shown;
+            searchHint.className = "mt-2 text-xs text-gray-600";
+            searchHint.textContent = `Найдено: ${total}${shown < total ? ` (показаны первые ${shown})` : ""}. Режим: ${searchMode === "exact" ? "точное JSON-сравнение" : "подстрока без учёта пробелов"}.`;
+            renderAllWebhooks();
+        } catch (err) {
+            searchHint.className = "mt-2 text-xs text-red-600";
+            searchHint.textContent = "Ошибка сети: " + String(err).slice(0, 120);
+        }
+    }
+
+    function clearSearch() {
+        searchInput.value = "";
+        searchTerm = "";
+        searchActive = false;
+        serverSearchResults = [];
+        searchHint.classList.add("hidden");
         currentPage = 1;
         renderAllWebhooks();
+    }
+
+    searchBtn.addEventListener("click", runServerSearch);
+    clearSearchBtn.addEventListener("click", clearSearch);
+    searchInput.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" && !e.shiftKey) {
+            e.preventDefault();
+            runServerSearch();
+        }
     });
 
     sortOrderSelect.addEventListener("change", (e) => {
@@ -738,15 +808,30 @@
             }
         });
 
-        if (hasNew) renderAllWebhooks();
+        // Если активен серверный поиск — не перерисовываем основной список,
+        // чтобы результаты поиска не сбивались. Просто обновим счётчик.
+        if (hasNew) {
+            if (searchActive) {
+                webhookCount.textContent = allHooks.length;
+            } else {
+                renderAllWebhooks();
+            }
+        }
     }
 
     function getFilteredHooks() {
-        let filtered = allHooks.filter(hook => {
-            if (!searchTerm) return true;
-            const bodyStr = JSON.stringify(hook.body).toLowerCase();
-            return bodyStr.includes(searchTerm) || hook.receiptId.toString().includes(searchTerm);
-        });
+        // Если активен серверный поиск — показываем именно его результаты, не локальные allHooks.
+        const source = searchActive ? serverSearchResults : allHooks;
+
+        let filtered = source;
+        // Локальная подстрочная фильтрация только если поиск НЕ активен и есть searchTerm
+        // (на случай если jumpToWebhook выставил searchInput.value программно).
+        if (!searchActive && searchTerm) {
+            filtered = source.filter(hook => {
+                const bodyStr = JSON.stringify(hook.body).toLowerCase();
+                return bodyStr.includes(searchTerm) || hook.receiptId.toString().includes(searchTerm);
+            });
+        }
 
         if (sortOrder === "oldest") {
             filtered = [...filtered].reverse();
@@ -1312,12 +1397,22 @@
     };
 
     window.jumpToWebhook = (receiptId) => {
-        searchInput.value = receiptId;
-        searchTerm = receiptId.toLowerCase();
+        // Фильтруем основной список по ID. Работает для хуков, уже загруженных на фронт через polling.
+        searchInput.value = "";
+        searchTerm = String(receiptId).toLowerCase();
+        searchActive = false;
+        serverSearchResults = [];
+        searchHint.classList.add("hidden");
         currentPage = 1;
         renderAllWebhooks();
         closeDuplicatesPanelFn();
-        showAlert(`Отфильтровано по ID #${receiptId}`, "success");
+
+        const found = allHooks.find(h => String(h.receiptId) === String(receiptId));
+        if (found) {
+            showAlert(`Отфильтровано по ID #${receiptId}`, "success");
+        } else {
+            showAlert(`Хук #${receiptId} ещё не подгружен на фронт. Подождите polling или прокрутите.`, "warning");
+        }
     };
 
     showDuplicatesBtn.addEventListener('click', openDuplicatesPanel);

@@ -37,553 +37,553 @@
     </style>
 </head>
 <body class="bg-gradient-to-br from-gray-50 to-gray-100 min-h-screen">
-<!-- Header -->
-<header class="bg-white shadow-md border-b border-gray-200 sticky top-0 z-50">
-    <div class="max-w-6xl mx-auto px-4 py-4 sm:px-6 lg:px-8">
-        <div class="flex items-center justify-between">
-            <div class="flex items-center gap-4">
-                <svg width="50" height="50" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-                    <rect width="100" height="100" rx="12" fill="#3B9702"/>
-                    <text x="50" y="70" font-family="Arial, sans-serif" font-size="60" font-weight="bold" fill="white" text-anchor="middle">G</text>
-                </svg>
-                <div>
-                    <h1 class="text-2xl font-bold text-gray-900">Webhook Viewer API</h1>
-                    <p class="text-xs text-green-600 font-semibold">Documentation</p>
+    <!-- Header -->
+    <header class="bg-white shadow-md border-b border-gray-200 sticky top-0 z-50">
+        <div class="max-w-6xl mx-auto px-4 py-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-4">
+                    <svg width="50" height="50" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                        <rect width="100" height="100" rx="12" fill="#3B9702"/>
+                        <text x="50" y="70" font-family="Arial, sans-serif" font-size="60" font-weight="bold" fill="white" text-anchor="middle">G</text>
+                    </svg>
+                    <div>
+                        <h1 class="text-2xl font-bold text-gray-900">Webhook Viewer API</h1>
+                        <p class="text-xs text-green-600 font-semibold">Documentation</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-4">
+                    <a href="/" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg text-sm font-medium transition">
+                        ← Viewer
+                    </a>
+                    <a href="https://green-api.com" target="_blank" class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium transition shadow-sm">
+                        GREEN-API →
+                    </a>
                 </div>
             </div>
-            <div class="flex items-center gap-4">
-                <a href="/" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg text-sm font-medium transition">
-                    ← Viewer
-                </a>
-                <a href="https://green-api.com" target="_blank" class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium transition shadow-sm">
-                    GREEN-API →
-                </a>
-            </div>
         </div>
-    </div>
-</header>
+    </header>
 
-<!-- Main Content -->
-<main class="max-w-6xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
-    <!-- Introduction -->
-    <section class="bg-white rounded-lg shadow-md p-8 mb-8 fade-in">
-        <h2 class="text-3xl font-bold text-gray-900 mb-4">Добро пожаловать в Webhook Viewer API</h2>
-        <p class="text-gray-700 mb-4 text-lg">
-            Webhook Viewer — это инструмент для тестирования и отладки webhook'ов, созданный командой <span class="text-green-600 font-semibold">GREEN-API QA TEAM</span>.
-        </p>
-        <p class="text-gray-600 mb-6">
-            С помощью этого API вы можете создавать временные комнаты для приема webhook'ов, просматривать их содержимое, симулировать ошибки и управлять данными.
-        </p>
-
-        <div class="bg-blue-50 border-l-4 border-blue-500 p-4 rounded">
-            <h3 class="font-semibold text-blue-900 mb-2">🚀 Быстрый старт</h3>
-            <ol class="list-decimal list-inside text-blue-800 space-y-2">
-                <li>Создайте комнату через POST запрос на <code class="bg-blue-100 px-2 py-1 rounded">/room/{id}</code></li>
-                <li>Получите URL для приема webhook'ов</li>
-                <li>Отправляйте webhook'ы на полученный URL</li>
-                <li>Просматривайте результаты через GET запрос на <code class="bg-blue-100 px-2 py-1 rounded">/hook/{id}</code></li>
-            </ol>
-        </div>
-    </section>
-
-    <!-- Room Management -->
-    <section class="bg-white rounded-lg shadow-md p-8 mb-8 fade-in">
-        <h2 class="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-2">
-            <span class="w-8 h-8 bg-green-100 rounded flex items-center justify-center text-green-600">🏠</span>
-            Управление комнатами
-        </h2>
-
-        <!-- Create Room -->
-        <div class="mb-8 border-b pb-8">
-            <div class="flex items-center gap-3 mb-4">
-                <span class="method-badge method-post">POST</span>
-                <code class="text-lg font-mono text-gray-800">/room/{id}</code>
-            </div>
-            <p class="text-gray-700 mb-4">Создает новую комнату для приема webhook'ов.</p>
-
-            <h4 class="font-semibold text-gray-900 mb-2">Параметры:</h4>
-            <ul class="list-disc list-inside text-gray-700 mb-4 ml-4">
-                <li><code class="bg-gray-100 px-2 py-1 rounded">id</code> (path) - Уникальный идентификатор комнаты</li>
-            </ul>
-
-            <h4 class="font-semibold text-gray-900 mb-2">Пример запроса:</h4>
-            <div class="code-block mb-4">
-                curl -X POST https://express-webhook-mqmg.onrender.com/room/my-test-room
-            </div>
-
-            <h4 class="font-semibold text-gray-900 mb-2">Пример ответа:</h4>
-            <div class="code-block">
-                {
-                "roomId": "my-test-room",
-                "fullUrl": "https://express-webhook-mqmg.onrender.com/hook/my-test-room"
-                }
-            </div>
-        </div>
-
-        <!-- Close Room -->
-        <div class="mb-8 border-b pb-8">
-            <div class="flex items-center gap-3 mb-4">
-                <span class="method-badge method-delete">DELETE</span>
-                <code class="text-lg font-mono text-gray-800">/room/{id}</code>
-            </div>
-            <p class="text-gray-700 mb-4">Закрывает комнату и удаляет все связанные данные.</p>
-
-            <h4 class="font-semibold text-gray-900 mb-2">Пример запроса:</h4>
-            <div class="code-block mb-4">
-                curl -X DELETE https://express-webhook-mqmg.onrender.com/room/my-test-room
-            </div>
-
-            <h4 class="font-semibold text-gray-900 mb-2">Пример ответа:</h4>
-            <div class="code-block">
-                {
-                "info": "successfully closed room for my-test-room",
-                "roomId": "my-test-room"
-                }
-            </div>
-        </div>
-
-        <!-- Get All Rooms -->
-        <div class="mb-8 border-b pb-8">
-            <div class="flex items-center gap-3 mb-4">
-                <span class="method-badge method-get">GET</span>
-                <code class="text-lg font-mono text-gray-800">/room/all</code>
-            </div>
-            <p class="text-gray-700 mb-4">Получает список всех активных комнат.</p>
-
-            <h4 class="font-semibold text-gray-900 mb-2">Пример запроса:</h4>
-            <div class="code-block mb-4">
-                curl https://express-webhook-mqmg.onrender.com/room/all
-            </div>
-
-            <h4 class="font-semibold text-gray-900 mb-2">Пример ответа:</h4>
-            <div class="code-block">
-                {
-                "rooms": ["my-test-room", "another-room"]
-                }
-            </div>
-        </div>
-
-        <!-- Fake Error Management -->
-        <div class="mb-8 border-b pb-8">
-            <div class="flex items-center gap-3 mb-4">
-                <span class="method-badge method-post">POST</span>
-                <code class="text-lg font-mono text-gray-800">/room/{id}/fake-error</code>
-            </div>
-            <p class="text-gray-700 mb-4">Включает или выключает симуляцию ошибок для комнаты.</p>
-
-            <h4 class="font-semibold text-gray-900 mb-2">Тело запроса:</h4>
-            <div class="code-block mb-4">
-                {
-                "enabled": true,
-                "statusCode": 500
-                }
-            </div>
-
-            <h4 class="font-semibold text-gray-900 mb-2">Пример запроса:</h4>
-            <div class="code-block mb-4">
-                curl -X POST https://express-webhook-mqmg.onrender.com/room/my-test-room/fake-error \
-                -H "Content-Type: application/json" \
-                -d '{"enabled": true, "statusCode": 500}'
-            </div>
-
-            <h4 class="font-semibold text-gray-900 mb-2">Пример ответа:</h4>
-            <div class="code-block">
-                {
-                "roomId": "my-test-room",
-                "enabled": true,
-                "statusCode": 500,
-                "message": "Fake error 500 enabled"
-                }
-            </div>
-        </div>
-
-        <!-- Get Fake Error Status -->
-        <div>
-            <div class="flex items-center gap-3 mb-4">
-                <span class="method-badge method-get">GET</span>
-                <code class="text-lg font-mono text-gray-800">/room/{id}/fake-error</code>
-            </div>
-            <p class="text-gray-700 mb-4">Получает текущий статус симуляции ошибок.</p>
-
-            <h4 class="font-semibold text-gray-900 mb-2">Пример запроса:</h4>
-            <div class="code-block mb-4">
-                curl https://express-webhook-mqmg.onrender.com/room/my-test-room/fake-error
-            </div>
-
-            <h4 class="font-semibold text-gray-900 mb-2">Пример ответа:</h4>
-            <div class="code-block">
-                {
-                "roomId": "my-test-room",
-                "enabled": true,
-                "statusCode": 500
-                }
-            </div>
-        </div>
-    </section>
-
-    <!-- Webhook Management -->
-    <section class="bg-white rounded-lg shadow-md p-8 mb-8 fade-in">
-        <h2 class="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-2">
-            <span class="w-8 h-8 bg-blue-100 rounded flex items-center justify-center text-blue-600">📨</span>
-            Управление Webhook'ами
-        </h2>
-
-        <!-- Get Webhooks -->
-        <div class="mb-8 border-b pb-8">
-            <div class="flex items-center gap-3 mb-4">
-                <span class="method-badge method-get">GET</span>
-                <code class="text-lg font-mono text-gray-800">/hook/{id}</code>
-            </div>
-            <p class="text-gray-700 mb-4">Получает все webhook'и для указанной комнаты.</p>
-
-            <h4 class="font-semibold text-gray-900 mb-2">Пример запроса:</h4>
-            <div class="code-block mb-4">
-                curl https://express-webhook-mqmg.onrender.com/hook/my-test-room
-            </div>
-
-            <h4 class="font-semibold text-gray-900 mb-2">Пример ответа:</h4>
-            <div class="code-block">
-                [
-                {
-                "receiptId": "1",
-                "timestamp": "2025-01-15T10:30:00.000Z",
-                "body": {
-                "event": "message.received",
-                "data": {
-                "from": "79991234567",
-                "text": "Hello World"
-                }
-                }
-                }
-                ]
-            </div>
-        </div>
-
-        <!-- Send Webhook -->
-        <div class="mb-8 border-b pb-8">
-            <div class="flex items-center gap-3 mb-4">
-                <span class="method-badge method-post">POST</span>
-                <code class="text-lg font-mono text-gray-800">/hook/{id}</code>
-            </div>
-            <p class="text-gray-700 mb-4">Отправляет webhook в указанную комнату.</p>
-
-            <div class="bg-yellow-50 border-l-4 border-yellow-500 p-4 rounded mb-4">
-                <p class="text-yellow-800">
-                    <strong>⚠️ Внимание:</strong> Если для комнаты включена симуляция ошибок, запрос вернет указанный HTTP код ошибки.
-                </p>
-            </div>
-
-            <h4 class="font-semibold text-gray-900 mb-2">Пример запроса:</h4>
-            <div class="code-block mb-4">
-                curl -X POST https://express-webhook-mqmg.onrender.com/hook/my-test-room \
-                -H "Content-Type: application/json" \
-                -d '{
-                "event": "message.received",
-                "data": {
-                "from": "79991234567",
-                "text": "Hello World"
-                }
-                }'
-            </div>
-
-            <h4 class="font-semibold text-gray-900 mb-2">Пример ответа (успех):</h4>
-            <div class="code-block mb-4">
-                {
-                "status": "ok"
-                }
-            </div>
-
-            <h4 class="font-semibold text-gray-900 mb-2">Пример ответа (симуляция ошибки):</h4>
-            <div class="code-block">
-                {
-                "error": "Simulated 500"
-                }
-            </div>
-        </div>
-
-        <!-- Clear All Webhooks -->
-        <div class="mb-8 border-b pb-8">
-            <div class="flex items-center gap-3 mb-4">
-                <span class="method-badge method-delete">DELETE</span>
-                <code class="text-lg font-mono text-gray-800">/hook/{id}</code>
-            </div>
-            <p class="text-gray-700 mb-4">Удаляет все webhook'и из комнаты.</p>
-
-            <h4 class="font-semibold text-gray-900 mb-2">Пример запроса:</h4>
-            <div class="code-block mb-4">
-                curl -X DELETE https://express-webhook-mqmg.onrender.com/hook/my-test-room
-            </div>
-
-            <h4 class="font-semibold text-gray-900 mb-2">Пример ответа:</h4>
-            <div class="code-block">
-                {
-                "status": "cleared"
-                }
-            </div>
-        </div>
-
-        <!-- Find Duplicates -->
-        <div class="mb-8 border-b pb-8">
-            <div class="flex items-center gap-3 mb-4">
-                <span class="method-badge method-get">GET</span>
-                <code class="text-lg font-mono text-gray-800">/hook/{id}/duplicates</code>
-            </div>
-            <p class="text-gray-700 mb-4">
-                Возвращает группы дублирующихся вебхуков в комнате. Сравнение идёт по содержимому
-                <code class="bg-gray-100 px-1.5 py-0.5 rounded">body</code> (с канонизацией ключей объектов —
-                порядок ключей не влияет на сравнение, порядок элементов массивов сохраняется).
-                Возвращаются только группы с количеством элементов <strong>≥ 2</strong>.
+    <!-- Main Content -->
+    <main class="max-w-6xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
+        <!-- Introduction -->
+        <section class="bg-white rounded-lg shadow-md p-8 mb-8 fade-in">
+            <h2 class="text-3xl font-bold text-gray-900 mb-4">Добро пожаловать в Webhook Viewer API</h2>
+            <p class="text-gray-700 mb-4 text-lg">
+                Webhook Viewer — это инструмент для тестирования и отладки webhook'ов, созданный командой <span class="text-green-600 font-semibold">GREEN-API QA TEAM</span>.
+            </p>
+            <p class="text-gray-600 mb-6">
+                С помощью этого API вы можете создавать временные комнаты для приема webhook'ов, просматривать их содержимое, симулировать ошибки и управлять данными.
             </p>
 
-            <h4 class="font-semibold text-gray-900 mb-2">Пример запроса:</h4>
-            <div class="code-block mb-4">
-                curl https://express-webhook-mqmg.onrender.com/hook/my-test-room/duplicates
+            <div class="bg-blue-50 border-l-4 border-blue-500 p-4 rounded">
+                <h3 class="font-semibold text-blue-900 mb-2">🚀 Быстрый старт</h3>
+                <ol class="list-decimal list-inside text-blue-800 space-y-2">
+                    <li>Создайте комнату через POST запрос на <code class="bg-blue-100 px-2 py-1 rounded">/room/{id}</code></li>
+                    <li>Получите URL для приема webhook'ов</li>
+                    <li>Отправляйте webhook'ы на полученный URL</li>
+                    <li>Просматривайте результаты через GET запрос на <code class="bg-blue-100 px-2 py-1 rounded">/hook/{id}</code></li>
+                </ol>
             </div>
+        </section>
 
-            <h4 class="font-semibold text-gray-900 mb-2">Пример ответа:</h4>
-            <div class="code-block">
-                {
-                "roomId": "my-test-room",
-                "groupsCount": 2,
-                "totalDuplicateWebhooks": 5,
-                "totalWebhooks": 8,
-                "groups": [
-                {
-                "bodyHash": "a3f1c9e2b740",
-                "count": 3,
-                "body": { "event": "message.received", "data": { "text": "Hello" } },
-                "receipts": [
-                { "receiptId": "1", "timestamp": "2025-01-15T10:30:00.000Z" },
-                { "receiptId": "4", "timestamp": "2025-01-15T10:31:12.000Z" },
-                { "receiptId": "7", "timestamp": "2025-01-15T10:32:55.000Z" }
-                ]
-                },
-                {
-                "bodyHash": "b18de40af991",
-                "count": 2,
-                "body": { ... },
-                "receipts": [ ... ]
-                }
-                ]
-                }
-            </div>
-            <p class="text-gray-700 mt-3 text-sm">
-                <strong>Примечание:</strong> <code class="bg-gray-100 px-1.5 py-0.5 rounded">body</code> хранится один раз
-                на группу, чтобы ответ оставался компактным даже при тысячах одинаковых хуков.
-                Каждый <code class="bg-gray-100 px-1.5 py-0.5 rounded">receipts[i]</code> — это
-                лёгкая ссылка на конкретный экземпляр хука без повторения тела.
-            </p>
-        </div>
+        <!-- Room Management -->
+        <section class="bg-white rounded-lg shadow-md p-8 mb-8 fade-in">
+            <h2 class="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-2">
+                <span class="w-8 h-8 bg-green-100 rounded flex items-center justify-center text-green-600">🏠</span>
+                Управление комнатами
+            </h2>
 
-        <!-- Delete Single Webhook -->
-        <div>
-            <div class="flex items-center gap-3 mb-4">
-                <span class="method-badge method-delete">DELETE</span>
-                <code class="text-lg font-mono text-gray-800">/hook/{room_id}/{webhook_id}</code>
-            </div>
-            <p class="text-gray-700 mb-4">Удаляет конкретный webhook по его ID.</p>
+            <!-- Create Room -->
+            <div class="mb-8 border-b pb-8">
+                <div class="flex items-center gap-3 mb-4">
+                    <span class="method-badge method-post">POST</span>
+                    <code class="text-lg font-mono text-gray-800">/room/{id}</code>
+                </div>
+                <p class="text-gray-700 mb-4">Создает новую комнату для приема webhook'ов.</p>
 
-            <h4 class="font-semibold text-gray-900 mb-2">Параметры:</h4>
-            <ul class="list-disc list-inside text-gray-700 mb-4 ml-4">
-                <li><code class="bg-gray-100 px-2 py-1 rounded">room_id</code> (path) - ID комнаты</li>
-                <li><code class="bg-gray-100 px-2 py-1 rounded">webhook_id</code> (path) - ID webhook'а (receiptId)</li>
-            </ul>
-
-            <h4 class="font-semibold text-gray-900 mb-2">Пример запроса:</h4>
-            <div class="code-block mb-4">
-                curl -X DELETE https://express-webhook-mqmg.onrender.com/hook/my-test-room/1
-            </div>
-
-            <h4 class="font-semibold text-gray-900 mb-2">Пример ответа:</h4>
-            <div class="code-block">
-                {
-                "status": "deleted",
-                "webhookId": "1",
-                "roomId": "my-test-room"
-                }
-            </div>
-        </div>
-    </section>
-
-    <!-- Error Codes -->
-    <section class="bg-white rounded-lg shadow-md p-8 mb-8 fade-in">
-        <h2 class="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-2">
-            <span class="w-8 h-8 bg-red-100 rounded flex items-center justify-center text-red-600">⚠️</span>
-            Коды ошибок
-        </h2>
-
-        <div class="overflow-x-auto">
-            <table class="w-full border-collapse">
-                <thead>
-                <tr class="bg-gray-50 border-b-2 border-gray-200">
-                    <th class="text-left p-4 font-semibold">Код</th>
-                    <th class="text-left p-4 font-semibold">Описание</th>
-                </tr>
-                </thead>
-                <tbody>
-                <tr class="border-b border-gray-200">
-                    <td class="p-4"><code class="bg-green-100 text-green-800 px-2 py-1 rounded">200</code></td>
-                    <td class="p-4">Успешный запрос</td>
-                </tr>
-                <tr class="border-b border-gray-200">
-                    <td class="p-4"><code class="bg-red-100 text-red-800 px-2 py-1 rounded">404</code></td>
-                    <td class="p-4">Комната или webhook не найдены</td>
-                </tr>
-                <tr class="border-b border-gray-200">
-                    <td class="p-4"><code class="bg-yellow-100 text-yellow-800 px-2 py-1 rounded">XXX</code></td>
-                    <td class="p-4">Симулированная ошибка (если включена)</td>
-                </tr>
-                </tbody>
-            </table>
-        </div>
-    </section>
-
-    <!-- Use Cases -->
-    <section class="bg-white rounded-lg shadow-md p-8 fade-in">
-        <h2 class="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-2">
-            <span class="w-8 h-8 bg-purple-100 rounded flex items-center justify-center text-purple-600">💡</span>
-            Примеры использования
-        </h2>
-
-        <div class="space-y-6">
-            <div class="border-l-4 border-green-500 pl-4">
-                <h3 class="font-semibold text-gray-900 mb-2">1. Тестирование Вебхуков</h3>
-                <p class="text-gray-700">Создайте комнату и используйте полученный URL в настройках webhook'ов для тестирования событий.</p>
-            </div>
-
-            <div class="border-l-4 border-blue-500 pl-4">
-                <h3 class="font-semibold text-gray-900 mb-2">2. Отладка интеграций</h3>
-                <p class="text-gray-700">Проверяйте формат данных, которые отправляет ваше приложение, перед интеграцией с реальным сервисом.</p>
-            </div>
-
-            <div class="border-l-4 border-purple-500 pl-4">
-                <h3 class="font-semibold text-gray-900 mb-2">3. Симуляция ошибок</h3>
-                <p class="text-gray-700">Тестируйте поведение вашего приложения при различных HTTP кодах ошибок (500, 502, 503 и т.д.).</p>
-            </div>
-        </div>
-    </section>
-
-    <!-- Best Practices -->
-    <section class="bg-gradient-to-r from-green-50 to-blue-50 rounded-lg shadow-md p-8 mt-8 fade-in">
-        <h2 class="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-2">
-            <span class="w-8 h-8 bg-green-600 text-white rounded flex items-center justify-center">✨</span>
-            Лучшие практики
-        </h2>
-
-        <div class="grid md:grid-cols-2 gap-6">
-            <div class="bg-white p-4 rounded-lg shadow">
-                <h3 class="font-semibold text-green-700 mb-2">✓ Рекомендуется</h3>
-                <ul class="space-y-2 text-gray-700 text-sm">
-                    <li>• Используйте осмысленные ID для комнат</li>
-                    <li>• Закрывайте комнаты после использования</li>
-                    <li>• Очищайте старые webhook'и регулярно</li>
-                    <li>• Используйте симуляцию ошибок для тестирования отказоустойчивости</li>
+                <h4 class="font-semibold text-gray-900 mb-2">Параметры:</h4>
+                <ul class="list-disc list-inside text-gray-700 mb-4 ml-4">
+                    <li><code class="bg-gray-100 px-2 py-1 rounded">id</code> (path) - Уникальный идентификатор комнаты</li>
                 </ul>
-            </div>
-            <div class="bg-white p-4 rounded-lg shadow">
-                <h3 class="font-semibold text-red-700 mb-2">✗ Не рекомендуется</h3>
-                <ul class="space-y-2 text-gray-700 text-sm">
-                    <li>• Не используйте для продакшн-данных</li>
-                    <li>• Не создавайте слишком много комнат одновременно</li>
-                    <li>• Не полагайтесь на долгосрочное хранение данных</li>
-                </ul>
-            </div>
-        </div>
-    </section>
 
-    <!-- Integration Example -->
-    <section class="bg-white rounded-lg shadow-md p-8 mt-8 fade-in">
-        <h2 class="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-2">
-            <span class="w-8 h-8 bg-indigo-100 rounded flex items-center justify-center text-indigo-600">🔧</span>
-            Пример интеграции с GREEN-API
-        </h2>
+                <h4 class="font-semibold text-gray-900 mb-2">Пример запроса:</h4>
+                <div class="code-block mb-4">
+                    curl -X POST https://express-webhook-mqmg.onrender.com/room/my-test-room
+                </div>
 
-        <p class="text-gray-700 mb-6">
-            Пошаговый пример настройки webhook'ов для GREEN-API:
-        </p>
-
-        <div class="space-y-6">
-            <div>
-                <h3 class="font-semibold text-gray-900 mb-3">Шаг 1: Создайте комнату</h3>
+                <h4 class="font-semibold text-gray-900 mb-2">Пример ответа:</h4>
                 <div class="code-block">
-                    curl -X POST https://express-webhook-mqmg.onrender.com/room/myroom
-
-                    # Ответ:
                     {
-                    "roomId": "myroom",
-                    "fullUrl": "https://express-webhook-mqmg.onrender.com/hook/myroom"
+                    "roomId": "my-test-room",
+                    "fullUrl": "https://express-webhook-mqmg.onrender.com/hook/my-test-room"
                     }
                 </div>
             </div>
 
-            <div>
-                <h3 class="font-semibold text-gray-900 mb-3">Шаг 2: Настройте webhook в GREEN-API</h3>
-                <div class="bg-blue-50 border-l-4 border-blue-500 p-4 rounded">
-                    <p class="text-blue-800 mb-2">Перейдите в настройки вашего инстанса GREEN-API и укажите:</p>
-                    <code class="bg-blue-100 px-3 py-2 rounded block">
-                        https://express-webhook-mqmg.onrender.com/hook/myroom
-                    </code>
+            <!-- Close Room -->
+            <div class="mb-8 border-b pb-8">
+                <div class="flex items-center gap-3 mb-4">
+                    <span class="method-badge method-delete">DELETE</span>
+                    <code class="text-lg font-mono text-gray-800">/room/{id}</code>
+                </div>
+                <p class="text-gray-700 mb-4">Закрывает комнату и удаляет все связанные данные.</p>
+
+                <h4 class="font-semibold text-gray-900 mb-2">Пример запроса:</h4>
+                <div class="code-block mb-4">
+                    curl -X DELETE https://express-webhook-mqmg.onrender.com/room/my-test-room
+                </div>
+
+                <h4 class="font-semibold text-gray-900 mb-2">Пример ответа:</h4>
+                <div class="code-block">
+                    {
+                    "info": "successfully closed room for my-test-room",
+                    "roomId": "my-test-room"
+                    }
                 </div>
             </div>
 
-            <div>
-                <h3 class="font-semibold text-gray-900 mb-3">Шаг 3: Отправьте тестовое сообщение</h3>
-                <p class="text-gray-700 mb-3">Отправьте сообщение через GREEN-API и проверьте webhook:</p>
-                <div class="code-block">
-                    curl https://express-webhook-mqmg.onrender.com/hook/myroom
+            <!-- Get All Rooms -->
+            <div class="mb-8 border-b pb-8">
+                <div class="flex items-center gap-3 mb-4">
+                    <span class="method-badge method-get">GET</span>
+                    <code class="text-lg font-mono text-gray-800">/room/all</code>
+                </div>
+                <p class="text-gray-700 mb-4">Получает список всех активных комнат.</p>
 
-                    # Получите все входящие webhook'и
+                <h4 class="font-semibold text-gray-900 mb-2">Пример запроса:</h4>
+                <div class="code-block mb-4">
+                    curl https://express-webhook-mqmg.onrender.com/room/all
+                </div>
+
+                <h4 class="font-semibold text-gray-900 mb-2">Пример ответа:</h4>
+                <div class="code-block">
+                    {
+                    "rooms": ["my-test-room", "another-room"]
+                    }
                 </div>
             </div>
 
-            <div>
-                <h3 class="font-semibold text-gray-900 mb-3">Шаг 4: Протестируйте ошибки</h3>
-                <div class="code-block">
-                    # Включите симуляцию ошибки 502
-                    curl -X POST https://express-webhook-mqmg.onrender.com/room/myroom/fake-error \
+            <!-- Fake Error Management -->
+            <div class="mb-8 border-b pb-8">
+                <div class="flex items-center gap-3 mb-4">
+                    <span class="method-badge method-post">POST</span>
+                    <code class="text-lg font-mono text-gray-800">/room/{id}/fake-error</code>
+                </div>
+                <p class="text-gray-700 mb-4">Включает или выключает симуляцию ошибок для комнаты.</p>
+
+                <h4 class="font-semibold text-gray-900 mb-2">Тело запроса:</h4>
+                <div class="code-block mb-4">
+                    {
+                    "enabled": true,
+                    "statusCode": 500
+                    }
+                </div>
+
+                <h4 class="font-semibold text-gray-900 mb-2">Пример запроса:</h4>
+                <div class="code-block mb-4">
+                    curl -X POST https://express-webhook-mqmg.onrender.com/room/my-test-room/fake-error \
                     -H "Content-Type: application/json" \
-                    -d '{"enabled": true, "statusCode": 502}'
+                    -d '{"enabled": true, "statusCode": 500}'
+                </div>
 
-                    # Теперь все webhook'и будут возвращать 502 ошибку
-                    # Проверьте как GREEN-API обрабатывает ошибки
+                <h4 class="font-semibold text-gray-900 mb-2">Пример ответа:</h4>
+                <div class="code-block">
+                    {
+                    "roomId": "my-test-room",
+                    "enabled": true,
+                    "statusCode": 500,
+                    "message": "Fake error 500 enabled"
+                    }
+                </div>
+            </div>
+
+            <!-- Get Fake Error Status -->
+            <div>
+                <div class="flex items-center gap-3 mb-4">
+                    <span class="method-badge method-get">GET</span>
+                    <code class="text-lg font-mono text-gray-800">/room/{id}/fake-error</code>
+                </div>
+                <p class="text-gray-700 mb-4">Получает текущий статус симуляции ошибок.</p>
+
+                <h4 class="font-semibold text-gray-900 mb-2">Пример запроса:</h4>
+                <div class="code-block mb-4">
+                    curl https://express-webhook-mqmg.onrender.com/room/my-test-room/fake-error
+                </div>
+
+                <h4 class="font-semibold text-gray-900 mb-2">Пример ответа:</h4>
+                <div class="code-block">
+                    {
+                    "roomId": "my-test-room",
+                    "enabled": true,
+                    "statusCode": 500
+                    }
+                </div>
+            </div>
+        </section>
+
+        <!-- Webhook Management -->
+        <section class="bg-white rounded-lg shadow-md p-8 mb-8 fade-in">
+            <h2 class="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-2">
+                <span class="w-8 h-8 bg-blue-100 rounded flex items-center justify-center text-blue-600">📨</span>
+                Управление Webhook'ами
+            </h2>
+
+            <!-- Get Webhooks -->
+            <div class="mb-8 border-b pb-8">
+                <div class="flex items-center gap-3 mb-4">
+                    <span class="method-badge method-get">GET</span>
+                    <code class="text-lg font-mono text-gray-800">/hook/{id}</code>
+                </div>
+                <p class="text-gray-700 mb-4">Получает все webhook'и для указанной комнаты.</p>
+
+                <h4 class="font-semibold text-gray-900 mb-2">Пример запроса:</h4>
+                <div class="code-block mb-4">
+                    curl https://express-webhook-mqmg.onrender.com/hook/my-test-room
+                </div>
+
+                <h4 class="font-semibold text-gray-900 mb-2">Пример ответа:</h4>
+                <div class="code-block">
+                    [
+                    {
+                    "receiptId": "1",
+                    "timestamp": "2025-01-15T10:30:00.000Z",
+                    "body": {
+                    "event": "message.received",
+                    "data": {
+                    "from": "79991234567",
+                    "text": "Hello World"
+                    }
+                    }
+                    }
+                    ]
+                </div>
+            </div>
+
+            <!-- Send Webhook -->
+            <div class="mb-8 border-b pb-8">
+                <div class="flex items-center gap-3 mb-4">
+                    <span class="method-badge method-post">POST</span>
+                    <code class="text-lg font-mono text-gray-800">/hook/{id}</code>
+                </div>
+                <p class="text-gray-700 mb-4">Отправляет webhook в указанную комнату.</p>
+
+                <div class="bg-yellow-50 border-l-4 border-yellow-500 p-4 rounded mb-4">
+                    <p class="text-yellow-800">
+                        <strong>⚠️ Внимание:</strong> Если для комнаты включена симуляция ошибок, запрос вернет указанный HTTP код ошибки.
+                    </p>
+                </div>
+
+                <h4 class="font-semibold text-gray-900 mb-2">Пример запроса:</h4>
+                <div class="code-block mb-4">
+                    curl -X POST https://express-webhook-mqmg.onrender.com/hook/my-test-room \
+                    -H "Content-Type: application/json" \
+                    -d '{
+                    "event": "message.received",
+                    "data": {
+                    "from": "79991234567",
+                    "text": "Hello World"
+                    }
+                    }'
+                </div>
+
+                <h4 class="font-semibold text-gray-900 mb-2">Пример ответа (успех):</h4>
+                <div class="code-block mb-4">
+                    {
+                    "status": "ok"
+                    }
+                </div>
+
+                <h4 class="font-semibold text-gray-900 mb-2">Пример ответа (симуляция ошибки):</h4>
+                <div class="code-block">
+                    {
+                    "error": "Simulated 500"
+                    }
+                </div>
+            </div>
+
+            <!-- Clear All Webhooks -->
+            <div class="mb-8 border-b pb-8">
+                <div class="flex items-center gap-3 mb-4">
+                    <span class="method-badge method-delete">DELETE</span>
+                    <code class="text-lg font-mono text-gray-800">/hook/{id}</code>
+                </div>
+                <p class="text-gray-700 mb-4">Удаляет все webhook'и из комнаты.</p>
+
+                <h4 class="font-semibold text-gray-900 mb-2">Пример запроса:</h4>
+                <div class="code-block mb-4">
+                    curl -X DELETE https://express-webhook-mqmg.onrender.com/hook/my-test-room
+                </div>
+
+                <h4 class="font-semibold text-gray-900 mb-2">Пример ответа:</h4>
+                <div class="code-block">
+                    {
+                    "status": "cleared"
+                    }
+                </div>
+            </div>
+
+            <!-- Find Duplicates -->
+            <div class="mb-8 border-b pb-8">
+                <div class="flex items-center gap-3 mb-4">
+                    <span class="method-badge method-get">GET</span>
+                    <code class="text-lg font-mono text-gray-800">/hook/{id}/duplicates</code>
+                </div>
+                <p class="text-gray-700 mb-4">
+                    Возвращает группы дублирующихся вебхуков в комнате. Сравнение идёт по содержимому
+                    <code class="bg-gray-100 px-1.5 py-0.5 rounded">body</code> (с канонизацией ключей объектов —
+                    порядок ключей не влияет на сравнение, порядок элементов массивов сохраняется).
+                    Возвращаются только группы с количеством элементов <strong>≥ 2</strong>.
+                </p>
+
+                <h4 class="font-semibold text-gray-900 mb-2">Пример запроса:</h4>
+                <div class="code-block mb-4">
+                    curl https://express-webhook-mqmg.onrender.com/hook/my-test-room/duplicates
+                </div>
+
+                <h4 class="font-semibold text-gray-900 mb-2">Пример ответа:</h4>
+                <div class="code-block">
+                    {
+                    "roomId": "my-test-room",
+                    "groupsCount": 2,
+                    "totalDuplicateWebhooks": 5,
+                    "totalWebhooks": 8,
+                    "groups": [
+                    {
+                    "bodyHash": "a3f1c9e2b740",
+                    "count": 3,
+                    "body": { "event": "message.received", "data": { "text": "Hello" } },
+                    "receipts": [
+                    { "receiptId": "1", "timestamp": "2025-01-15T10:30:00.000Z" },
+                    { "receiptId": "4", "timestamp": "2025-01-15T10:31:12.000Z" },
+                    { "receiptId": "7", "timestamp": "2025-01-15T10:32:55.000Z" }
+                    ]
+                    },
+                    {
+                    "bodyHash": "b18de40af991",
+                    "count": 2,
+                    "body": { ... },
+                    "receipts": [ ... ]
+                    }
+                    ]
+                    }
+                </div>
+                <p class="text-gray-700 mt-3 text-sm">
+                    <strong>Примечание:</strong> <code class="bg-gray-100 px-1.5 py-0.5 rounded">body</code> хранится один раз
+                    на группу, чтобы ответ оставался компактным даже при тысячах одинаковых хуков.
+                    Каждый <code class="bg-gray-100 px-1.5 py-0.5 rounded">receipts[i]</code> — это
+                    лёгкая ссылка на конкретный экземпляр хука без повторения тела.
+                </p>
+            </div>
+
+            <!-- Delete Single Webhook -->
+            <div>
+                <div class="flex items-center gap-3 mb-4">
+                    <span class="method-badge method-delete">DELETE</span>
+                    <code class="text-lg font-mono text-gray-800">/hook/{room_id}/{webhook_id}</code>
+                </div>
+                <p class="text-gray-700 mb-4">Удаляет конкретный webhook по его ID.</p>
+
+                <h4 class="font-semibold text-gray-900 mb-2">Параметры:</h4>
+                <ul class="list-disc list-inside text-gray-700 mb-4 ml-4">
+                    <li><code class="bg-gray-100 px-2 py-1 rounded">room_id</code> (path) - ID комнаты</li>
+                    <li><code class="bg-gray-100 px-2 py-1 rounded">webhook_id</code> (path) - ID webhook'а (receiptId)</li>
+                </ul>
+
+                <h4 class="font-semibold text-gray-900 mb-2">Пример запроса:</h4>
+                <div class="code-block mb-4">
+                    curl -X DELETE https://express-webhook-mqmg.onrender.com/hook/my-test-room/1
+                </div>
+
+                <h4 class="font-semibold text-gray-900 mb-2">Пример ответа:</h4>
+                <div class="code-block">
+                    {
+                    "status": "deleted",
+                    "webhookId": "1",
+                    "roomId": "my-test-room"
+                    }
+                </div>
+            </div>
+        </section>
+
+        <!-- Error Codes -->
+        <section class="bg-white rounded-lg shadow-md p-8 mb-8 fade-in">
+            <h2 class="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-2">
+                <span class="w-8 h-8 bg-red-100 rounded flex items-center justify-center text-red-600">⚠️</span>
+                Коды ошибок
+            </h2>
+
+            <div class="overflow-x-auto">
+                <table class="w-full border-collapse">
+                    <thead>
+                    <tr class="bg-gray-50 border-b-2 border-gray-200">
+                        <th class="text-left p-4 font-semibold">Код</th>
+                        <th class="text-left p-4 font-semibold">Описание</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr class="border-b border-gray-200">
+                        <td class="p-4"><code class="bg-green-100 text-green-800 px-2 py-1 rounded">200</code></td>
+                        <td class="p-4">Успешный запрос</td>
+                    </tr>
+                    <tr class="border-b border-gray-200">
+                        <td class="p-4"><code class="bg-red-100 text-red-800 px-2 py-1 rounded">404</code></td>
+                        <td class="p-4">Комната или webhook не найдены</td>
+                    </tr>
+                    <tr class="border-b border-gray-200">
+                        <td class="p-4"><code class="bg-yellow-100 text-yellow-800 px-2 py-1 rounded">XXX</code></td>
+                        <td class="p-4">Симулированная ошибка (если включена)</td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Use Cases -->
+        <section class="bg-white rounded-lg shadow-md p-8 fade-in">
+            <h2 class="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-2">
+                <span class="w-8 h-8 bg-purple-100 rounded flex items-center justify-center text-purple-600">💡</span>
+                Примеры использования
+            </h2>
+
+            <div class="space-y-6">
+                <div class="border-l-4 border-green-500 pl-4">
+                    <h3 class="font-semibold text-gray-900 mb-2">1. Тестирование Вебхуков</h3>
+                    <p class="text-gray-700">Создайте комнату и используйте полученный URL в настройках webhook'ов для тестирования событий.</p>
+                </div>
+
+                <div class="border-l-4 border-blue-500 pl-4">
+                    <h3 class="font-semibold text-gray-900 mb-2">2. Отладка интеграций</h3>
+                    <p class="text-gray-700">Проверяйте формат данных, которые отправляет ваше приложение, перед интеграцией с реальным сервисом.</p>
+                </div>
+
+                <div class="border-l-4 border-purple-500 pl-4">
+                    <h3 class="font-semibold text-gray-900 mb-2">3. Симуляция ошибок</h3>
+                    <p class="text-gray-700">Тестируйте поведение вашего приложения при различных HTTP кодах ошибок (500, 502, 503 и т.д.).</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Best Practices -->
+        <section class="bg-gradient-to-r from-green-50 to-blue-50 rounded-lg shadow-md p-8 mt-8 fade-in">
+            <h2 class="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-2">
+                <span class="w-8 h-8 bg-green-600 text-white rounded flex items-center justify-center">✨</span>
+                Лучшие практики
+            </h2>
+
+            <div class="grid md:grid-cols-2 gap-6">
+                <div class="bg-white p-4 rounded-lg shadow">
+                    <h3 class="font-semibold text-green-700 mb-2">✓ Рекомендуется</h3>
+                    <ul class="space-y-2 text-gray-700 text-sm">
+                        <li>• Используйте осмысленные ID для комнат</li>
+                        <li>• Закрывайте комнаты после использования</li>
+                        <li>• Очищайте старые webhook'и регулярно</li>
+                        <li>• Используйте симуляцию ошибок для тестирования отказоустойчивости</li>
+                    </ul>
+                </div>
+                <div class="bg-white p-4 rounded-lg shadow">
+                    <h3 class="font-semibold text-red-700 mb-2">✗ Не рекомендуется</h3>
+                    <ul class="space-y-2 text-gray-700 text-sm">
+                        <li>• Не используйте для продакшн-данных</li>
+                        <li>• Не создавайте слишком много комнат одновременно</li>
+                        <li>• Не полагайтесь на долгосрочное хранение данных</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- Integration Example -->
+        <section class="bg-white rounded-lg shadow-md p-8 mt-8 fade-in">
+            <h2 class="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-2">
+                <span class="w-8 h-8 bg-indigo-100 rounded flex items-center justify-center text-indigo-600">🔧</span>
+                Пример интеграции с GREEN-API
+            </h2>
+
+            <p class="text-gray-700 mb-6">
+                Пошаговый пример настройки webhook'ов для GREEN-API:
+            </p>
+
+            <div class="space-y-6">
+                <div>
+                    <h3 class="font-semibold text-gray-900 mb-3">Шаг 1: Создайте комнату</h3>
+                    <div class="code-block">
+                        curl -X POST https://express-webhook-mqmg.onrender.com/room/myroom
+
+                        # Ответ:
+                        {
+                        "roomId": "myroom",
+                        "fullUrl": "https://express-webhook-mqmg.onrender.com/hook/myroom"
+                        }
+                    </div>
+                </div>
+
+                <div>
+                    <h3 class="font-semibold text-gray-900 mb-3">Шаг 2: Настройте webhook в GREEN-API</h3>
+                    <div class="bg-blue-50 border-l-4 border-blue-500 p-4 rounded">
+                        <p class="text-blue-800 mb-2">Перейдите в настройки вашего инстанса GREEN-API и укажите:</p>
+                        <code class="bg-blue-100 px-3 py-2 rounded block">
+                            https://express-webhook-mqmg.onrender.com/hook/myroom
+                        </code>
+                    </div>
+                </div>
+
+                <div>
+                    <h3 class="font-semibold text-gray-900 mb-3">Шаг 3: Отправьте тестовое сообщение</h3>
+                    <p class="text-gray-700 mb-3">Отправьте сообщение через GREEN-API и проверьте webhook:</p>
+                    <div class="code-block">
+                        curl https://express-webhook-mqmg.onrender.com/hook/myroom
+
+                        # Получите все входящие webhook'и
+                    </div>
+                </div>
+
+                <div>
+                    <h3 class="font-semibold text-gray-900 mb-3">Шаг 4: Протестируйте ошибки</h3>
+                    <div class="code-block">
+                        # Включите симуляцию ошибки 502
+                        curl -X POST https://express-webhook-mqmg.onrender.com/room/myroom/fake-error \
+                        -H "Content-Type: application/json" \
+                        -d '{"enabled": true, "statusCode": 502}'
+
+                        # Теперь все webhook'и будут возвращать 502 ошибку
+                        # Проверьте как GREEN-API обрабатывает ошибки
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Support -->
+        <section class="bg-gradient-to-r from-green-600 to-green-700 rounded-lg shadow-md p-8 mt-8 text-white fade-in">
+            <div class="text-center">
+                <h2 class="text-2xl font-bold mb-4">Webhook viewer</h2>
+                <p class="mb-6 text-green-100">
+                    Начать работу.
+                </p>
+                <div class="flex justify-center gap-4 flex-wrap">
+                    <a href="/"
+                       class="px-6 py-3 bg-green-500 text-white rounded-lg font-medium hover:bg-green-400 transition">
+                        🚀 Открыть Viewer
+                    </a>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t border-gray-200 mt-12">
+        <div class="max-w-6xl mx-auto px-4 py-6 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between text-sm text-gray-600">
+                <div class="flex items-center gap-2">
+                    <span class="text-green-600 font-semibold">GREEN-API QA TEAM</span>
+                    <span class="text-gray-400">|</span>
+                    <p>© 2025 Webhook Viewer</p>
+                </div>
+                <div class="flex gap-6">
+                    <a href="/" class="hover:text-green-600 transition">Viewer</a>
+                    <a href="/docs" class="hover:text-green-600 transition">Документация</a>
+                    <a href="https://green-api.com" target="_blank" class="hover:text-green-600 transition">GREEN-API</a>
                 </div>
             </div>
         </div>
-    </section>
-
-    <!-- Support -->
-    <section class="bg-gradient-to-r from-green-600 to-green-700 rounded-lg shadow-md p-8 mt-8 text-white fade-in">
-        <div class="text-center">
-            <h2 class="text-2xl font-bold mb-4">Webhook viewer</h2>
-            <p class="mb-6 text-green-100">
-                Начать работу.
-            </p>
-            <div class="flex justify-center gap-4 flex-wrap">
-                <a href="/"
-                   class="px-6 py-3 bg-green-500 text-white rounded-lg font-medium hover:bg-green-400 transition">
-                    🚀 Открыть Viewer
-                </a>
-            </div>
-        </div>
-    </section>
-</main>
-
-<!-- Footer -->
-<footer class="bg-white border-t border-gray-200 mt-12">
-    <div class="max-w-6xl mx-auto px-4 py-6 sm:px-6 lg:px-8">
-        <div class="flex items-center justify-between text-sm text-gray-600">
-            <div class="flex items-center gap-2">
-                <span class="text-green-600 font-semibold">GREEN-API QA TEAM</span>
-                <span class="text-gray-400">|</span>
-                <p>© 2025 Webhook Viewer</p>
-            </div>
-            <div class="flex gap-6">
-                <a href="/" class="hover:text-green-600 transition">Viewer</a>
-                <a href="/docs" class="hover:text-green-600 transition">Документация</a>
-                <a href="https://green-api.com" target="_blank" class="hover:text-green-600 transition">GREEN-API</a>
-            </div>
-        </div>
-    </div>
-</footer>
+    </footer>
 </body>
 </html>

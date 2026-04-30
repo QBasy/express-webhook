@@ -101,6 +101,43 @@ export async function webhookRoutes(fastify: FastifyInstance) {
         });
     });
 
+    // Поиск по содержимому хуков. POST потому что в теле может быть JSON.
+    fastify.post("/:id/search", async (request, reply) => {
+        const { id } = request.params as { id: string };
+        const repo = await roomRepository.getRoomRepo(id);
+        if (!repo) return reply.status(404).send({ error: "Room not found" });
+
+        const body = (request.body ?? {}) as {
+            mode?: "exact" | "substring";
+            query?: string;
+            offset?: number;
+            limit?: number;
+        };
+
+        const mode = body.mode === "exact" ? "exact" : "substring";
+        const offset = Math.max(0, Number(body.offset) || 0);
+        const limit = Math.min(500, Math.max(1, Number(body.limit) || 50));
+
+        if (typeof body.query !== "string" || body.query.trim() === "") {
+            return reply.status(400).send({ error: "query is required" });
+        }
+
+        let needle: any = body.query;
+        if (mode === "exact") {
+            try {
+                needle = JSON.parse(body.query);
+            } catch (e) {
+                return reply.status(400).send({
+                    error: "exact mode requires valid JSON in query",
+                    detail: String(e).slice(0, 200),
+                });
+            }
+        }
+
+        const result = await repo.searchWebhooks({ mode, needle, offset, limit });
+        return reply.status(200).send(result);
+    });
+
     fastify.delete("/:room_id/:webhook_id", async (request, reply) => {
         const { room_id, webhook_id } = request.params as { room_id: string, webhook_id: string };
         const repo = await roomRepository.getRoomRepo(room_id);

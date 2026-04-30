@@ -54,7 +54,26 @@ export interface IWebhookRepository {
     getDuplicateHeaders(): Promise<IDuplicateGroupHeader[]>;
     /** Возвращает одну группу по hash. */
     getDuplicateGroup(bodyHash: string): Promise<IDuplicateGroup | undefined>;
+    /** Поиск по содержимому хуков. */
+    searchWebhooks(opts: ISearchOptions): Promise<ISearchResult>;
     fakeError?: boolean;
+}
+
+export interface ISearchOptions {
+    /** Тип поиска: 'exact' — каноническое равенство body, 'substring' — подстрока в stringify(body). */
+    mode: "exact" | "substring";
+    /** Для exact: распарсенный JSON. Для substring: строка для поиска. */
+    needle: any;
+    offset: number;
+    limit: number;
+}
+
+export interface ISearchResult {
+    mode: "exact" | "substring";
+    total: number;
+    offset: number;
+    limit: number;
+    matches: IWebhook[];
 }
 
 const SCAN_CHUNK = 5000;
@@ -212,5 +231,52 @@ export class InMemoryWebhookRepository implements IWebhookRepository {
             lastTimestamp: last.timestamp,
             receipts: g.receipts,
         };
+    }
+
+    /**
+     * Поиск по всем хукам в комнате с уступкой event loop.
+     *  - mode='exact': каноническое равенство body (порядок ключей объектов не важен).
+     *  - mode='substring': подстрока в JSON.stringify(body) без пробелов и в lowercase,
+     *    нечувствительная к форматированию ввода.
+     */
+    async searchWebhooks(opts: ISearchOptions): Promise<ISearchResult> {
+        const { mode, needle, offset, limit } = opts;
+        const all = this.webhooks;
+        const matches: IWebhook[] = [];
+
+        if (mode === "exact") {
+            const target = canonicalStringify(needle);
+            for (let i = 0; i < all.length; i += SCAN_CHUNK) {
+                const end = Math.min(i + SCAN_CHUNK, all.length);
+                for (let j = i; j < end; j++) {
+                    if (canonicalStringify(all[j].body) === target) {
+                        matches.push(all[j]);
+                    }
+                }
+                if (end < all.length) await setImmediateP();
+            }
+        } else {
+            // substring: нормализуем needle - вырезаем все whitespace, в lowercase.
+            const target = String(needle).replace(/\s+/g, "").toLowerCase();
+            if (!target) {
+                return { mode, total: 0, offset, limit, matches: [] };
+            }
+            for (let i = 0; i < all.length; i += SCAN_CHUNK) {
+                const end = Math.min(i + SCAN_CHUNK, all.length);
+                for (let j = i; j < end; j++) {
+                    let bodyStr: string;
+                    try { bodyStr = JSON.stringify(all[j].body); } catch { bodyStr = String(all[j].body); }
+                    bodyStr = bodyStr.replace(/\s+/g, "").toLowerCase();
+                    if (bodyStr.includes(target)) {
+                        matches.push(all[j]);
+                    }
+                }
+                if (end < all.length) await setImmediateP();
+            }
+        }
+
+        const total = matches.length;
+        const slice = matches.slice(offset, offset + limit);
+        return { mode, total, offset, limit, matches: slice };
     }
 }
