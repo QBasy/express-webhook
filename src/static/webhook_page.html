@@ -1059,12 +1059,29 @@
     }
 
     // ===== Дубликаты =====
+    // Вся логика построена на двух эндпоинтах:
+    //   /duplicates/summary?page=N&pageSize=M  — лёгкий список заголовков групп
+    //   /duplicates/group/:hash?offset=X&limit=Y — тело + receipts конкретной группы
+    // Тело и список ID грузятся только при раскрытии группы. Это позволяет работать
+    // с комнатами на сотни тысяч хуков без падения браузера.
+
+    const DUP_PAGE_SIZE = 20;
+    const DUP_RECEIPTS_PAGE = 100;
+    const DUP_BODY_RENDER_LIMIT = 20000;
+
+    let dupCurrentPage = 1;
+    let dupTotalPages = 1;
+
     function openDuplicatesPanel() {
         duplicatesPanel.classList.remove('translate-x-full');
-        fetchDuplicates();
+        // Пока панель открыта — не дёргаем фоновый опрос (тяжело при 100k+ хуков).
+        stopFetchingHooks();
+        dupCurrentPage = 1;
+        fetchDuplicatesSummary();
     }
     function closeDuplicatesPanelFn() {
         duplicatesPanel.classList.add('translate-x-full');
+        if (currentRoomId) startFetchingHooks();
     }
 
     function resetDuplicatesPanelState() {
@@ -1075,7 +1092,7 @@
         duplicatesPanelLoading.classList.add('hidden');
     }
 
-    async function fetchDuplicates() {
+    async function fetchDuplicatesSummary() {
         resetDuplicatesPanelState();
 
         if (!currentRoomId) {
@@ -1088,7 +1105,9 @@
         duplicatesPanelLoading.classList.remove('hidden');
 
         try {
-            const res = await fetch(`${apiBase}/hook/${encodeURIComponent(currentRoomId)}/duplicates`);
+            const url = `${apiBase}/hook/${encodeURIComponent(currentRoomId)}/duplicates/summary`
+                + `?page=${dupCurrentPage}&pageSize=${DUP_PAGE_SIZE}`;
+            const res = await fetch(url);
             duplicatesPanelLoading.classList.add('hidden');
 
             if (!res.ok) {
@@ -1098,68 +1117,200 @@
             }
 
             const data = await res.json();
-            const groups = data.groups || [];
+            const headers = Array.isArray(data.groups) ? data.groups : [];
+            dupTotalPages = data.totalPages || 1;
 
             duplicatesSummary.textContent =
-                `Групп: ${data.groupsCount} • в дубликатах: ${data.totalDuplicateWebhooks} из ${data.totalWebhooks}`;
+                `Групп: ${data.totalGroups} • в дубликатах: ${data.totalDuplicateWebhooks} из ${data.totalWebhooks}`;
 
-            if (groups.length === 0) {
+            if (data.totalGroups === 0) {
                 duplicatesPanelEmpty.classList.remove('hidden');
                 return;
             }
 
-            duplicatesList.innerHTML = groups.map((g, idx) => renderDuplicateGroup(g, idx)).join('');
+            const html = headers.map(h => renderDuplicateHeader(h));
+            if (dupTotalPages > 1) {
+                html.push(renderDupPagination(dupCurrentPage, dupTotalPages));
+            }
+            duplicatesList.innerHTML = html.join('');
         } catch (err) {
             duplicatesPanelLoading.classList.add('hidden');
             duplicatesPanelError.classList.remove('hidden');
             duplicatesSummary.textContent = "Ошибка загрузки";
-            console.error('fetchDuplicates error', err);
+            console.error('fetchDuplicatesSummary error', err);
         }
     }
 
-    function renderDuplicateGroup(group, idx) {
-        const ids = group.webhooks.map(w => w.receiptId);
-        const idsHtml = ids.map(id => `
-            <button onclick="jumpToWebhook('${id}')"
-                    class="px-2 py-0.5 bg-orange-100 hover:bg-orange-200 text-orange-800 text-xs font-mono rounded transition"
-                    title="Подсветить вебхук в основном списке">
-                #${id}
-            </button>
-        `).join('');
-
-        const firstTs = group.webhooks[0]?.timestamp;
-        const lastTs = group.webhooks[group.webhooks.length - 1]?.timestamp;
-
+    function renderDuplicateHeader(h) {
+        // Превью body уже короткое (≤200 символов от бэка), безопасно для DOM.
+        const preview = String(h.bodyPreview ?? '').replace(/[<>&]/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;'}[c]));
         return `
-            <div class="border border-orange-200 rounded-lg bg-orange-50/30 overflow-hidden fade-in">
-                <div class="px-3 py-2 bg-orange-100/60 border-b border-orange-200 flex items-center justify-between">
-                    <div class="flex items-center gap-2">
-                        <span class="px-2 py-0.5 bg-orange-500 text-white text-xs font-bold rounded">
-                            x${group.count}
-                        </span>
-                        <span class="text-xs font-mono text-orange-800" title="Хеш тела хука">${group.bodyHash}</span>
+            <div class="border border-orange-200 rounded-lg bg-orange-50/30 overflow-hidden fade-in"
+                 data-hash="${h.bodyHash}">
+                <button class="w-full px-3 py-2 bg-orange-100/60 border-b border-orange-200 flex items-center justify-between hover:bg-orange-100 transition text-left"
+                        onclick="toggleDuplicateGroup('${h.bodyHash}', this)">
+                    <div class="flex items-center gap-2 min-w-0">
+                        <span class="px-2 py-0.5 bg-orange-500 text-white text-xs font-bold rounded shrink-0">x${h.count}</span>
+                        <span class="text-xs font-mono text-orange-800 shrink-0" title="Хеш тела хука">${h.bodyHash}</span>
+                        <span class="text-xs text-gray-600 truncate font-mono" title="Превью тела">${preview}</span>
                     </div>
-                    <button onclick="copyEntireWebhook(${escapeJson(group.body)}, event)"
-                            class="text-xs text-blue-600 hover:text-blue-800 font-medium"
-                            title="Копировать тело">
-                        📋 Копировать
-                    </button>
-                </div>
-                <div class="px-3 py-2 flex flex-wrap items-center gap-1 bg-white border-b border-orange-100">
-                    <span class="text-xs text-gray-500 mr-1">ID:</span>
-                    ${idsHtml}
-                </div>
+                    <span class="text-orange-700 ml-2 shrink-0 dup-toggle-arrow">▾</span>
+                </button>
                 <div class="px-3 py-1.5 text-[11px] text-gray-500 bg-white border-b border-orange-100">
-                    Первый: ${formatTimestamp(firstTs)} • Последний: ${formatTimestamp(lastTs)}
+                    Первый: #${h.firstReceiptId} (${formatTimestamp(h.firstTimestamp)}) •
+                    Последний: #${h.lastReceiptId} (${formatTimestamp(h.lastTimestamp)})
                 </div>
-                <div class="bg-gray-50 p-3 overflow-x-auto max-h-72 overflow-y-auto">
-                    <pre class="text-xs font-mono">${syntaxHighlight(group.body)}</pre>
-                </div>
+                <div class="dup-group-body hidden"></div>
             </div>
         `;
     }
 
-    // Прыжок к конкретному вебхуку в основном списке
+    function renderDupPagination(page, totalPages) {
+        const prev = page > 1
+            ? `<button class="px-3 py-1 bg-white border border-gray-300 rounded hover:bg-gray-50 text-sm" onclick="dupGoToPage(${page-1})">← Назад</button>`
+            : `<button class="px-3 py-1 bg-gray-100 border border-gray-200 rounded text-sm text-gray-400" disabled>← Назад</button>`;
+        const next = page < totalPages
+            ? `<button class="px-3 py-1 bg-white border border-gray-300 rounded hover:bg-gray-50 text-sm" onclick="dupGoToPage(${page+1})">Вперёд →</button>`
+            : `<button class="px-3 py-1 bg-gray-100 border border-gray-200 rounded text-sm text-gray-400" disabled>Вперёд →</button>`;
+        return `
+            <div class="flex items-center justify-between pt-2">
+                ${prev}
+                <span class="text-xs text-gray-500">Стр. ${page} из ${totalPages}</span>
+                ${next}
+            </div>
+        `;
+    }
+
+    window.dupGoToPage = (n) => {
+        dupCurrentPage = n;
+        fetchDuplicatesSummary();
+    };
+
+    // Раскрыть/свернуть группу. При первом раскрытии — fetch тела + первой страницы receipts.
+    window.toggleDuplicateGroup = async (hash, btn) => {
+        const card = btn.closest('[data-hash]');
+        const body = card.querySelector('.dup-group-body');
+        const arrow = card.querySelector('.dup-toggle-arrow');
+
+        if (!body.classList.contains('hidden')) {
+            body.classList.add('hidden');
+            arrow.textContent = '▾';
+            return;
+        }
+
+        arrow.textContent = '▴';
+        if (body.dataset.loaded === '1') {
+            body.classList.remove('hidden');
+            return;
+        }
+
+        body.classList.remove('hidden');
+        body.innerHTML = `<div class="px-3 py-3 text-xs text-gray-500">Загрузка...</div>`;
+
+        try {
+            const url = `${apiBase}/hook/${encodeURIComponent(currentRoomId)}/duplicates/group/${encodeURIComponent(hash)}`
+                + `?offset=0&limit=${DUP_RECEIPTS_PAGE}`;
+            const res = await fetch(url);
+            if (!res.ok) {
+                body.innerHTML = `<div class="px-3 py-3 text-xs text-red-500">Ошибка загрузки группы</div>`;
+                return;
+            }
+            const data = await res.json();
+            renderGroupBody(body, data, hash, 0);
+            body.dataset.loaded = '1';
+        } catch (err) {
+            body.innerHTML = `<div class="px-3 py-3 text-xs text-red-500">Ошибка: ${String(err).slice(0, 100)}</div>`;
+        }
+    };
+
+    function renderGroupBody(container, data, hash, offset) {
+        const receipts = data.receipts || [];
+        const total = data.receiptsTotal || receipts.length;
+        const idsHtml = receipts.map(r => `
+            <button onclick="jumpToWebhook('${r.receiptId}')"
+                    class="px-2 py-0.5 bg-orange-100 hover:bg-orange-200 text-orange-800 text-xs font-mono rounded transition"
+                    title="${r.timestamp ? formatTimestamp(r.timestamp) : ''}">
+                #${r.receiptId}
+            </button>
+        `).join('');
+
+        const nextOffset = offset + receipts.length;
+        const hasMore = nextOffset < total;
+        const moreBtn = hasMore
+            ? `<button class="text-xs text-blue-600 hover:text-blue-800 mt-2"
+                       onclick="loadMoreReceipts('${hash}', ${nextOffset}, this)">
+                  Показать ещё (${total - nextOffset} осталось)
+               </button>`
+            : '';
+
+        // Тело: безопасно обрезаем перед syntaxHighlight.
+        let bodyJson = '';
+        try { bodyJson = JSON.stringify(data.body, null, 2); } catch { bodyJson = String(data.body); }
+        const bodyTruncated = bodyJson.length > DUP_BODY_RENDER_LIMIT;
+        const bodyForRender = bodyTruncated
+            ? bodyJson.slice(0, DUP_BODY_RENDER_LIMIT) + '\n\n... [тело обрезано, ' + (bodyJson.length - DUP_BODY_RENDER_LIMIT) + ' символов скрыто]'
+            : bodyJson;
+
+        container.innerHTML = `
+            <div class="px-3 py-2 flex flex-wrap items-center gap-1 bg-white border-b border-orange-100">
+                <span class="text-xs text-gray-500 mr-1">ID (${receipts.length} из ${total}):</span>
+                <span class="dup-ids-list flex flex-wrap gap-1">${idsHtml}</span>
+            </div>
+            <div class="px-3 py-1 bg-white border-b border-orange-100">${moreBtn}</div>
+            <div class="px-3 py-2 bg-white border-b border-orange-100 flex justify-end">
+                <button onclick="copyEntireWebhook(${escapeJson(data.body)}, event)"
+                        class="text-xs text-blue-600 hover:text-blue-800 font-medium">
+                    📋 Копировать тело
+                </button>
+            </div>
+            <div class="bg-gray-50 p-3 overflow-x-auto max-h-72 overflow-y-auto">
+                <pre class="text-xs font-mono">${syntaxHighlight(bodyForRender)}</pre>
+            </div>
+        `;
+    }
+
+    window.loadMoreReceipts = async (hash, offset, btn) => {
+        btn.disabled = true;
+        btn.textContent = 'Загрузка...';
+        try {
+            const url = `${apiBase}/hook/${encodeURIComponent(currentRoomId)}/duplicates/group/${encodeURIComponent(hash)}`
+                + `?offset=${offset}&limit=${DUP_RECEIPTS_PAGE}`;
+            const res = await fetch(url);
+            if (!res.ok) { btn.textContent = 'Ошибка'; return; }
+            const data = await res.json();
+            const card = document.querySelector(`[data-hash="${hash}"]`);
+            if (!card) return;
+            const idsList = card.querySelector('.dup-ids-list');
+            const newIds = (data.receipts || []).map(r => `
+                <button onclick="jumpToWebhook('${r.receiptId}')"
+                        class="px-2 py-0.5 bg-orange-100 hover:bg-orange-200 text-orange-800 text-xs font-mono rounded transition">
+                    #${r.receiptId}
+                </button>
+            `).join('');
+            idsList.insertAdjacentHTML('beforeend', newIds);
+
+            // Обновляем счётчик
+            const counter = card.querySelector('.dup-ids-list').previousElementSibling
+                ?? card.querySelector('span.text-xs.text-gray-500');
+            const shown = idsList.querySelectorAll('button').length;
+            const counterSpan = idsList.parentElement.querySelector('span.text-xs.text-gray-500');
+            if (counterSpan) counterSpan.textContent = `ID (${shown} из ${data.receiptsTotal}):`;
+
+            const nextOffset = offset + (data.receipts || []).length;
+            if (nextOffset >= data.receiptsTotal) {
+                btn.remove();
+            } else {
+                btn.disabled = false;
+                btn.textContent = `Показать ещё (${data.receiptsTotal - nextOffset} осталось)`;
+                btn.onclick = () => window.loadMoreReceipts(hash, nextOffset, btn);
+            }
+        } catch (err) {
+            btn.disabled = false;
+            btn.textContent = 'Ошибка, повторить';
+            console.error(err);
+        }
+    };
+
     window.jumpToWebhook = (receiptId) => {
         searchInput.value = receiptId;
         searchTerm = receiptId.toLowerCase();
@@ -1171,7 +1322,7 @@
 
     showDuplicatesBtn.addEventListener('click', openDuplicatesPanel);
     closeDuplicatesPanelBtn.addEventListener('click', closeDuplicatesPanelFn);
-    refreshDuplicatesBtn.addEventListener('click', fetchDuplicates);
+    refreshDuplicatesBtn.addEventListener('click', () => { dupCurrentPage = 1; fetchDuplicatesSummary(); });
 
     // Monitor online/offline status
     window.addEventListener('online', () => {

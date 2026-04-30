@@ -44,23 +44,60 @@ export async function webhookRoutes(fastify: FastifyInstance) {
         return { status: "cleared" };
     });
 
-    fastify.get("/:id/duplicates", async (request, reply) => {
+    // Сводка дубликатов: только заголовки, с пагинацией. Лёгкий ответ.
+    fastify.get("/:id/duplicates/summary", async (request, reply) => {
         const { id } = request.params as { id: string };
+        const q = request.query as { page?: string; pageSize?: string };
         const repo = await roomRepository.getRoomRepo(id);
-        if (!repo) {
-            logger.warn(`Attempt to scan duplicates in non-existent room ${id}`);
-            return reply.status(404).send({ error: "Room not found" });
-        }
+        if (!repo) return reply.status(404).send({ error: "Room not found" });
 
-        const groups = repo.getDuplicates();
-        const totalDuplicateWebhooks = groups.reduce((s, g) => s + g.count, 0);
+        const page = Math.max(1, parseInt(q.page ?? "1", 10) || 1);
+        const pageSize = Math.min(100, Math.max(1, parseInt(q.pageSize ?? "20", 10) || 20));
+
+        const headers = await repo.getDuplicateHeaders();
+        const totalGroups = headers.length;
+        const totalDuplicateWebhooks = headers.reduce((s, h) => s + h.count, 0);
+        const start = (page - 1) * pageSize;
+        const slice = headers.slice(start, start + pageSize);
 
         return reply.status(200).send({
             roomId: id,
-            groupsCount: groups.length,
+            page,
+            pageSize,
+            totalGroups,
+            totalPages: Math.max(1, Math.ceil(totalGroups / pageSize)),
             totalDuplicateWebhooks,
             totalWebhooks: repo.getWebhooks().length,
-            groups,
+            groups: slice,
+        });
+    });
+
+    // Детали одной группы: тело + страница receipts.
+    fastify.get("/:id/duplicates/group/:hash", async (request, reply) => {
+        const { id, hash } = request.params as { id: string; hash: string };
+        const q = request.query as { offset?: string; limit?: string };
+        const repo = await roomRepository.getRoomRepo(id);
+        if (!repo) return reply.status(404).send({ error: "Room not found" });
+
+        const offset = Math.max(0, parseInt(q.offset ?? "0", 10) || 0);
+        const limit = Math.min(500, Math.max(1, parseInt(q.limit ?? "100", 10) || 100));
+
+        const group = await repo.getDuplicateGroup(hash);
+        if (!group) return reply.status(404).send({ error: "Group not found" });
+
+        const slice = group.receipts.slice(offset, offset + limit);
+        return reply.status(200).send({
+            bodyHash: group.bodyHash,
+            count: group.count,
+            body: group.body,
+            firstReceiptId: group.firstReceiptId,
+            lastReceiptId: group.lastReceiptId,
+            firstTimestamp: group.firstTimestamp,
+            lastTimestamp: group.lastTimestamp,
+            offset,
+            limit,
+            receiptsTotal: group.count,
+            receipts: slice,
         });
     });
 

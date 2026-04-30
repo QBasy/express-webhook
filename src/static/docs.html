@@ -352,21 +352,27 @@
                 "bodyHash": "a3f1c9e2b740",
                 "count": 3,
                 "body": { "event": "message.received", "data": { "text": "Hello" } },
-                "webhooks": [
-                { "receiptId": "1", "timestamp": "...", "body": { ... } },
-                { "receiptId": "4", "timestamp": "...", "body": { ... } },
-                { "receiptId": "7", "timestamp": "...", "body": { ... } }
+                "receipts": [
+                { "receiptId": "1", "timestamp": "2025-01-15T10:30:00.000Z" },
+                { "receiptId": "4", "timestamp": "2025-01-15T10:31:12.000Z" },
+                { "receiptId": "7", "timestamp": "2025-01-15T10:32:55.000Z" }
                 ]
                 },
                 {
                 "bodyHash": "b18de40af991",
                 "count": 2,
                 "body": { ... },
-                "webhooks": [ ... ]
+                "receipts": [ ... ]
                 }
                 ]
                 }
             </div>
+            <p class="text-gray-700 mt-3 text-sm">
+                <strong>Примечание:</strong> <code class="bg-gray-100 px-1.5 py-0.5 rounded">body</code> хранится один раз
+                на группу, чтобы ответ оставался компактным даже при тысячах одинаковых хуков.
+                Каждый <code class="bg-gray-100 px-1.5 py-0.5 rounded">receipts[i]</code> — это
+                лёгкая ссылка на конкретный экземпляр хука без повторения тела.
+            </p>
         </div>
 
         <!-- Delete Single Webhook -->
