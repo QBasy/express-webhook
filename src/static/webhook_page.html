@@ -6,216 +6,200 @@
     <title>Webhook Viewer - GREEN-API QA TEAM</title>
     <link rel="icon" href="/favicon" type="image/x-icon">
     <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Phosphor Icons — многовесовая иконочная библиотека -->
+    <link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css">
+    <link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/bold/style.css">
+    <link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/fill/style.css">
+
     <style>
         @keyframes pulse-dot {
             0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
+            50% { opacity: 0.4; }
         }
-        .pulse-dot {
-            animation: pulse-dot 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-        }
-        .connection-lost {
-            animation: shake 0.5s;
-        }
+        .pulse-dot { animation: pulse-dot 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+
+        .connection-lost { animation: shake 0.5s; }
         @keyframes shake {
             0%, 100% { transform: translateX(0); }
-            25% { transform: translateX(-5px); }
-            75% { transform: translateX(5px); }
+            25% { transform: translateX(-4px); }
+            75% { transform: translateX(4px); }
         }
-        .fade-in {
-            animation: fadeIn 0.3s ease-in;
-        }
+
+        .fade-in { animation: fadeIn 0.25s ease-out; }
         @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(-10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        .json-key {
-            color: #0066cc;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-        .json-key:hover {
-            background: #e3f2fd;
-            padding: 2px 4px;
-            border-radius: 3px;
-            text-decoration: underline;
-        }
-        .json-string {
-            color: #22863a;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-        .json-string:hover {
-            background: #f0fff4;
-            padding: 2px 4px;
-            border-radius: 3px;
-            text-decoration: underline;
-        }
-        .json-number {
-            color: #005cc5;
-        }
-        .json-boolean {
-            color: #d73a49;
-        }
-        .json-null {
-            color: #6f42c1;
+            from { opacity: 0; transform: translateY(-8px); }
+            to   { opacity: 1; transform: translateY(0); }
         }
 
-        /* Стили для подсветки вложенных объектов */
-        .json-value-wrapper {
-            display: inline;
-            transition: background-color 0.2s;
-        }
+        /* JSON Syntax */
+        .json-key    { color: #0066cc; cursor: pointer; transition: all 0.15s; }
+        .json-key:hover    { background: #e3f2fd; padding: 1px 3px; border-radius: 3px; text-decoration: underline; }
+        .json-string { color: #22863a; cursor: pointer; transition: all 0.15s; }
+        .json-string:hover { background: #f0fff4; padding: 1px 3px; border-radius: 3px; text-decoration: underline; }
+        .json-number  { color: #005cc5; }
+        .json-boolean { color: #d73a49; }
+        .json-null    { color: #6f42c1; }
 
-        .json-key-container {
-            display: inline;
-        }
-
-        .json-key-container:hover .json-colon,
-        .json-key-container:hover .json-value-wrapper,
-        .json-key-container:hover .json-value-wrapper * {
-            background-color: #fff3cd !important;
-            border-radius: 3px;
-        }
-
-        .json-colon {
-            cursor: pointer;
-            padding: 0 2px;
-            transition: background-color 0.2s;
-        }
-
-        .json-colon:hover {
-            background-color: #ffc107;
-            border-radius: 3px;
-        }
+        /* Copy flash */
         .copy-indicator {
             position: fixed;
             background: #10b981;
             color: white;
-            padding: 8px 16px;
+            padding: 7px 14px;
             border-radius: 6px;
-            font-size: 14px;
-            font-weight: 500;
+            font-size: 13px;
+            font-weight: 600;
             pointer-events: none;
             z-index: 9999;
-            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
-            animation: copyPop 0.5s ease-out;
+            box-shadow: 0 4px 14px rgba(16,185,129,0.35);
+            animation: copyPop 0.4s ease-out;
         }
         @keyframes copyPop {
-            0% { transform: scale(0.8); opacity: 0; }
-            50% { transform: scale(1.1); }
+            0%   { transform: scale(0.75); opacity: 0; }
+            60%  { transform: scale(1.08); }
             100% { transform: scale(1); opacity: 1; }
         }
-        .webhook-url-container {
-            position: relative;
-            transition: all 0.2s;
+
+        .copy-btn-inline { opacity: 0; transition: opacity 0.15s; }
+        .webhook-url-container:hover .copy-btn-inline { opacity: 1; }
+        .webhook-url-container { transition: transform 0.15s; }
+        .webhook-url-container:hover { transform: translateX(2px); }
+
+        /* Phosphor icon sizing helpers */
+        .ph { font-size: 1em; line-height: 1; vertical-align: -0.12em; }
+        .ph-lg { font-size: 1.2em; }
+        .ph-xl { font-size: 1.4em; }
+
+        /* Sidebar icon badge */
+        .section-icon {
+            width: 26px; height: 26px;
+            display: flex; align-items: center; justify-content: center;
+            border-radius: 6px;
+            font-size: 14px;
         }
-        .webhook-url-container:hover {
-            transform: translateX(2px);
-        }
-        .copy-btn-inline {
-            opacity: 0;
-            transition: opacity 0.2s;
-        }
-        .webhook-url-container:hover .copy-btn-inline {
-            opacity: 1;
-        }
+
+        /* Cleaner button base */
+        .btn { display: inline-flex; align-items: center; gap: 6px; font-weight: 500; border-radius: 8px; transition: all 0.15s; cursor: pointer; white-space: nowrap; }
+        .btn:active { transform: scale(0.97); }
     </style>
 </head>
 <body class="bg-gradient-to-br from-gray-50 to-gray-100 min-h-screen flex flex-col">
-<!-- Header -->
-<header class="bg-white shadow-md border-b border-gray-200">
-    <div class="max-w-7xl mx-auto px-4 py-4 sm:px-6 lg:px-8">
+
+<!-- ═══════════════════════════════════════════════════════════ HEADER -->
+<header class="bg-white shadow-sm border-b border-gray-200">
+    <div class="max-w-7xl mx-auto px-4 py-3 sm:px-6 lg:px-8">
         <div class="flex items-center justify-between">
-            <div class="flex items-center gap-4">
-                <!-- GREEN-API Logo -->
-                <svg width="50" height="50" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+
+            <div class="flex items-center gap-3">
+                <svg width="40" height="40" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
                     <rect width="100" height="100" rx="12" fill="#3B9702"/>
-                    <text x="50" y="70" font-family="Arial, sans-serif" font-size="60" font-weight="bold" fill="white" text-anchor="middle">G</text>
+                    <text x="50" y="70" font-family="Arial,sans-serif" font-size="62" font-weight="bold"
+                          fill="white" text-anchor="middle">G</text>
                 </svg>
                 <div>
-                    <h1 class="text-2xl font-bold text-gray-900">Webhook Viewer</h1>
-                    <p class="text-xs text-green-600 font-semibold">GREEN-API QA TEAM</p>
+                    <h1 class="text-xl font-bold text-gray-900 leading-tight">Webhook Viewer</h1>
+                    <p class="text-[11px] text-green-600 font-semibold tracking-wide uppercase">GREEN-API QA TEAM</p>
                 </div>
             </div>
-            <div class="flex items-center gap-4">
-                <div id="connectionStatus" class="flex items-center gap-2 px-3 py-1 rounded-full bg-green-100 text-green-700 text-sm">
+
+            <div class="flex items-center gap-3">
+                <div id="connectionStatus"
+                     class="flex items-center gap-2 px-3 py-1.5 rounded-full bg-green-50 text-green-700 text-sm border border-green-200">
                     <span class="w-2 h-2 bg-green-500 rounded-full pulse-dot"></span>
-                    <span>Подключено</span>
+                    <span class="font-medium">Подключено</span>
                 </div>
-                <a href="https://green-api.com" target="_blank" class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium transition shadow-sm">
-                    GREEN-API →
+                <a href="https://green-api.com" target="_blank"
+                   class="btn px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm shadow-sm">
+                    GREEN-API
+                    <i class="ph ph-arrow-right"></i>
                 </a>
             </div>
         </div>
     </div>
 </header>
 
-<!-- Main Content -->
+<!-- ═══════════════════════════════════════════════════════════ LAYOUT -->
 <div class="flex-1 flex max-w-7xl mx-auto w-full">
-    <!-- Sidebar -->
-    <aside class="w-80 bg-white shadow-lg border-r border-gray-200 p-6 space-y-6 overflow-y-auto">
+
+    <!-- ─────────────────────────────────────────────────── SIDEBAR -->
+    <aside class="w-72 bg-white shadow-sm border-r border-gray-200 p-5 space-y-5 overflow-y-auto flex-shrink-0">
+
         <!-- Room Controls -->
         <div>
-            <h2 class="text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                <span class="w-6 h-6 bg-green-100 rounded flex items-center justify-center text-green-600">🏠</span>
-                Управление комнатой
+            <h2 class="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2 uppercase tracking-wide">
+                <span class="section-icon bg-green-50 text-green-600">
+                    <i class="ph ph-house-simple"></i>
+                </span>
+                Комната
             </h2>
-            <div class="space-y-3">
-                <input id="roomId" type="text" placeholder="Введите ID комнаты"
-                       class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition">
-                <button id="createRoomBtn" class="w-full bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white px-4 py-3 rounded-lg font-medium transition shadow-md hover:shadow-lg">
+            <div class="space-y-2">
+                <input id="roomId" type="text" placeholder="ID комнаты"
+                       class="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition bg-gray-50 focus:bg-white">
+                <button id="createRoomBtn"
+                        class="btn w-full justify-center px-4 py-2.5 bg-green-600 hover:bg-green-700 text-white text-sm shadow-sm">
+                    <i class="ph ph-sign-in"></i>
                     Создать / Войти
                 </button>
-                <button id="closeRoomBtn" class="w-full bg-red-600 hover:bg-red-700 text-white px-4 py-3 rounded-lg font-medium transition">
+                <button id="closeRoomBtn"
+                        class="btn w-full justify-center px-4 py-2.5 bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 text-sm">
+                    <i class="ph ph-door-open"></i>
                     Закрыть комнату
                 </button>
-                <!-- Добавьте эту кнопку рядом с Create / Close -->
-                <button id="showRoomsBtn" class="w-full bg-gray-100 hover:bg-gray-200 text-gray-800 px-4 py-2 rounded-lg font-medium transition text-sm">
-                    📁 Показать комнаты
+                <button id="showRoomsBtn"
+                        class="btn w-full justify-center px-4 py-2 bg-gray-50 hover:bg-gray-100 text-gray-700 border border-gray-200 text-sm">
+                    <i class="ph ph-folders"></i>
+                    Показать комнаты
                 </button>
             </div>
-            <div id="roomStatus" class="mt-3 text-sm text-gray-600 p-3 bg-gray-50 rounded-lg"></div>
+            <div id="roomStatus" class="mt-3 text-sm text-gray-600 p-3 bg-gray-50 rounded-lg border border-gray-100"></div>
         </div>
 
         <!-- Statistics -->
-        <div class="p-4 bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg">
-            <h3 class="text-sm font-semibold text-blue-900 mb-2">Статистика</h3>
-            <div class="space-y-2">
+        <div class="p-4 bg-blue-50 rounded-lg border border-blue-100">
+            <h3 class="text-xs font-semibold text-blue-800 mb-2.5 uppercase tracking-wide flex items-center gap-1.5">
+                <i class="ph ph-chart-bar text-blue-600"></i>
+                Статистика
+            </h3>
+            <div class="space-y-1.5">
                 <div class="flex justify-between text-sm">
-                    <span class="text-blue-700">Всего вебхуков:</span>
-                    <span id="webhookCount" class="font-bold text-blue-900">0</span>
+                    <span class="text-blue-700">Всего вебхуков</span>
+                    <span id="webhookCount" class="font-bold text-blue-900 tabular-nums">0</span>
                 </div>
                 <div class="flex justify-between text-sm">
-                    <span class="text-blue-700">Отображено:</span>
-                    <span id="displayedCount" class="font-bold text-blue-900">0</span>
+                    <span class="text-blue-700">Отображено</span>
+                    <span id="displayedCount" class="font-bold text-blue-900 tabular-nums">0</span>
                 </div>
                 <div class="flex justify-between text-sm">
-                    <span class="text-blue-700">Текущая страница:</span>
-                    <span id="currentPageDisplay" class="font-bold text-blue-900">1</span>
+                    <span class="text-blue-700">Страница</span>
+                    <span id="currentPageDisplay" class="font-bold text-blue-900 tabular-nums">1</span>
                 </div>
             </div>
         </div>
 
         <!-- Fake Error Controls -->
         <div class="border border-gray-200 rounded-lg p-4">
-            <h3 class="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                <span>⚠️</span> Симуляция ошибок
+            <h3 class="text-xs font-semibold text-gray-700 mb-3 flex items-center gap-1.5 uppercase tracking-wide">
+                <i class="ph ph-warning text-amber-500"></i>
+                Симуляция ошибок
             </h3>
-            <label class="flex items-center gap-2 mb-3">
-                <input type="checkbox" id="fakeErrorToggle" class="w-4 h-4 text-red-600 border-gray-300 rounded focus:ring-red-500">
+            <label class="flex items-center gap-2 mb-3 cursor-pointer">
+                <input type="checkbox" id="fakeErrorToggle"
+                       class="w-4 h-4 text-red-600 border-gray-300 rounded focus:ring-red-500">
                 <span class="text-sm text-gray-700">Включить симуляцию</span>
             </label>
             <input id="fakeStatusInput" type="number" min="100" max="599" placeholder="HTTP код"
-                   class="w-full p-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-500" value="500">
+                   class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-500 bg-gray-50" value="500">
         </div>
 
         <!-- Sort Controls -->
         <div class="border border-gray-200 rounded-lg p-4">
-            <h3 class="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                <span>🔄</span> Сортировка
+            <h3 class="text-xs font-semibold text-gray-700 mb-3 flex items-center gap-1.5 uppercase tracking-wide">
+                <i class="ph ph-arrows-down-up text-gray-500"></i>
+                Сортировка
             </h3>
-            <select id="sortOrder" class="w-full p-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500">
+            <select id="sortOrder"
+                    class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500 bg-gray-50">
                 <option value="newest">Новые первые</option>
                 <option value="oldest">Старые первые</option>
             </select>
@@ -223,142 +207,194 @@
 
         <!-- Actions -->
         <div class="space-y-2">
-            <button id="sendTestHookBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-lg font-medium transition text-sm">
-                📤 Отправить тест
+            <button id="sendTestHookBtn"
+                    class="btn w-full justify-center px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm shadow-sm">
+                <i class="ph ph-paper-plane-tilt"></i>
+                Отправить тест
             </button>
-            <button id="exportBtn" class="w-full bg-purple-600 hover:bg-purple-700 text-white px-4 py-2.5 rounded-lg font-medium transition text-sm">
-                💾 Экспорт JSON
+            <button id="exportBtn"
+                    class="btn w-full justify-center px-4 py-2.5 bg-violet-600 hover:bg-violet-700 text-white text-sm shadow-sm">
+                <i class="ph ph-download-simple"></i>
+                Экспорт JSON
             </button>
-            <button id="showDuplicatesBtn" class="w-full bg-orange-500 hover:bg-orange-600 text-white px-4 py-2.5 rounded-lg font-medium transition text-sm">
-                🔁 Найти дубликаты
+            <button id="showDuplicatesBtn"
+                    class="btn w-full justify-center px-4 py-2.5 bg-orange-500 hover:bg-orange-600 text-white text-sm shadow-sm">
+                <i class="ph ph-copy-simple"></i>
+                Найти дубликаты
             </button>
-            <button id="clearHooksBtn" class="w-full bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2.5 rounded-lg font-medium transition text-sm">
-                🗑️ Очистить все
+            <button id="clearHooksBtn"
+                    class="btn w-full justify-center px-4 py-2.5 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 text-sm">
+                <i class="ph ph-trash"></i>
+                Очистить все
             </button>
         </div>
+
     </aside>
 
-    <!-- Main Panel -->
-    <main class="flex-1 p-6 overflow-y-auto">
-        <!-- Search and Filter Bar -->
-        <div class="bg-white p-4 rounded-lg shadow-md mb-6">
-            <div class="flex gap-3 items-center flex-wrap">
+    <!-- ─────────────────────────────────────────────────── MAIN -->
+    <main class="flex-1 p-6 overflow-y-auto min-w-0">
+
+        <!-- Search Bar -->
+        <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-200 mb-5">
+            <div class="flex gap-2 items-start flex-wrap">
                 <div class="flex-1 relative min-w-[260px]">
-                    <textarea id="searchInput" rows="1" placeholder="Поиск: подстрока (по умолч.) или вставь JSON и переключи в Exact"
-                              class="w-full p-3 pl-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition resize-y font-mono text-sm"></textarea>
-                    <span class="absolute left-3 top-3 text-gray-400">🔍</span>
+                    <i class="ph ph-magnifying-glass absolute left-3 top-3 text-gray-400 pointer-events-none" style="font-size:15px"></i>
+                    <textarea id="searchInput" rows="1"
+                              placeholder="Поиск: подстрока (по умолч.) или вставь JSON и переключи в Exact"
+                              class="w-full py-2.5 pl-9 pr-3 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent resize-y font-mono bg-gray-50 focus:bg-white transition"></textarea>
                 </div>
-                <select id="searchMode" class="p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 text-sm" title="Режим поиска">
+                <select id="searchMode"
+                        class="px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500 bg-gray-50 self-start">
                     <option value="substring">Подстрока</option>
-                    <option value="exact">Точное совпадение JSON</option>
+                    <option value="exact">Точное JSON</option>
                 </select>
-                <button id="searchBtn" class="px-4 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium transition">
+                <button id="searchBtn"
+                        class="btn px-4 py-2.5 bg-green-600 hover:bg-green-700 text-white text-sm self-start">
+                    <i class="ph ph-magnifying-glass"></i>
                     Искать
                 </button>
-                <button id="clearSearchBtn" class="px-3 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-sm font-medium transition" title="Сбросить">✕</button>
-                <select id="itemsPerPage" class="p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 text-sm">
-                    <option value="10">10 / страница</option>
-                    <option value="25" selected>25 / страница</option>
-                    <option value="50">50 / страница</option>
-                    <option value="100">100 / страница</option>
+                <button id="clearSearchBtn"
+                        class="btn px-3 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-600 text-sm self-start"
+                        title="Сбросить поиск">
+                    <i class="ph ph-x"></i>
+                </button>
+                <select id="itemsPerPage"
+                        class="px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500 bg-gray-50 self-start">
+                    <option value="10">10 / стр.</option>
+                    <option value="25" selected>25 / стр.</option>
+                    <option value="50">50 / стр.</option>
+                    <option value="100">100 / стр.</option>
                 </select>
             </div>
             <div id="searchHint" class="mt-2 text-xs text-gray-500 hidden"></div>
         </div>
 
         <!-- Webhooks List -->
-        <div class="bg-white rounded-lg shadow-md overflow-hidden">
-            <div class="p-4 bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200">
-                <h2 class="text-xl font-semibold text-gray-900">История вебхуков</h2>
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+            <div class="px-5 py-4 border-b border-gray-200 flex items-center gap-2">
+                <i class="ph ph-webhooks-logo text-gray-400" style="font-size:18px"></i>
+                <h2 class="text-base font-semibold text-gray-800">История вебхуков</h2>
             </div>
-            <div id="webhooksContainer" class="p-4 space-y-4 min-h-[400px]">
-                <div class="flex flex-col items-center justify-center py-16 text-gray-400">
-                    <div class="text-6xl mb-4">📭</div>
-                    <p class="text-lg">Нет вебхуков для отображения</p>
-                    <p class="text-sm mt-2">Создайте комнату и отправьте первый вебхук</p>
+            <div id="webhooksContainer" class="p-4 space-y-3 min-h-[400px]">
+                <div class="flex flex-col items-center justify-center py-20 text-gray-400">
+                    <i class="ph ph-tray text-gray-300" style="font-size:56px; margin-bottom:16px;"></i>
+                    <p class="text-base font-medium text-gray-500">Нет вебхуков для отображения</p>
+                    <p class="text-sm mt-1 text-gray-400">Создайте комнату и отправьте первый вебхук</p>
                 </div>
             </div>
         </div>
 
         <!-- Pagination -->
-        <div id="paginationContainer" class="mt-6 flex items-center justify-between bg-white p-4 rounded-lg shadow-md">
-            <button id="prevPage" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg font-medium transition disabled:opacity-50 disabled:cursor-not-allowed">
-                ← Назад
+        <div id="paginationContainer" class="mt-4 flex items-center justify-between bg-white px-4 py-3 rounded-xl shadow-sm border border-gray-200">
+            <button id="prevPage"
+                    class="btn px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm disabled:opacity-40 disabled:cursor-not-allowed">
+                <i class="ph ph-arrow-left"></i>
+                Назад
             </button>
-            <div id="pageNumbers" class="flex gap-2"></div>
-            <button id="nextPage" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg font-medium transition disabled:opacity-50 disabled:cursor-not-allowed">
-                Вперед →
+            <div id="pageNumbers" class="flex gap-1.5"></div>
+            <button id="nextPage"
+                    class="btn px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm disabled:opacity-40 disabled:cursor-not-allowed">
+                Вперёд
+                <i class="ph ph-arrow-right"></i>
             </button>
         </div>
+
     </main>
 </div>
 
-<!-- Footer -->
+<!-- ═══════════════════════════════════════════════════════════ FOOTER -->
 <footer class="bg-white border-t border-gray-200 mt-auto">
-    <div class="max-w-7xl mx-auto px-4 py-4 sm:px-6 lg:px-8">
-        <div class="flex items-center justify-between text-sm text-gray-600">
+    <div class="max-w-7xl mx-auto px-4 py-3 sm:px-6 lg:px-8">
+        <div class="flex items-center justify-between text-sm text-gray-500">
             <div class="flex items-center gap-2">
                 <span class="text-green-600 font-semibold">GREEN-API QA TEAM</span>
-                <span class="text-gray-400">|</span>
-                <p>© 2025 Webhook Viewer</p>
+                <span class="text-gray-300">|</span>
+                <span>© 2025 Webhook Viewer</span>
             </div>
-            <div class="flex gap-6">
-                <a href="/docs" class="hover:text-green-600 transition">Документация</a>
-            </div>
+            <a href="/docs" class="hover:text-green-600 transition flex items-center gap-1">
+                <i class="ph ph-book-open"></i>
+                Документация
+            </a>
         </div>
     </div>
 </footer>
 
-<!-- Панель со списком комнат -->
-<div id="roomsPanel" class="fixed right-0 top-0 h-full w-96 bg-white shadow-xl border-l border-gray-200 transform translate-x-full transition-transform duration-300 z-50">
-    <div class="p-4 flex items-center justify-between border-b">
-        <h3 class="text-lg font-semibold">Все комнаты</h3>
-        <button id="closeRoomsPanel" class="text-gray-500 hover:text-gray-700">✕</button>
+<!-- ═══════════════════════════════════════════════════════════ PANEL: ROOMS -->
+<div id="roomsPanel"
+     class="fixed right-0 top-0 h-full w-88 bg-white shadow-2xl border-l border-gray-200 transform translate-x-full transition-transform duration-300 z-50"
+     style="width:360px">
+    <div class="px-5 py-4 flex items-center justify-between border-b border-gray-200">
+        <h3 class="text-base font-semibold flex items-center gap-2 text-gray-800">
+            <i class="ph ph-folders text-green-600"></i>
+            Все комнаты
+        </h3>
+        <button id="closeRoomsPanel"
+                class="btn p-1.5 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-lg">
+            <i class="ph ph-x" style="font-size:16px"></i>
+        </button>
     </div>
-    <div id="roomsPanelContent" class="p-4 overflow-y-auto" style="height: calc(100% - 64px);">
-        <div id="roomsPanelLoading" class="flex items-center justify-center py-8 hidden">
-            <!-- Простая svg-иконка спиннера -->
-            <svg class="animate-spin h-8 w-8 text-green-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
-            </svg>
+    <div id="roomsPanelContent" class="p-4 overflow-y-auto" style="height:calc(100% - 64px)">
+        <div id="roomsPanelLoading" class="flex items-center justify-center py-10 hidden">
+            <i class="ph ph-spinner-gap text-green-600 animate-spin" style="font-size:32px"></i>
         </div>
         <div id="roomsList" class="space-y-2"></div>
-        <div id="roomsPanelEmpty" class="text-center text-gray-500 py-6 hidden">Нет доступных комнат</div>
-        <div id="roomsPanelError" class="text-center text-red-500 py-6 hidden">Ошибка загрузки</div>
+        <div id="roomsPanelEmpty" class="text-center text-gray-500 py-10 hidden">
+            <i class="ph ph-folder-open text-gray-300" style="font-size:40px;display:block;margin:0 auto 8px"></i>
+            Нет доступных комнат
+        </div>
+        <div id="roomsPanelError" class="text-center text-red-500 py-8 hidden flex flex-col items-center gap-2">
+            <i class="ph ph-warning-circle text-red-400" style="font-size:36px;display:block;margin:0 auto 6px"></i>
+            Ошибка загрузки
+        </div>
     </div>
 </div>
 
-<!-- Панель с дубликатами -->
-<div id="duplicatesPanel" class="fixed right-0 top-0 h-full w-[480px] max-w-full bg-white shadow-xl border-l border-gray-200 transform translate-x-full transition-transform duration-300 z-50 flex flex-col">
-    <div class="p-4 flex items-center justify-between border-b">
+<!-- ═══════════════════════════════════════════════════════════ PANEL: DUPLICATES -->
+<div id="duplicatesPanel"
+     class="fixed right-0 top-0 h-full bg-white shadow-2xl border-l border-gray-200 transform translate-x-full transition-transform duration-300 z-50 flex flex-col"
+     style="width:480px;max-width:100%">
+    <div class="px-5 py-4 flex items-center justify-between border-b border-gray-200">
         <div>
-            <h3 class="text-lg font-semibold flex items-center gap-2">🔁 Дубликаты вебхуков</h3>
+            <h3 class="text-base font-semibold flex items-center gap-2 text-gray-800">
+                <i class="ph ph-copy-simple text-orange-500"></i>
+                Дубликаты вебхуков
+            </h3>
             <p id="duplicatesSummary" class="text-xs text-gray-500 mt-0.5">Группировка по телу хука</p>
         </div>
-        <div class="flex items-center gap-2">
-            <button id="refreshDuplicatesBtn" class="text-gray-500 hover:text-green-700 text-sm" title="Обновить">↻</button>
-            <button id="closeDuplicatesPanel" class="text-gray-500 hover:text-gray-700 text-xl">✕</button>
+        <div class="flex items-center gap-1">
+            <button id="refreshDuplicatesBtn"
+                    class="btn p-1.5 text-gray-400 hover:text-green-700 hover:bg-green-50 rounded-lg"
+                    title="Обновить">
+                <i class="ph ph-arrows-clockwise" style="font-size:16px"></i>
+            </button>
+            <button id="closeDuplicatesPanel"
+                    class="btn p-1.5 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-lg">
+                <i class="ph ph-x" style="font-size:16px"></i>
+            </button>
         </div>
     </div>
     <div class="flex-1 overflow-y-auto p-4">
-        <div id="duplicatesPanelLoading" class="flex items-center justify-center py-8 hidden">
-            <svg class="animate-spin h-8 w-8 text-orange-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
-            </svg>
+        <div id="duplicatesPanelLoading" class="flex items-center justify-center py-10 hidden">
+            <i class="ph ph-spinner-gap text-orange-500 animate-spin" style="font-size:32px"></i>
         </div>
         <div id="duplicatesList" class="space-y-3"></div>
-        <div id="duplicatesPanelEmpty" class="text-center text-gray-500 py-10 hidden">
-            <div class="text-5xl mb-3">✨</div>
-            <p class="font-medium">Дубликатов не найдено</p>
+        <div id="duplicatesPanelEmpty" class="text-center text-gray-500 py-12 hidden">
+            <i class="ph ph-sparkle text-gray-300" style="font-size:48px;display:block;margin:0 auto 12px"></i>
+            <p class="font-medium text-gray-600">Дубликатов не найдено</p>
             <p class="text-xs mt-1">Все вебхуки в комнате уникальны</p>
         </div>
-        <div id="duplicatesPanelError" class="text-center text-red-500 py-6 hidden">Ошибка загрузки</div>
-        <div id="duplicatesPanelNoRoom" class="text-center text-gray-500 py-6 hidden">Сначала откройте комнату</div>
+        <div id="duplicatesPanelError" class="text-center text-red-500 py-8 hidden">
+            <i class="ph ph-warning-circle text-red-400" style="font-size:36px;display:block;margin:0 auto 8px"></i>
+            Ошибка загрузки
+        </div>
+        <div id="duplicatesPanelNoRoom" class="text-center text-gray-500 py-8 hidden">
+            <i class="ph ph-door-open text-gray-300" style="font-size:36px;display:block;margin:0 auto 8px"></i>
+            Сначала откройте комнату
+        </div>
     </div>
 </div>
 
+<!-- ═══════════════════════════════════════════════════════════ SCRIPT -->
 <script>
     const apiBase = `${window.location.origin}`;
     let currentRoomId = null;
@@ -372,134 +408,101 @@
     let isOnline = true;
     let reconnectAttempts = 0;
 
-    // DOM Elements
-    const roomIdInput = document.getElementById("roomId");
-    const roomStatus = document.getElementById("roomStatus");
+    const roomIdInput       = document.getElementById("roomId");
+    const roomStatus        = document.getElementById("roomStatus");
     const webhooksContainer = document.getElementById("webhooksContainer");
-    const webhookCount = document.getElementById("webhookCount");
-    const displayedCount = document.getElementById("displayedCount");
-    const currentPageDisplay = document.getElementById("currentPageDisplay");
-    const searchInput = document.getElementById("searchInput");
-    const fakeErrorToggle = document.getElementById("fakeErrorToggle");
-    const fakeStatusInput = document.getElementById("fakeStatusInput");
-    const sortOrderSelect = document.getElementById("sortOrder");
-    const itemsPerPageSelect = document.getElementById("itemsPerPage");
-    const connectionStatus = document.getElementById("connectionStatus");
-    const prevPageBtn = document.getElementById("prevPage");
-    const nextPageBtn = document.getElementById("nextPage");
-    const pageNumbers = document.getElementById("pageNumbers");
+    const webhookCount      = document.getElementById("webhookCount");
+    const displayedCount    = document.getElementById("displayedCount");
+    const currentPageDisplay= document.getElementById("currentPageDisplay");
+    const searchInput       = document.getElementById("searchInput");
+    const fakeErrorToggle   = document.getElementById("fakeErrorToggle");
+    const fakeStatusInput   = document.getElementById("fakeStatusInput");
+    const sortOrderSelect   = document.getElementById("sortOrder");
+    const itemsPerPageSelect= document.getElementById("itemsPerPage");
+    const connectionStatus  = document.getElementById("connectionStatus");
+    const prevPageBtn       = document.getElementById("prevPage");
+    const nextPageBtn       = document.getElementById("nextPage");
+    const pageNumbers       = document.getElementById("pageNumbers");
 
-    // Новые DOM элементы для панели
-    const showRoomsBtn = document.getElementById("showRoomsBtn");
-    const roomsPanel = document.getElementById("roomsPanel");
-    const closeRoomsPanel = document.getElementById("closeRoomsPanel");
+    const showRoomsBtn      = document.getElementById("showRoomsBtn");
+    const roomsPanel        = document.getElementById("roomsPanel");
+    const closeRoomsPanel   = document.getElementById("closeRoomsPanel");
     const roomsPanelLoading = document.getElementById("roomsPanelLoading");
-    const roomsList = document.getElementById("roomsList");
-    const roomsPanelEmpty = document.getElementById("roomsPanelEmpty");
-    const roomsPanelError = document.getElementById("roomsPanelError");
+    const roomsList         = document.getElementById("roomsList");
+    const roomsPanelEmpty   = document.getElementById("roomsPanelEmpty");
+    const roomsPanelError   = document.getElementById("roomsPanelError");
 
-    // DOM элементы панели дубликатов
-    const showDuplicatesBtn = document.getElementById("showDuplicatesBtn");
-    const duplicatesPanel = document.getElementById("duplicatesPanel");
-    const closeDuplicatesPanelBtn = document.getElementById("closeDuplicatesPanel");
-    const refreshDuplicatesBtn = document.getElementById("refreshDuplicatesBtn");
-    const duplicatesPanelLoading = document.getElementById("duplicatesPanelLoading");
-    const duplicatesList = document.getElementById("duplicatesList");
-    const duplicatesPanelEmpty = document.getElementById("duplicatesPanelEmpty");
-    const duplicatesPanelError = document.getElementById("duplicatesPanelError");
-    const duplicatesPanelNoRoom = document.getElementById("duplicatesPanelNoRoom");
-    const duplicatesSummary = document.getElementById("duplicatesSummary");
+    const showDuplicatesBtn        = document.getElementById("showDuplicatesBtn");
+    const duplicatesPanel          = document.getElementById("duplicatesPanel");
+    const closeDuplicatesPanelBtn  = document.getElementById("closeDuplicatesPanel");
+    const refreshDuplicatesBtn     = document.getElementById("refreshDuplicatesBtn");
+    const duplicatesPanelLoading   = document.getElementById("duplicatesPanelLoading");
+    const duplicatesList           = document.getElementById("duplicatesList");
+    const duplicatesPanelEmpty     = document.getElementById("duplicatesPanelEmpty");
+    const duplicatesPanelError     = document.getElementById("duplicatesPanelError");
+    const duplicatesPanelNoRoom    = document.getElementById("duplicatesPanelNoRoom");
+    const duplicatesSummary        = document.getElementById("duplicatesSummary");
 
-    // Initialize
     fakeStatusInput.disabled = false;
-    fakeErrorToggle.checked = false;
+    fakeErrorToggle.checked  = false;
 
-    // Copy with visual feedback
+    /* ── Copy ──────────────────────────────────────────────────────── */
     function copyToClipboardWithFeedback(text, event) {
         navigator.clipboard.writeText(text).then(() => {
-            const indicator = document.createElement('div');
-            indicator.className = 'copy-indicator';
-            indicator.textContent = '✓ Скопировано';
-            indicator.style.left = event.pageX + 'px';
-            indicator.style.top = event.pageY + 'px';
-            document.body.appendChild(indicator);
-
-            setTimeout(() => {
-                indicator.style.opacity = '0';
-                setTimeout(() => indicator.remove(), 300);
-            }, 1000);
+            const el = document.createElement('div');
+            el.className = 'copy-indicator';
+            el.innerHTML = '<i class="ph ph-check-circle" style="margin-right:4px"></i> Скопировано';
+            el.style.left = event.pageX + 'px';
+            el.style.top  = event.pageY + 'px';
+            document.body.appendChild(el);
+            setTimeout(() => { el.style.opacity='0'; setTimeout(()=>el.remove(),250); }, 1100);
         });
     }
 
-    // Connection Status Management
+    /* ── Connection ────────────────────────────────────────────────── */
     function updateConnectionStatus(online) {
         isOnline = online;
         if (online) {
-            connectionStatus.className = "flex items-center gap-2 px-3 py-1 rounded-full bg-green-100 text-green-700 text-sm";
-            connectionStatus.innerHTML = `
-                    <span class="w-2 h-2 bg-green-500 rounded-full pulse-dot"></span>
-                    <span>Подключено</span>
-                `;
+            connectionStatus.className = "flex items-center gap-2 px-3 py-1.5 rounded-full bg-green-50 text-green-700 text-sm border border-green-200";
+            connectionStatus.innerHTML = `<span class="w-2 h-2 bg-green-500 rounded-full pulse-dot"></span><span class="font-medium">Подключено</span>`;
             reconnectAttempts = 0;
         } else {
-            connectionStatus.className = "flex items-center gap-2 px-3 py-1 rounded-full bg-red-100 text-red-700 text-sm connection-lost";
-            connectionStatus.innerHTML = `
-                    <span class="w-2 h-2 bg-red-500 rounded-full"></span>
-                    <span>Нет соединения</span>
-                `;
+            connectionStatus.className = "flex items-center gap-2 px-3 py-1.5 rounded-full bg-red-50 text-red-700 text-sm border border-red-200 connection-lost";
+            connectionStatus.innerHTML = `<span class="w-2 h-2 bg-red-500 rounded-full"></span><span class="font-medium">Нет соединения</span>`;
             attemptReconnect();
         }
     }
 
     async function attemptReconnect() {
         if (isOnline || !currentRoomId) return;
-
         reconnectAttempts++;
         const delay = Math.min(1000 * Math.pow(2, reconnectAttempts), 30000);
-
-        connectionStatus.innerHTML = `
-                <span class="w-2 h-2 bg-yellow-500 rounded-full pulse-dot"></span>
-                <span>Переподключение... (${reconnectAttempts})</span>
-            `;
-
+        connectionStatus.innerHTML = `<span class="w-2 h-2 bg-yellow-400 rounded-full pulse-dot"></span><span class="font-medium">Переподключение (${reconnectAttempts})…</span>`;
         setTimeout(async () => {
             try {
                 const res = await fetch(`${apiBase}/hook/${encodeURIComponent(currentRoomId)}`);
-                if (res.ok) {
-                    updateConnectionStatus(true);
-                    showAlert("Соединение восстановлено", "success");
-                } else {
-                    attemptReconnect();
-                }
-            } catch {
-                attemptReconnect();
-            }
+                if (res.ok) { updateConnectionStatus(true); showAlert("Соединение восстановлено", "success"); }
+                else attemptReconnect();
+            } catch { attemptReconnect(); }
         }, delay);
     }
 
-    // Fake Error Toggle
+    /* ── Fake Error ────────────────────────────────────────────────── */
     fakeErrorToggle.addEventListener("change", async (e) => {
-        if (!currentRoomId) {
-            fakeErrorToggle.checked = false;
-            return showAlert("Сначала создайте комнату", "warning");
-        }
-
+        if (!currentRoomId) { fakeErrorToggle.checked = false; return showAlert("Сначала создайте комнату", "warning"); }
         const enabled = e.target.checked;
-        const parsed = parseInt(fakeStatusInput.value, 10);
-        const statusCode = (Number.isInteger(parsed) && parsed >= 100 && parsed <= 599) ? parsed : 500;
-
+        const parsed  = parseInt(fakeStatusInput.value, 10);
+        const code    = (Number.isInteger(parsed) && parsed >= 100 && parsed <= 599) ? parsed : 500;
         try {
             const res = await fetch(`${apiBase}/room/${encodeURIComponent(currentRoomId)}/fake-error`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ enabled, statusCode })
+                body: JSON.stringify({ enabled, statusCode: code })
             });
-
-            if (!res.ok) throw new Error("Не удалось обновить статус");
-
+            if (!res.ok) throw new Error();
             fakeStatusInput.disabled = !enabled;
-            showAlert(enabled ? `Симуляция ${statusCode} включена` : "Симуляция отключена", "success");
-        } catch (err) {
+            showAlert(enabled ? `Симуляция ${code} включена` : "Симуляция отключена", "success");
+        } catch {
             fakeErrorToggle.checked = !enabled;
             showAlert("Ошибка при изменении состояния", "error");
             updateConnectionStatus(false);
@@ -510,534 +513,22 @@
         if (!currentRoomId) return;
         try {
             const res = await fetch(`${apiBase}/room/${encodeURIComponent(currentRoomId)}/fake-error`);
-            if (!res.ok) {
-                fakeErrorToggle.checked = false;
-                fakeStatusInput.disabled = false;
-                return;
-            }
+            if (!res.ok) { fakeErrorToggle.checked = false; fakeStatusInput.disabled = false; return; }
             const data = await res.json();
             const enabled = data.fakeError ?? data.enabled ?? false;
-            const statusCode = data.statusCode ?? data.status ?? 500;
-
-            fakeErrorToggle.checked = Boolean(enabled);
-            fakeStatusInput.value = statusCode;
+            fakeErrorToggle.checked  = Boolean(enabled);
+            fakeStatusInput.value    = data.statusCode ?? data.status ?? 500;
             fakeStatusInput.disabled = !enabled;
-        } catch (err) {
-            console.warn("updateFakeErrorStatus failed", err);
-        }
+        } catch { console.warn("updateFakeErrorStatus failed"); }
     }
 
-    // Room Management
-    document.getElementById("createRoomBtn").addEventListener("click", async () => {
-        const id = roomIdInput.value.trim();
-        if (!id) return showAlert("Введите ID комнаты", "warning");
-
-        try {
-            currentRoomId = id;
-            lastIds.clear();
-            allHooks = [];
-            currentPage = 1;
-
-            const res = await fetch(`${apiBase}/room/${encodeURIComponent(id)}`, { method: "POST" });
-            if (!res.ok) throw new Error("Ошибка создания комнаты");
-
-            const webhookUrl = `${apiBase}/hook/${encodeURIComponent(id)}`;
-            roomStatus.innerHTML = `
-                    <div class="font-semibold text-green-700 mb-2">✓ Комната активна</div>
-                    <div class="webhook-url-container text-xs break-all bg-white p-2 rounded border border-gray-200 group">
-                        <div class="flex items-center justify-between gap-2">
-                            <span class="flex-1">${webhookUrl}</span>
-                            <button onclick="copyUrlToClipboard(event, '${webhookUrl}')"
-                                    class="copy-btn-inline text-blue-600 hover:text-blue-800 text-lg"
-                                    title="Копировать URL">
-                                📋
-                            </button>
-                        </div>
-                    </div>
-                `;
-
-            await updateFakeErrorStatus();
-            startFetchingHooks();
-            updateConnectionStatus(true);
-            showAlert("Комната создана успешно", "success");
-        } catch (e) {
-            showAlert("Ошибка: " + e.message, "error");
-            updateConnectionStatus(false);
-        }
-    });
-
-    window.copyUrlToClipboard = (event, url) => {
-        event.stopPropagation();
-        copyToClipboardWithFeedback(url, event);
-    };
-
-    document.getElementById("closeRoomBtn").addEventListener("click", async () => {
-        if (!currentRoomId) return showAlert("Нет активной комнаты", "warning");
-
-        try {
-            await fetch(`${apiBase}/room/${encodeURIComponent(currentRoomId)}`, { method: "DELETE" });
-            stopFetchingHooks();
-            roomStatus.innerHTML = `<div class="text-gray-500 text-sm">Комната закрыта</div>`;
-            currentRoomId = null;
-            lastIds.clear();
-            allHooks = [];
-            currentPage = 1;
-            renderAllWebhooks();
-
-            fakeErrorToggle.checked = false;
-            fakeStatusInput.value = "500";
-            fakeStatusInput.disabled = false;
-
-            showAlert("Комната закрыта", "success");
-        } catch (e) {
-            showAlert("Ошибка закрытия комнаты", "error");
-        }
-    });
-
-    document.getElementById("clearHooksBtn").addEventListener("click", async () => {
-        if (!currentRoomId) return showAlert("Нет активной комнаты", "warning");
-
-        try {
-            await fetch(`${apiBase}/hook/${encodeURIComponent(currentRoomId)}`, { method: "DELETE" });
-            lastIds.clear();
-            allHooks = [];
-            currentPage = 1;
-            renderAllWebhooks();
-            showAlert("Вебхуки очищены", "success");
-        } catch (e) {
-            showAlert("Ошибка очистки", "error");
-        }
-    });
-
-    document.getElementById("sendTestHookBtn").addEventListener("click", async () => {
-        if (!currentRoomId) return showAlert("Нет активной комнаты", "warning");
-
-        const testData = {
-            message: "Тестовый вебхук",
-            time: new Date().toISOString(),
-            randomValue: Math.random().toString(36).substring(7),
-            nested: {
-                level1: {
-                    level2: "Глубокое значение",
-                    array: [1, 2, 3, 4, 5]
-                }
-            }
-        };
-
-        try {
-            const res = await fetch(`${apiBase}/hook/${encodeURIComponent(currentRoomId)}`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(testData)
-            });
-
-            if (!res.ok) {
-                const errBody = await res.json().catch(() => null);
-                throw new Error(errBody?.error || res.status);
-            }
-            showAlert("Тестовый вебхук отправлен", "success");
-        } catch (e) {
-            showAlert("Ошибка отправки: " + e.message, "error");
-            updateConnectionStatus(false);
-        }
-    });
-
-    document.getElementById("exportBtn").addEventListener("click", () => {
-        if (allHooks.length === 0) return showAlert("Нет данных для экспорта", "warning");
-
-        const dataStr = JSON.stringify(allHooks, null, 2);
-        const dataBlob = new Blob([dataStr], { type: "application/json" });
-        const url = URL.createObjectURL(dataBlob);
-        const link = document.createElement("a");
-        link.href = url;
-        link.download = `webhooks_${currentRoomId || 'no-room'}_${Date.now()}.json`;
-        link.click();
-        URL.revokeObjectURL(url);
-        showAlert("Экспорт завершён", "success");
-    });
-
-    // ===== Поиск (серверный) =====
-    // searchActive=true означает что мы показываем результаты поиска вместо обычного списка.
-    // serverSearchResults содержит хуки, найденные сервером, и не пересекается с allHooks.
-    let searchActive = false;
-    let serverSearchResults = [];
-    let searchMode = "substring";
-    const searchModeSelect = document.getElementById("searchMode");
-    const searchBtn = document.getElementById("searchBtn");
-    const clearSearchBtn = document.getElementById("clearSearchBtn");
-    const searchHint = document.getElementById("searchHint");
-
-    async function runServerSearch() {
-        const raw = searchInput.value.trim();
-        if (!currentRoomId) return showAlert("Сначала откройте комнату", "warning");
-        if (!raw) return showAlert("Введите запрос для поиска", "warning");
-
-        searchMode = searchModeSelect.value === "exact" ? "exact" : "substring";
-
-        searchHint.classList.remove("hidden");
-        searchHint.textContent = `Ищем (${searchMode === "exact" ? "точное JSON" : "подстрока"})...`;
-
-        try {
-            const res = await fetch(`${apiBase}/hook/${encodeURIComponent(currentRoomId)}/search`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ mode: searchMode, query: raw, offset: 0, limit: 500 }),
-            });
-
-            const data = await res.json();
-            if (!res.ok) {
-                searchHint.textContent = "Ошибка: " + (data.error || res.status) + (data.detail ? " — " + data.detail : "");
-                searchHint.className = "mt-2 text-xs text-red-600";
-                return;
-            }
-
-            searchActive = true;
-            serverSearchResults = data.matches || [];
-            currentPage = 1;
-            const shown = serverSearchResults.length;
-            const total = data.total ?? shown;
-            searchHint.className = "mt-2 text-xs text-gray-600";
-            searchHint.textContent = `Найдено: ${total}${shown < total ? ` (показаны первые ${shown})` : ""}. Режим: ${searchMode === "exact" ? "точное JSON-сравнение" : "подстрока без учёта пробелов"}.`;
-            renderAllWebhooks();
-        } catch (err) {
-            searchHint.className = "mt-2 text-xs text-red-600";
-            searchHint.textContent = "Ошибка сети: " + String(err).slice(0, 120);
-        }
-    }
-
-    function clearSearch() {
-        searchInput.value = "";
-        searchTerm = "";
-        searchActive = false;
-        serverSearchResults = [];
-        searchHint.classList.add("hidden");
-        currentPage = 1;
-        renderAllWebhooks();
-    }
-
-    searchBtn.addEventListener("click", runServerSearch);
-    clearSearchBtn.addEventListener("click", clearSearch);
-    searchInput.addEventListener("keydown", (e) => {
-        if (e.key === "Enter" && !e.shiftKey) {
-            e.preventDefault();
-            runServerSearch();
-        }
-    });
-
-    sortOrderSelect.addEventListener("change", (e) => {
-        sortOrder = e.target.value;
-        renderAllWebhooks();
-    });
-
-    itemsPerPageSelect.addEventListener("change", (e) => {
-        itemsPerPage = parseInt(e.target.value);
-        currentPage = 1;
-        renderAllWebhooks();
-    });
-
-    // Pagination
-    prevPageBtn.addEventListener("click", () => {
-        if (currentPage > 1) {
-            currentPage--;
-            renderAllWebhooks();
-        }
-    });
-
-    nextPageBtn.addEventListener("click", () => {
-        const totalPages = Math.ceil(getFilteredHooks().length / itemsPerPage);
-        if (currentPage < totalPages) {
-            currentPage++;
-            renderAllWebhooks();
-        }
-    });
-
-    // Utility Functions
-    window.deleteWebhook = async (webhookId) => {
-        if (!currentRoomId) return;
-
-        try {
-            await fetch(`${apiBase}/hook/${encodeURIComponent(currentRoomId)}/${encodeURIComponent(webhookId)}`, { method: "DELETE" });
-            allHooks = allHooks.filter(h => h.receiptId !== webhookId);
-            lastIds.delete(webhookId);
-            renderAllWebhooks();
-            showAlert("Вебхук удалён", "success");
-        } catch (e) {
-            showAlert("Ошибка удаления", "error");
-            updateConnectionStatus(false);
-        }
-    };
-
-    window.copyEntireWebhook = (body, event) => {
-        const text = JSON.stringify(body, null, 2);
-        copyToClipboardWithFeedback(text, event);
-    };
-
-    function startFetchingHooks() {
-        stopFetchingHooks();
-        hookInterval = setInterval(async () => {
-            if (!currentRoomId) return;
-            try {
-                const res = await fetch(`${apiBase}/hook/${encodeURIComponent(currentRoomId)}`);
-                if (!res.ok) {
-                    updateConnectionStatus(false);
-                    throw new Error("Ошибка загрузки");
-                }
-                updateConnectionStatus(true);
-                const data = await res.json();
-                processWebhooks(data);
-            } catch (e) {
-                updateConnectionStatus(false);
-                console.error("Ошибка загрузки вебхуков:", e);
-            }
-        }, 2000);
-    }
-
-    function stopFetchingHooks() {
-        if (hookInterval) clearInterval(hookInterval);
-    }
-
-    function processWebhooks(hooks) {
-        if (!hooks || hooks.length === 0) return;
-
-        let hasNew = false;
-        hooks.forEach(hook => {
-            if (!lastIds.has(hook.receiptId)) {
-                lastIds.add(hook.receiptId);
-                allHooks.unshift(hook);
-                hasNew = true;
-            }
-        });
-
-        // Если активен серверный поиск — не перерисовываем основной список,
-        // чтобы результаты поиска не сбивались. Просто обновим счётчик.
-        if (hasNew) {
-            if (searchActive) {
-                webhookCount.textContent = allHooks.length;
-            } else {
-                renderAllWebhooks();
-            }
-        }
-    }
-
-    function getFilteredHooks() {
-        // Если активен серверный поиск — показываем именно его результаты, не локальные allHooks.
-        const source = searchActive ? serverSearchResults : allHooks;
-
-        let filtered = source;
-        // Локальная подстрочная фильтрация только если поиск НЕ активен и есть searchTerm
-        // (на случай если jumpToWebhook выставил searchInput.value программно).
-        if (!searchActive && searchTerm) {
-            filtered = source.filter(hook => {
-                const bodyStr = JSON.stringify(hook.body).toLowerCase();
-                return bodyStr.includes(searchTerm) || hook.receiptId.toString().includes(searchTerm);
-            });
-        }
-
-        if (sortOrder === "oldest") {
-            filtered = [...filtered].reverse();
-        }
-
-        return filtered;
-    }
-
-    function syntaxHighlight(json) {
-        if (typeof json !== 'string') {
-            json = JSON.stringify(json, null, 2);
-        }
-
-        json = json.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-
-        return json.replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, function (match) {
-            let cls = 'json-number';
-            if (/^"/.test(match)) {
-                if (/:$/.test(match)) {
-                    cls = 'json-key';
-                    const key = match.slice(1, -2);
-                    return `<span class="${cls}" onclick="copyValue(event, '${escapeHtml(key)}')" title="Копировать ключ">${match}</span>`;
-                } else {
-                    cls = 'json-string';
-                    const val = match.slice(1, -1);
-                    return `<span class="${cls}" onclick="copyValue(event, '${escapeHtml(val)}')" title="Копировать значение">${match}</span>`;
-                }
-            } else if (/true|false/.test(match)) {
-                cls = 'json-boolean';
-            } else if (/null/.test(match)) {
-                cls = 'json-null';
-            }
-            return `<span class="${cls}">${match}</span>`;
-        });
-    }
-
-    function escapeHtml(text) {
-        return text.replace(/'/g, "\\'").replace(/"/g, '&quot;');
-    }
-
-    window.copyValue = (event, value) => {
-        event.stopPropagation();
-        const decodedValue = value.replace(/&quot;/g, '"').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>');
-        copyToClipboardWithFeedback(decodedValue, event);
-    };
-
-    function renderAllWebhooks() {
-        const filtered = getFilteredHooks();
-        const totalPages = Math.ceil(filtered.length / itemsPerPage);
-        const startIdx = (currentPage - 1) * itemsPerPage;
-        const endIdx = startIdx + itemsPerPage;
-        const paginatedHooks = filtered.slice(startIdx, endIdx);
-
-        webhookCount.textContent = allHooks.length;
-        displayedCount.textContent = paginatedHooks.length;
-        currentPageDisplay.textContent = currentPage;
-
-        if (paginatedHooks.length === 0) {
-            webhooksContainer.innerHTML = `
-                    <div class="flex flex-col items-center justify-center py-16 text-gray-400">
-                        <div class="text-6xl mb-4">📭</div>
-                        <p class="text-lg">${searchTerm ? 'Ничего не найдено' : 'Нет вебхуков для отображения'}</p>
-                        <p class="text-sm mt-2">${searchTerm ? 'Попробуйте изменить запрос' : 'Создайте комнату и отправьте первый вебхук'}</p>
-                    </div>
-                `;
-        } else {
-            webhooksContainer.innerHTML = paginatedHooks.map(hook => `
-                    <div class="p-4 border border-gray-200 rounded-lg bg-white hover:shadow-lg hover:border-green-300 transition-all fade-in">
-                        <div class="flex justify-between items-start mb-3">
-                            <div class="flex items-center gap-3">
-                                <span class="px-2 py-1 bg-green-100 text-green-700 text-xs font-mono rounded">
-                                    ID: ${hook.receiptId}
-                                </span>
-                                <span class="text-sm text-gray-500">
-                                    ${formatTimestamp(hook.timestamp)}
-                                </span>
-                            </div>
-                            <div class="flex gap-2">
-                                <button onclick="copyEntireWebhook(${escapeJson(hook.body)}, event)"
-                                        class="px-3 py-1 text-blue-600 hover:bg-blue-50 rounded transition text-sm font-medium"
-                                        title="Копировать весь объект">
-                                    📋 Копировать всё
-                                </button>
-                                <button onclick="deleteWebhook('${hook.receiptId}')"
-                                        class="px-3 py-1 text-red-600 hover:bg-red-50 rounded transition text-sm font-medium"
-                                        title="Удалить">
-                                    🗑️ Удалить
-                                </button>
-                            </div>
-                        </div>
-                        <div class="bg-gray-50 p-4 rounded-lg overflow-x-auto border border-gray-200 hover:bg-white transition">
-                            <pre class="text-sm font-mono">${syntaxHighlight(hook.body)}</pre>
-                        </div>
-                        <div class="mt-2 text-xs text-gray-500 italic">
-                            💡 Нажмите на любой ключ или значение, чтобы скопировать
-                        </div>
-                    </div>
-                `).join("");
-        }
-
-        renderPagination(totalPages);
-    }
-
-    function renderPagination(totalPages) {
-        prevPageBtn.disabled = currentPage === 1;
-        nextPageBtn.disabled = currentPage === totalPages || totalPages === 0;
-
-        let pages = [];
-        if (totalPages <= 7) {
-            pages = Array.from({ length: totalPages }, (_, i) => i + 1);
-        } else {
-            if (currentPage <= 4) {
-                pages = [1, 2, 3, 4, 5, '...', totalPages];
-            } else if (currentPage >= totalPages - 3) {
-                pages = [1, '...', totalPages - 4, totalPages - 3, totalPages - 2, totalPages - 1, totalPages];
-            } else {
-                pages = [1, '...', currentPage - 1, currentPage, currentPage + 1, '...', totalPages];
-            }
-        }
-
-        pageNumbers.innerHTML = pages.map(page => {
-            if (page === '...') {
-                return `<span class="px-3 py-2 text-gray-400">...</span>`;
-            }
-            const isActive = page === currentPage;
-            return `
-                    <button onclick="goToPage(${page})"
-                            class="px-3 py-2 rounded-lg font-medium transition ${
-                isActive
-                    ? 'bg-green-600 text-white shadow-md'
-                    : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
-            }">
-                        ${page}
-                    </button>
-                `;
-        }).join('');
-    }
-
-    window.goToPage = (page) => {
-        currentPage = page;
-        renderAllWebhooks();
-    };
-
-    function formatTimestamp(ts) {
-        if (!ts) return "Недавно";
-        const date = new Date(ts);
-        const now = new Date();
-        const diff = now - date;
-
-        if (diff < 60000) return "Только что";
-        if (diff < 3600000) return `${Math.floor(diff / 60000)} мин. назад`;
-        if (diff < 86400000) return `${Math.floor(diff / 3600000)} ч. назад`;
-
-        return date.toLocaleString("ru-RU", {
-            day: '2-digit',
-            month: '2-digit',
-            year: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit'
-        });
-    }
-
-    function escapeJson(obj) {
-        return JSON.stringify(obj).replace(/'/g, "\\'").replace(/"/g, "&quot;");
-    }
-
-    function showAlert(message, type) {
-        const colors = {
-            success: "bg-green-100 text-green-800 border-green-400",
-            error: "bg-red-100 text-red-800 border-red-400",
-            warning: "bg-yellow-100 text-yellow-800 border-yellow-400"
-        };
-
-        const icons = {
-            success: "✓",
-            error: "✕",
-            warning: "⚠"
-        };
-
-        const alert = document.createElement("div");
-        alert.className = `fixed top-20 right-6 px-5 py-3 rounded-lg border-l-4 ${colors[type]} shadow-2xl transition-all z-50 max-w-md fade-in`;
-        alert.innerHTML = `
-                <div class="flex items-center gap-3">
-                    <span class="text-xl font-bold">${icons[type]}</span>
-                    <span class="font-medium">${message}</span>
-                </div>
-            `;
-        document.body.appendChild(alert);
-
-        setTimeout(() => {
-            alert.style.opacity = "0";
-            alert.style.transform = "translateX(100%)";
-            setTimeout(() => alert.remove(), 300);
-        }, 4000);
-    }
-
-    // универсальная функция открытия комнаты
+    /* ── Room Management ───────────────────────────────────────────── */
     async function openRoom(id) {
         if (!id) return showAlert("Введите ID комнаты", "warning");
-
         try {
             currentRoomId = id;
             roomIdInput.value = id;
-            lastIds.clear();
-            allHooks = [];
-            currentPage = 1;
+            lastIds.clear(); allHooks = []; currentPage = 1;
             renderAllWebhooks();
 
             const res = await fetch(`${apiBase}/room/${encodeURIComponent(id)}`, { method: "POST" });
@@ -1045,18 +536,19 @@
 
             const webhookUrl = `${apiBase}/hook/${encodeURIComponent(id)}`;
             roomStatus.innerHTML = `
-            <div class="font-semibold text-green-700 mb-2">✓ Комната активна</div>
-            <div class="webhook-url-container text-xs break-all bg-white p-2 rounded border border-gray-200 group">
-                <div class="flex items-center justify-between gap-2">
-                    <span class="flex-1">${webhookUrl}</span>
-                    <button onclick="copyUrlToClipboard(event, '${webhookUrl}')"
-                            class="copy-btn-inline text-blue-600 hover:text-blue-800 text-lg"
-                            title="Копировать URL">
-                        📋
-                    </button>
+                <div class="font-semibold text-green-700 mb-2 flex items-center gap-1.5">
+                    <i class="ph ph-check-circle text-green-500"></i> Комната активна
                 </div>
-            </div>
-        `;
+                <div class="webhook-url-container text-xs break-all bg-white p-2 rounded-lg border border-gray-200">
+                    <div class="flex items-center justify-between gap-2">
+                        <span class="flex-1 font-mono text-gray-600">${webhookUrl}</span>
+                        <button onclick="copyUrlToClipboard(event,'${webhookUrl}')"
+                                class="copy-btn-inline text-blue-500 hover:text-blue-700 p-1 rounded transition"
+                                title="Копировать URL">
+                            <i class="ph ph-copy" style="font-size:15px"></i>
+                        </button>
+                    </div>
+                </div>`;
 
             await updateFakeErrorStatus();
             startFetchingHooks();
@@ -1068,372 +560,472 @@
         }
     }
 
-    // изменяем обработчик кнопки Create чтобы использовать openRoom
+    window.copyUrlToClipboard = (event, url) => { event.stopPropagation(); copyToClipboardWithFeedback(url, event); };
+
     document.getElementById("createRoomBtn").addEventListener("click", async () => {
-        const id = roomIdInput.value.trim();
-        await openRoom(id);
+        await openRoom(roomIdInput.value.trim());
     });
 
-    // Открыть / закрыть панель
-    function openRoomsPanel() {
-        roomsPanel.classList.remove('translate-x-full');
-        roomsPanelError.classList.add('hidden');
-        fetchAllRooms();
-    }
-    function closeRoomsPanelFn() {
-        roomsPanel.classList.add('translate-x-full');
-    }
-
-    // обработчики
-    showRoomsBtn.addEventListener('click', openRoomsPanel);
-    closeRoomsPanel.addEventListener('click', closeRoomsPanelFn);
-
-    // Загрузка списка комнат
-    async function fetchAllRooms() {
-        roomsList.innerHTML = '';
-        roomsPanelEmpty.classList.add('hidden');
-        roomsPanelError.classList.add('hidden');
-        roomsPanelLoading.classList.remove('hidden');
-
+    document.getElementById("closeRoomBtn").addEventListener("click", async () => {
+        if (!currentRoomId) return showAlert("Нет активной комнаты", "warning");
         try {
-            const res = await fetch(`${apiBase}/room/allRooms`);
-            roomsPanelLoading.classList.add('hidden');
+            await fetch(`${apiBase}/room/${encodeURIComponent(currentRoomId)}`, { method: "DELETE" });
+            stopFetchingHooks();
+            roomStatus.innerHTML = `<div class="text-gray-500 text-sm flex items-center gap-1"><i class="ph ph-door"></i> Комната закрыта</div>`;
+            currentRoomId = null; lastIds.clear(); allHooks = []; currentPage = 1;
+            renderAllWebhooks();
+            fakeErrorToggle.checked = false; fakeStatusInput.value = "500"; fakeStatusInput.disabled = false;
+            showAlert("Комната закрыта", "success");
+        } catch { showAlert("Ошибка закрытия комнаты", "error"); }
+    });
 
-            if (!res.ok) {
-                roomsPanelError.classList.remove('hidden');
-                return;
-            }
+    document.getElementById("clearHooksBtn").addEventListener("click", async () => {
+        if (!currentRoomId) return showAlert("Нет активной комнаты", "warning");
+        try {
+            await fetch(`${apiBase}/hook/${encodeURIComponent(currentRoomId)}`, { method: "DELETE" });
+            lastIds.clear(); allHooks = []; currentPage = 1; renderAllWebhooks();
+            showAlert("Вебхуки очищены", "success");
+        } catch { showAlert("Ошибка очистки", "error"); }
+    });
 
-            const data = await res.json();
-            const rooms = data.rooms;
-
-            if (!rooms || rooms.length === 0) {
-                roomsPanelEmpty.classList.remove('hidden');
-                return;
-            }
-
-            // Рендер списка комнат
-            roomsList.innerHTML = rooms.map(r => `
-            <div class="p-3 border border-gray-200 rounded-lg flex items-center justify-between hover:bg-gray-50">
-                <div class="flex flex-col">
-                    <button class="text-left text-sm font-medium text-gray-800 room-select-btn" data-room-id="${r.roomId}">
-                        ${r.roomId}
-                    </button>
-                    <div class="text-xs text-gray-500">Вебхуков: ${r.webhooksCount}</div>
-                </div>
-                <div class="flex flex-col items-end gap-2">
-                    <button class="px-3 py-1 bg-green-600 text-white rounded text-sm select-room-action" data-room-id="${r.roomId}">Открыть</button>
-                </div>
-            </div>
-        `).join('');
-
-            // навесим обработчики на все кнопки
-            document.querySelectorAll('.select-room-action, .room-select-btn').forEach(el => {
-                el.addEventListener('click', async (e) => {
-                    const rid = e.currentTarget.getAttribute('data-room-id');
-                    await openRoom(rid);
-                    closeRoomsPanelFn();
-                });
+    document.getElementById("sendTestHookBtn").addEventListener("click", async () => {
+        if (!currentRoomId) return showAlert("Нет активной комнаты", "warning");
+        const testData = {
+            message: "Тестовый вебхук", time: new Date().toISOString(),
+            randomValue: Math.random().toString(36).substring(7),
+            nested: { level1: { level2: "Глубокое значение", array: [1,2,3,4,5] } }
+        };
+        try {
+            const res = await fetch(`${apiBase}/hook/${encodeURIComponent(currentRoomId)}`, {
+                method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(testData)
             });
+            if (!res.ok) { const e = await res.json().catch(()=>null); throw new Error(e?.error || res.status); }
+            showAlert("Тестовый вебхук отправлен", "success");
+        } catch (e) { showAlert("Ошибка отправки: " + e.message, "error"); updateConnectionStatus(false); }
+    });
 
+    document.getElementById("exportBtn").addEventListener("click", () => {
+        if (allHooks.length === 0) return showAlert("Нет данных для экспорта", "warning");
+        const blob = new Blob([JSON.stringify(allHooks, null, 2)], { type: "application/json" });
+        const url  = URL.createObjectURL(blob);
+        const a    = document.createElement("a");
+        a.href = url; a.download = `webhooks_${currentRoomId||'no-room'}_${Date.now()}.json`;
+        a.click(); URL.revokeObjectURL(url);
+        showAlert("Экспорт завершён", "success");
+    });
+
+    /* ── Search ────────────────────────────────────────────────────── */
+    let searchActive = false, serverSearchResults = [], searchMode = "substring";
+    const searchModeSelect = document.getElementById("searchMode");
+    const searchBtn        = document.getElementById("searchBtn");
+    const clearSearchBtn   = document.getElementById("clearSearchBtn");
+    const searchHint       = document.getElementById("searchHint");
+
+    async function runServerSearch() {
+        const raw = searchInput.value.trim();
+        if (!currentRoomId) return showAlert("Сначала откройте комнату", "warning");
+        if (!raw)           return showAlert("Введите запрос для поиска", "warning");
+        searchMode = searchModeSelect.value === "exact" ? "exact" : "substring";
+        searchHint.classList.remove("hidden");
+        searchHint.textContent = `Ищем (${searchMode === "exact" ? "точное JSON" : "подстрока"})…`;
+        try {
+            const res = await fetch(`${apiBase}/hook/${encodeURIComponent(currentRoomId)}/search`, {
+                method: "POST", headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ mode: searchMode, query: raw, offset: 0, limit: 500 })
+            });
+            const data = await res.json();
+            if (!res.ok) {
+                searchHint.textContent = "Ошибка: " + (data.error || res.status);
+                searchHint.className   = "mt-2 text-xs text-red-600"; return;
+            }
+            searchActive = true; serverSearchResults = data.matches || []; currentPage = 1;
+            const shown = serverSearchResults.length, total = data.total ?? shown;
+            searchHint.className   = "mt-2 text-xs text-gray-600";
+            searchHint.textContent = `Найдено: ${total}${shown < total ? ` (показаны первые ${shown})` : ""}. Режим: ${searchMode === "exact" ? "точное JSON" : "подстрока"}.`;
+            renderAllWebhooks();
         } catch (err) {
-            roomsPanelLoading.classList.add('hidden');
-            roomsPanelError.classList.remove('hidden');
-            console.error('fetchAllRooms error', err);
+            searchHint.className   = "mt-2 text-xs text-red-600";
+            searchHint.textContent = "Ошибка сети: " + String(err).slice(0, 120);
         }
     }
 
-    // ===== Дубликаты =====
-    // Вся логика построена на двух эндпоинтах:
-    //   /duplicates/summary?page=N&pageSize=M  — лёгкий список заголовков групп
-    //   /duplicates/group/:hash?offset=X&limit=Y — тело + receipts конкретной группы
-    // Тело и список ID грузятся только при раскрытии группы. Это позволяет работать
-    // с комнатами на сотни тысяч хуков без падения браузера.
+    function clearSearch() {
+        searchInput.value = ""; searchTerm = ""; searchActive = false;
+        serverSearchResults = []; searchHint.classList.add("hidden"); currentPage = 1;
+        renderAllWebhooks();
+    }
 
-    const DUP_PAGE_SIZE = 20;
-    const DUP_RECEIPTS_PAGE = 100;
-    const DUP_BODY_RENDER_LIMIT = 20000;
+    searchBtn.addEventListener("click", runServerSearch);
+    clearSearchBtn.addEventListener("click", clearSearch);
+    searchInput.addEventListener("keydown", e => { if (e.key==="Enter"&&!e.shiftKey){e.preventDefault();runServerSearch();} });
+    sortOrderSelect.addEventListener("change", e  => { sortOrder = e.target.value; renderAllWebhooks(); });
+    itemsPerPageSelect.addEventListener("change", e=> { itemsPerPage = parseInt(e.target.value); currentPage=1; renderAllWebhooks(); });
+    prevPageBtn.addEventListener("click", () => { if (currentPage>1){currentPage--;renderAllWebhooks();} });
+    nextPageBtn.addEventListener("click", () => {
+        const tot = Math.ceil(getFilteredHooks().length/itemsPerPage);
+        if (currentPage<tot){currentPage++;renderAllWebhooks();}
+    });
 
-    let dupCurrentPage = 1;
-    let dupTotalPages = 1;
+    /* ── Webhook Helpers ───────────────────────────────────────────── */
+    window.deleteWebhook = async (id) => {
+        if (!currentRoomId) return;
+        try {
+            await fetch(`${apiBase}/hook/${encodeURIComponent(currentRoomId)}/${encodeURIComponent(id)}`, { method: "DELETE" });
+            allHooks = allHooks.filter(h=>h.receiptId!==id); lastIds.delete(id);
+            renderAllWebhooks(); showAlert("Вебхук удалён", "success");
+        } catch { showAlert("Ошибка удаления", "error"); updateConnectionStatus(false); }
+    };
+
+    window.copyEntireWebhook = (body, event) => copyToClipboardWithFeedback(JSON.stringify(body,null,2), event);
+
+    function startFetchingHooks() {
+        stopFetchingHooks();
+        hookInterval = setInterval(async () => {
+            if (!currentRoomId) return;
+            try {
+                const res = await fetch(`${apiBase}/hook/${encodeURIComponent(currentRoomId)}`);
+                if (!res.ok) { updateConnectionStatus(false); throw new Error(); }
+                updateConnectionStatus(true);
+                processWebhooks(await res.json());
+            } catch { updateConnectionStatus(false); }
+        }, 2000);
+    }
+    function stopFetchingHooks() { if (hookInterval) clearInterval(hookInterval); }
+
+    function processWebhooks(hooks) {
+        if (!hooks?.length) return;
+        let hasNew = false;
+        hooks.forEach(h => { if (!lastIds.has(h.receiptId)){ lastIds.add(h.receiptId); allHooks.unshift(h); hasNew=true; } });
+        if (hasNew) {
+            if (searchActive) webhookCount.textContent = allHooks.length;
+            else renderAllWebhooks();
+        }
+    }
+
+    function getFilteredHooks() {
+        const source = searchActive ? serverSearchResults : allHooks;
+        let filtered = source;
+        if (!searchActive && searchTerm)
+            filtered = source.filter(h => JSON.stringify(h.body).toLowerCase().includes(searchTerm) || String(h.receiptId).includes(searchTerm));
+        return sortOrder === "oldest" ? [...filtered].reverse() : filtered;
+    }
+
+    /* ── Syntax Highlight ──────────────────────────────────────────── */
+    function syntaxHighlight(json) {
+        if (typeof json !== 'string') json = JSON.stringify(json, null, 2);
+        json = json.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+        return json.replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, m => {
+            if (/^"/.test(m)) {
+                if (/:$/.test(m)) {
+                    const k = m.slice(1,-2);
+                    return `<span class="json-key" onclick="copyValue(event,'${escapeHtml(k)}')" title="Копировать ключ">${m}</span>`;
+                }
+                const v = m.slice(1,-1);
+                return `<span class="json-string" onclick="copyValue(event,'${escapeHtml(v)}')" title="Копировать значение">${m}</span>`;
+            }
+            if (/true|false/.test(m)) return `<span class="json-boolean">${m}</span>`;
+            if (/null/.test(m))       return `<span class="json-null">${m}</span>`;
+            return `<span class="json-number">${m}</span>`;
+        });
+    }
+
+    function escapeHtml(t) { return t.replace(/'/g,"\\'").replace(/"/g,'&quot;'); }
+    window.copyValue = (event, value) => {
+        event.stopPropagation();
+        copyToClipboardWithFeedback(value.replace(/&quot;/g,'"').replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>'), event);
+    };
+    function escapeJson(obj) { return JSON.stringify(obj).replace(/'/g,"\\'").replace(/"/g,'&quot;'); }
+
+    /* ── Render ────────────────────────────────────────────────────── */
+    function renderAllWebhooks() {
+        const filtered = getFilteredHooks();
+        const totalPages = Math.ceil(filtered.length / itemsPerPage);
+        const start = (currentPage-1)*itemsPerPage;
+        const page  = filtered.slice(start, start+itemsPerPage);
+
+        webhookCount.textContent     = allHooks.length;
+        displayedCount.textContent   = page.length;
+        currentPageDisplay.textContent = currentPage;
+
+        if (page.length === 0) {
+            webhooksContainer.innerHTML = `
+                <div class="flex flex-col items-center justify-center py-20 text-gray-400">
+                    <i class="ph ph-tray text-gray-300" style="font-size:56px;margin-bottom:16px;display:block;text-align:center"></i>
+                    <p class="text-base font-medium text-gray-500">${searchTerm?'Ничего не найдено':'Нет вебхуков для отображения'}</p>
+                    <p class="text-sm mt-1 text-gray-400">${searchTerm?'Попробуйте изменить запрос':'Создайте комнату и отправьте первый вебхук'}</p>
+                </div>`;
+        } else {
+            webhooksContainer.innerHTML = page.map(hook => `
+                <div class="p-4 border border-gray-200 rounded-xl bg-white hover:shadow-md hover:border-green-300 transition-all fade-in">
+                    <div class="flex justify-between items-center mb-3 gap-3">
+                        <div class="flex items-center gap-2 min-w-0">
+                            <span class="inline-flex items-center gap-1 px-2.5 py-1 bg-green-50 text-green-700 text-xs font-mono rounded-lg border border-green-100 shrink-0">
+                                <i class="ph ph-hash" style="font-size:11px"></i>${hook.receiptId}
+                            </span>
+                            <span class="text-xs text-gray-400 truncate">${formatTimestamp(hook.timestamp)}</span>
+                        </div>
+                        <div class="flex gap-1 shrink-0">
+                            <button onclick="copyEntireWebhook(${escapeJson(hook.body)}, event)"
+                                    class="btn px-2.5 py-1.5 text-xs text-blue-600 hover:bg-blue-50 border border-transparent hover:border-blue-100 rounded-lg">
+                                <i class="ph ph-copy" style="font-size:13px"></i> Копировать
+                            </button>
+                            <button onclick="deleteWebhook('${hook.receiptId}')"
+                                    class="btn px-2.5 py-1.5 text-xs text-red-500 hover:bg-red-50 border border-transparent hover:border-red-100 rounded-lg">
+                                <i class="ph ph-trash" style="font-size:13px"></i> Удалить
+                            </button>
+                        </div>
+                    </div>
+                    <div class="bg-gray-50 p-4 rounded-lg overflow-x-auto border border-gray-100 hover:bg-white transition-colors">
+                        <pre class="text-sm font-mono">${syntaxHighlight(hook.body)}</pre>
+                    </div>
+                    <div class="mt-2 text-xs text-gray-400 flex items-center gap-1">
+                        <i class="ph ph-cursor-click" style="font-size:12px"></i>
+                        Нажмите на ключ или значение, чтобы скопировать
+                    </div>
+                </div>`).join("");
+        }
+        renderPagination(totalPages);
+    }
+
+    function renderPagination(totalPages) {
+        prevPageBtn.disabled = currentPage === 1;
+        nextPageBtn.disabled = currentPage === totalPages || totalPages === 0;
+        let pages = [];
+        if (totalPages <= 7) pages = Array.from({length:totalPages},(_,i)=>i+1);
+        else if (currentPage <= 4) pages = [1,2,3,4,5,'…',totalPages];
+        else if (currentPage >= totalPages-3) pages = [1,'…',totalPages-4,totalPages-3,totalPages-2,totalPages-1,totalPages];
+        else pages = [1,'…',currentPage-1,currentPage,currentPage+1,'…',totalPages];
+
+        pageNumbers.innerHTML = pages.map(p => {
+            if (p === '…') return `<span class="px-2 py-2 text-gray-400 text-sm">…</span>`;
+            const active = p === currentPage;
+            return `<button onclick="goToPage(${p})"
+                class="w-9 h-9 rounded-lg font-medium text-sm transition ${active ? 'bg-green-600 text-white shadow-sm' : 'bg-gray-100 hover:bg-gray-200 text-gray-700'}">${p}</button>`;
+        }).join('');
+    }
+
+    window.goToPage = p => { currentPage=p; renderAllWebhooks(); };
+
+    function formatTimestamp(ts) {
+        if (!ts) return "Недавно";
+        const d = new Date(ts), diff = Date.now()-d;
+        if (diff < 60000)   return "Только что";
+        if (diff < 3600000) return `${Math.floor(diff/60000)} мин. назад`;
+        if (diff < 86400000)return `${Math.floor(diff/3600000)} ч. назад`;
+        return d.toLocaleString("ru-RU",{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
+    }
+
+    /* ── Alert ─────────────────────────────────────────────────────── */
+    function showAlert(message, type) {
+        const cfg = {
+            success: { cls: "bg-green-50 text-green-800 border-green-400", icon: "ph-check-circle" },
+            error:   { cls: "bg-red-50 text-red-800 border-red-400",       icon: "ph-x-circle" },
+            warning: { cls: "bg-amber-50 text-amber-800 border-amber-400", icon: "ph-warning" }
+        }[type];
+        const el = document.createElement("div");
+        el.className = `fixed top-20 right-5 px-4 py-3 rounded-xl border-l-4 ${cfg.cls} shadow-xl z-50 max-w-xs fade-in flex items-center gap-2`;
+        el.innerHTML = `<i class="ph ${cfg.icon}" style="font-size:18px;flex-shrink:0"></i><span class="text-sm font-medium">${message}</span>`;
+        document.body.appendChild(el);
+        setTimeout(() => { el.style.opacity="0"; el.style.transform="translateX(12px)"; el.style.transition="all 0.25s"; setTimeout(()=>el.remove(),300); }, 3800);
+    }
+
+    /* ── Rooms Panel ───────────────────────────────────────────────── */
+    function openRoomsPanel() { roomsPanel.classList.remove('translate-x-full'); fetchAllRooms(); }
+    function closeRoomsPanelFn() { roomsPanel.classList.add('translate-x-full'); }
+    showRoomsBtn.addEventListener('click', openRoomsPanel);
+    closeRoomsPanel.addEventListener('click', closeRoomsPanelFn);
+
+    async function fetchAllRooms() {
+        roomsList.innerHTML = ''; roomsPanelEmpty.classList.add('hidden');
+        roomsPanelError.classList.add('hidden'); roomsPanelLoading.classList.remove('hidden');
+        try {
+            const res = await fetch(`${apiBase}/room/allRooms`);
+            roomsPanelLoading.classList.add('hidden');
+            if (!res.ok) { roomsPanelError.classList.remove('hidden'); return; }
+            const data = await res.json();
+            const rooms = data.rooms;
+            if (!rooms?.length) { roomsPanelEmpty.classList.remove('hidden'); return; }
+            roomsList.innerHTML = rooms.map(r=>`
+                <div class="p-3 border border-gray-200 rounded-xl flex items-center justify-between hover:bg-gray-50 transition">
+                    <div>
+                        <div class="text-sm font-medium text-gray-800 font-mono">${r.roomId}</div>
+                        <div class="text-xs text-gray-500 mt-0.5 flex items-center gap-1">
+                            <i class="ph ph-webhooks-logo" style="font-size:11px"></i>
+                            ${r.webhooksCount} вебхуков
+                        </div>
+                    </div>
+                    <button class="btn px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white text-xs shadow-sm select-room-action" data-room-id="${r.roomId}">
+                        <i class="ph ph-arrow-right"></i> Открыть
+                    </button>
+                </div>`).join('');
+            document.querySelectorAll('.select-room-action').forEach(el => {
+                el.addEventListener('click', async e => {
+                    await openRoom(e.currentTarget.dataset.roomId); closeRoomsPanelFn();
+                });
+            });
+        } catch { roomsPanelLoading.classList.add('hidden'); roomsPanelError.classList.remove('hidden'); }
+    }
+
+    /* ── Duplicates Panel ──────────────────────────────────────────── */
+    const DUP_PAGE_SIZE = 20, DUP_RECEIPTS_PAGE = 100, DUP_BODY_LIMIT = 20000;
+    let dupCurrentPage = 1, dupTotalPages = 1;
 
     function openDuplicatesPanel() {
-        duplicatesPanel.classList.remove('translate-x-full');
-        // Пока панель открыта — не дёргаем фоновый опрос (тяжело при 100k+ хуков).
-        stopFetchingHooks();
-        dupCurrentPage = 1;
-        fetchDuplicatesSummary();
+        duplicatesPanel.classList.remove('translate-x-full'); stopFetchingHooks();
+        dupCurrentPage = 1; fetchDuplicatesSummary();
     }
-    function closeDuplicatesPanelFn() {
-        duplicatesPanel.classList.add('translate-x-full');
-        if (currentRoomId) startFetchingHooks();
-    }
+    function closeDuplicatesPanelFn() { duplicatesPanel.classList.add('translate-x-full'); if(currentRoomId)startFetchingHooks(); }
 
-    function resetDuplicatesPanelState() {
-        duplicatesList.innerHTML = '';
-        duplicatesPanelEmpty.classList.add('hidden');
-        duplicatesPanelError.classList.add('hidden');
-        duplicatesPanelNoRoom.classList.add('hidden');
+    function resetDupPanel() {
+        duplicatesList.innerHTML=''; duplicatesPanelEmpty.classList.add('hidden');
+        duplicatesPanelError.classList.add('hidden'); duplicatesPanelNoRoom.classList.add('hidden');
         duplicatesPanelLoading.classList.add('hidden');
     }
 
     async function fetchDuplicatesSummary() {
-        resetDuplicatesPanelState();
-
-        if (!currentRoomId) {
-            duplicatesSummary.textContent = "Сначала откройте комнату";
-            duplicatesPanelNoRoom.classList.remove('hidden');
-            return;
-        }
-
-        duplicatesSummary.textContent = `Сканируем комнату ${currentRoomId}...`;
-        duplicatesPanelLoading.classList.remove('hidden');
-
+        resetDupPanel();
+        if (!currentRoomId) { duplicatesSummary.textContent="Сначала откройте комнату"; duplicatesPanelNoRoom.classList.remove('hidden'); return; }
+        duplicatesSummary.textContent=`Сканируем ${currentRoomId}…`; duplicatesPanelLoading.classList.remove('hidden');
         try {
-            const url = `${apiBase}/hook/${encodeURIComponent(currentRoomId)}/duplicates/summary`
-                + `?page=${dupCurrentPage}&pageSize=${DUP_PAGE_SIZE}`;
-            const res = await fetch(url);
-            duplicatesPanelLoading.classList.add('hidden');
-
-            if (!res.ok) {
-                duplicatesPanelError.classList.remove('hidden');
-                duplicatesSummary.textContent = "Ошибка загрузки";
-                return;
-            }
-
-            const data = await res.json();
-            const headers = Array.isArray(data.groups) ? data.groups : [];
-            dupTotalPages = data.totalPages || 1;
-
-            duplicatesSummary.textContent =
-                `Групп: ${data.totalGroups} • в дубликатах: ${data.totalDuplicateWebhooks} из ${data.totalWebhooks}`;
-
-            if (data.totalGroups === 0) {
-                duplicatesPanelEmpty.classList.remove('hidden');
-                return;
-            }
-
-            const html = headers.map(h => renderDuplicateHeader(h));
-            if (dupTotalPages > 1) {
-                html.push(renderDupPagination(dupCurrentPage, dupTotalPages));
-            }
+            const url = `${apiBase}/hook/${encodeURIComponent(currentRoomId)}/duplicates/summary?page=${dupCurrentPage}&pageSize=${DUP_PAGE_SIZE}`;
+            const res = await fetch(url); duplicatesPanelLoading.classList.add('hidden');
+            if (!res.ok){ duplicatesPanelError.classList.remove('hidden'); duplicatesSummary.textContent="Ошибка загрузки"; return; }
+            const data = await res.json(); const headers = Array.isArray(data.groups)?data.groups:[];
+            dupTotalPages = data.totalPages||1;
+            duplicatesSummary.textContent=`Групп: ${data.totalGroups} · в дубликатах: ${data.totalDuplicateWebhooks} из ${data.totalWebhooks}`;
+            if (data.totalGroups===0){ duplicatesPanelEmpty.classList.remove('hidden'); return; }
+            const html = headers.map(h=>renderDuplicateHeader(h));
+            if(dupTotalPages>1) html.push(renderDupPagination(dupCurrentPage,dupTotalPages));
             duplicatesList.innerHTML = html.join('');
-        } catch (err) {
-            duplicatesPanelLoading.classList.add('hidden');
-            duplicatesPanelError.classList.remove('hidden');
-            duplicatesSummary.textContent = "Ошибка загрузки";
-            console.error('fetchDuplicatesSummary error', err);
-        }
+        } catch (err){ duplicatesPanelLoading.classList.add('hidden'); duplicatesPanelError.classList.remove('hidden'); }
     }
 
     function renderDuplicateHeader(h) {
-        // Превью body уже короткое (≤200 символов от бэка), безопасно для DOM.
-        const preview = String(h.bodyPreview ?? '').replace(/[<>&]/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;'}[c]));
+        const preview = String(h.bodyPreview??'').replace(/[<>&]/g, c=>({'<':'&lt;','>':'&gt;','&':'&amp;'}[c]));
         return `
-            <div class="border border-orange-200 rounded-lg bg-orange-50/30 overflow-hidden fade-in"
-                 data-hash="${h.bodyHash}">
-                <button class="w-full px-3 py-2 bg-orange-100/60 border-b border-orange-200 flex items-center justify-between hover:bg-orange-100 transition text-left"
-                        onclick="toggleDuplicateGroup('${h.bodyHash}', this)">
-                    <div class="flex items-center gap-2 min-w-0">
-                        <span class="px-2 py-0.5 bg-orange-500 text-white text-xs font-bold rounded shrink-0">x${h.count}</span>
-                        <span class="text-xs font-mono text-orange-800 shrink-0" title="Хеш тела хука">${h.bodyHash}</span>
-                        <span class="text-xs text-gray-600 truncate font-mono" title="Превью тела">${preview}</span>
-                    </div>
-                    <span class="text-orange-700 ml-2 shrink-0 dup-toggle-arrow">▾</span>
-                </button>
-                <div class="px-3 py-1.5 text-[11px] text-gray-500 bg-white border-b border-orange-100">
-                    Первый: #${h.firstReceiptId} (${formatTimestamp(h.firstTimestamp)}) •
-                    Последний: #${h.lastReceiptId} (${formatTimestamp(h.lastTimestamp)})
+        <div class="border border-orange-200 rounded-xl bg-orange-50/30 overflow-hidden fade-in" data-hash="${h.bodyHash}">
+            <button class="w-full px-3 py-2.5 bg-orange-50 border-b border-orange-200 flex items-center justify-between hover:bg-orange-100/70 transition text-left"
+                    onclick="toggleDuplicateGroup('${h.bodyHash}', this)">
+                <div class="flex items-center gap-2 min-w-0">
+                    <span class="px-2 py-0.5 bg-orange-500 text-white text-xs font-bold rounded-lg shrink-0">×${h.count}</span>
+                    <span class="text-xs font-mono text-orange-700 shrink-0">${h.bodyHash}</span>
+                    <span class="text-xs text-gray-600 truncate font-mono">${preview}</span>
                 </div>
-                <div class="dup-group-body hidden"></div>
+                <i class="ph ph-caret-down text-orange-600 ml-2 shrink-0 dup-toggle-arrow" style="font-size:14px"></i>
+            </button>
+            <div class="px-3 py-1.5 text-[11px] text-gray-500 bg-white border-b border-orange-100 flex items-center gap-1">
+                <i class="ph ph-clock text-gray-400" style="font-size:11px"></i>
+                Первый: #${h.firstReceiptId} (${formatTimestamp(h.firstTimestamp)}) ·
+                Последний: #${h.lastReceiptId} (${formatTimestamp(h.lastTimestamp)})
             </div>
-        `;
+            <div class="dup-group-body hidden"></div>
+        </div>`;
     }
 
-    function renderDupPagination(page, totalPages) {
-        const prev = page > 1
-            ? `<button class="px-3 py-1 bg-white border border-gray-300 rounded hover:bg-gray-50 text-sm" onclick="dupGoToPage(${page-1})">← Назад</button>`
-            : `<button class="px-3 py-1 bg-gray-100 border border-gray-200 rounded text-sm text-gray-400" disabled>← Назад</button>`;
-        const next = page < totalPages
-            ? `<button class="px-3 py-1 bg-white border border-gray-300 rounded hover:bg-gray-50 text-sm" onclick="dupGoToPage(${page+1})">Вперёд →</button>`
-            : `<button class="px-3 py-1 bg-gray-100 border border-gray-200 rounded text-sm text-gray-400" disabled>Вперёд →</button>`;
-        return `
-            <div class="flex items-center justify-between pt-2">
-                ${prev}
-                <span class="text-xs text-gray-500">Стр. ${page} из ${totalPages}</span>
-                ${next}
-            </div>
-        `;
+    function renderDupPagination(page, total) {
+        const prev = page>1
+            ? `<button class="btn px-3 py-1.5 bg-white border border-gray-300 hover:bg-gray-50 text-sm" onclick="dupGoToPage(${page-1})"><i class="ph ph-arrow-left"></i> Назад</button>`
+            : `<button class="btn px-3 py-1.5 bg-gray-100 border border-gray-200 text-sm text-gray-400" disabled><i class="ph ph-arrow-left"></i> Назад</button>`;
+        const next = page<total
+            ? `<button class="btn px-3 py-1.5 bg-white border border-gray-300 hover:bg-gray-50 text-sm" onclick="dupGoToPage(${page+1})">Вперёд <i class="ph ph-arrow-right"></i></button>`
+            : `<button class="btn px-3 py-1.5 bg-gray-100 border border-gray-200 text-sm text-gray-400" disabled>Вперёд <i class="ph ph-arrow-right"></i></button>`;
+        return `<div class="flex items-center justify-between pt-2">${prev}<span class="text-xs text-gray-500">Стр. ${page} из ${total}</span>${next}</div>`;
     }
 
-    window.dupGoToPage = (n) => {
-        dupCurrentPage = n;
-        fetchDuplicatesSummary();
-    };
+    window.dupGoToPage = n => { dupCurrentPage=n; fetchDuplicatesSummary(); };
 
-    // Раскрыть/свернуть группу. При первом раскрытии — fetch тела + первой страницы receipts.
     window.toggleDuplicateGroup = async (hash, btn) => {
-        const card = btn.closest('[data-hash]');
-        const body = card.querySelector('.dup-group-body');
+        const card  = btn.closest('[data-hash]');
+        const body  = card.querySelector('.dup-group-body');
         const arrow = card.querySelector('.dup-toggle-arrow');
-
         if (!body.classList.contains('hidden')) {
             body.classList.add('hidden');
-            arrow.textContent = '▾';
-            return;
+            arrow.classList.replace('ph-caret-up','ph-caret-down'); return;
         }
-
-        arrow.textContent = '▴';
-        if (body.dataset.loaded === '1') {
-            body.classList.remove('hidden');
-            return;
-        }
-
+        arrow.classList.replace('ph-caret-down','ph-caret-up');
+        if (body.dataset.loaded==='1'){ body.classList.remove('hidden'); return; }
         body.classList.remove('hidden');
-        body.innerHTML = `<div class="px-3 py-3 text-xs text-gray-500">Загрузка...</div>`;
-
+        body.innerHTML=`<div class="px-3 py-3 text-xs text-gray-500 flex items-center gap-2"><i class="ph ph-spinner-gap animate-spin" style="font-size:14px"></i> Загрузка…</div>`;
         try {
-            const url = `${apiBase}/hook/${encodeURIComponent(currentRoomId)}/duplicates/group/${encodeURIComponent(hash)}`
-                + `?offset=0&limit=${DUP_RECEIPTS_PAGE}`;
-            const res = await fetch(url);
-            if (!res.ok) {
-                body.innerHTML = `<div class="px-3 py-3 text-xs text-red-500">Ошибка загрузки группы</div>`;
-                return;
-            }
-            const data = await res.json();
-            renderGroupBody(body, data, hash, 0);
-            body.dataset.loaded = '1';
-        } catch (err) {
-            body.innerHTML = `<div class="px-3 py-3 text-xs text-red-500">Ошибка: ${String(err).slice(0, 100)}</div>`;
-        }
+            const res = await fetch(`${apiBase}/hook/${encodeURIComponent(currentRoomId)}/duplicates/group/${encodeURIComponent(hash)}?offset=0&limit=${DUP_RECEIPTS_PAGE}`);
+            if (!res.ok){ body.innerHTML=`<div class="px-3 py-3 text-xs text-red-500">Ошибка загрузки группы</div>`; return; }
+            renderGroupBody(body, await res.json(), hash, 0);
+            body.dataset.loaded='1';
+        } catch(err){ body.innerHTML=`<div class="px-3 py-3 text-xs text-red-500">Ошибка: ${String(err).slice(0,100)}</div>`; }
     };
 
     function renderGroupBody(container, data, hash, offset) {
-        const receipts = data.receipts || [];
-        const total = data.receiptsTotal || receipts.length;
-        const idsHtml = receipts.map(r => `
+        const receipts = data.receipts||[], total = data.receiptsTotal||receipts.length;
+        const idsHtml = receipts.map(r=>`
             <button onclick="jumpToWebhook('${r.receiptId}')"
-                    class="px-2 py-0.5 bg-orange-100 hover:bg-orange-200 text-orange-800 text-xs font-mono rounded transition"
-                    title="${r.timestamp ? formatTimestamp(r.timestamp) : ''}">
+                    class="px-2 py-0.5 bg-orange-100 hover:bg-orange-200 text-orange-800 text-xs font-mono rounded-lg transition"
+                    title="${r.timestamp?formatTimestamp(r.timestamp):''}">
                 #${r.receiptId}
-            </button>
-        `).join('');
-
-        const nextOffset = offset + receipts.length;
-        const hasMore = nextOffset < total;
+            </button>`).join('');
+        const nextOff = offset+receipts.length, hasMore = nextOff<total;
         const moreBtn = hasMore
-            ? `<button class="text-xs text-blue-600 hover:text-blue-800 mt-2"
-                       onclick="loadMoreReceipts('${hash}', ${nextOffset}, this)">
-                  Показать ещё (${total - nextOffset} осталось)
-               </button>`
-            : '';
-
-        // Тело: безопасно обрезаем перед syntaxHighlight.
-        let bodyJson = '';
-        try { bodyJson = JSON.stringify(data.body, null, 2); } catch { bodyJson = String(data.body); }
-        const bodyTruncated = bodyJson.length > DUP_BODY_RENDER_LIMIT;
-        const bodyForRender = bodyTruncated
-            ? bodyJson.slice(0, DUP_BODY_RENDER_LIMIT) + '\n\n... [тело обрезано, ' + (bodyJson.length - DUP_BODY_RENDER_LIMIT) + ' символов скрыто]'
-            : bodyJson;
-
-        container.innerHTML = `
+            ? `<button class="text-xs text-blue-600 hover:text-blue-800 flex items-center gap-1 mt-2"
+                       onclick="loadMoreReceipts('${hash}',${nextOff},this)">
+                  <i class="ph ph-plus-circle" style="font-size:13px"></i> Показать ещё (${total-nextOff} осталось)
+               </button>` : '';
+        let bodyJson=''; try{ bodyJson=JSON.stringify(data.body,null,2); }catch{ bodyJson=String(data.body); }
+        const trunc = bodyJson.length > DUP_BODY_LIMIT;
+        const forRender = trunc ? bodyJson.slice(0,DUP_BODY_LIMIT)+'\n\n… [тело обрезано, '+(bodyJson.length-DUP_BODY_LIMIT)+' символов скрыто]' : bodyJson;
+        container.innerHTML=`
             <div class="px-3 py-2 flex flex-wrap items-center gap-1 bg-white border-b border-orange-100">
-                <span class="text-xs text-gray-500 mr-1">ID (${receipts.length} из ${total}):</span>
+                <span class="text-xs text-gray-500 mr-1 flex items-center gap-1"><i class="ph ph-hash" style="font-size:11px"></i>ID (${receipts.length} из ${total}):</span>
                 <span class="dup-ids-list flex flex-wrap gap-1">${idsHtml}</span>
             </div>
             <div class="px-3 py-1 bg-white border-b border-orange-100">${moreBtn}</div>
             <div class="px-3 py-2 bg-white border-b border-orange-100 flex justify-end">
-                <button onclick="copyEntireWebhook(${escapeJson(data.body)}, event)"
-                        class="text-xs text-blue-600 hover:text-blue-800 font-medium">
-                    📋 Копировать тело
+                <button onclick="copyEntireWebhook(${escapeJson(data.body)},event)"
+                        class="btn text-xs text-blue-600 hover:text-blue-800 font-medium">
+                    <i class="ph ph-copy" style="font-size:13px"></i> Копировать тело
                 </button>
             </div>
-            <div class="bg-gray-50 p-3 overflow-x-auto max-h-72 overflow-y-auto">
-                <pre class="text-xs font-mono">${syntaxHighlight(bodyForRender)}</pre>
-            </div>
-        `;
+            <div class="bg-gray-50 p-3 overflow-x-auto max-h-64 overflow-y-auto">
+                <pre class="text-xs font-mono">${syntaxHighlight(forRender)}</pre>
+            </div>`;
     }
 
     window.loadMoreReceipts = async (hash, offset, btn) => {
-        btn.disabled = true;
-        btn.textContent = 'Загрузка...';
+        btn.disabled=true; btn.innerHTML='<i class="ph ph-spinner-gap animate-spin" style="font-size:12px"></i> Загрузка…';
         try {
-            const url = `${apiBase}/hook/${encodeURIComponent(currentRoomId)}/duplicates/group/${encodeURIComponent(hash)}`
-                + `?offset=${offset}&limit=${DUP_RECEIPTS_PAGE}`;
-            const res = await fetch(url);
-            if (!res.ok) { btn.textContent = 'Ошибка'; return; }
+            const res = await fetch(`${apiBase}/hook/${encodeURIComponent(currentRoomId)}/duplicates/group/${encodeURIComponent(hash)}?offset=${offset}&limit=${DUP_RECEIPTS_PAGE}`);
+            if (!res.ok){ btn.textContent='Ошибка'; return; }
             const data = await res.json();
             const card = document.querySelector(`[data-hash="${hash}"]`);
             if (!card) return;
             const idsList = card.querySelector('.dup-ids-list');
-            const newIds = (data.receipts || []).map(r => `
+            idsList.insertAdjacentHTML('beforeend',(data.receipts||[]).map(r=>`
                 <button onclick="jumpToWebhook('${r.receiptId}')"
-                        class="px-2 py-0.5 bg-orange-100 hover:bg-orange-200 text-orange-800 text-xs font-mono rounded transition">
+                        class="px-2 py-0.5 bg-orange-100 hover:bg-orange-200 text-orange-800 text-xs font-mono rounded-lg transition">
                     #${r.receiptId}
-                </button>
-            `).join('');
-            idsList.insertAdjacentHTML('beforeend', newIds);
-
-            // Обновляем счётчик
-            const counter = card.querySelector('.dup-ids-list').previousElementSibling
-                ?? card.querySelector('span.text-xs.text-gray-500');
+                </button>`).join(''));
             const shown = idsList.querySelectorAll('button').length;
-            const counterSpan = idsList.parentElement.querySelector('span.text-xs.text-gray-500');
-            if (counterSpan) counterSpan.textContent = `ID (${shown} из ${data.receiptsTotal}):`;
-
-            const nextOffset = offset + (data.receipts || []).length;
-            if (nextOffset >= data.receiptsTotal) {
-                btn.remove();
-            } else {
-                btn.disabled = false;
-                btn.textContent = `Показать ещё (${data.receiptsTotal - nextOffset} осталось)`;
-                btn.onclick = () => window.loadMoreReceipts(hash, nextOffset, btn);
-            }
-        } catch (err) {
-            btn.disabled = false;
-            btn.textContent = 'Ошибка, повторить';
-            console.error(err);
-        }
+            const counter = idsList.parentElement.querySelector('.text-xs.text-gray-500');
+            if(counter) counter.innerHTML=`<i class="ph ph-hash" style="font-size:11px"></i>ID (${shown} из ${data.receiptsTotal}):`;
+            const nextOff = offset+(data.receipts||[]).length;
+            if (nextOff>=data.receiptsTotal){ btn.remove(); }
+            else { btn.disabled=false; btn.innerHTML=`<i class="ph ph-plus-circle" style="font-size:13px"></i> Показать ещё (${data.receiptsTotal-nextOff} осталось)`; btn.onclick=()=>window.loadMoreReceipts(hash,nextOff,btn); }
+        } catch{ btn.disabled=false; btn.innerHTML='<i class="ph ph-warning" style="font-size:12px"></i> Ошибка, повторить'; }
     };
 
     window.jumpToWebhook = (receiptId) => {
-        // Фильтруем основной список по ID. Работает для хуков, уже загруженных на фронт через polling.
-        searchInput.value = "";
-        searchTerm = String(receiptId).toLowerCase();
-        searchActive = false;
-        serverSearchResults = [];
-        searchHint.classList.add("hidden");
-        currentPage = 1;
-        renderAllWebhooks();
-        closeDuplicatesPanelFn();
-
-        const found = allHooks.find(h => String(h.receiptId) === String(receiptId));
-        if (found) {
-            showAlert(`Отфильтровано по ID #${receiptId}`, "success");
-        } else {
-            showAlert(`Хук #${receiptId} ещё не подгружен на фронт. Подождите polling или прокрутите.`, "warning");
-        }
+        searchInput.value=""; searchTerm=String(receiptId).toLowerCase();
+        searchActive=false; serverSearchResults=[]; searchHint.classList.add("hidden"); currentPage=1;
+        renderAllWebhooks(); closeDuplicatesPanelFn();
+        const found = allHooks.find(h=>String(h.receiptId)===String(receiptId));
+        showAlert(found ? `Отфильтровано по ID #${receiptId}` : `Хук #${receiptId} ещё не подгружен на фронт`, found?"success":"warning");
     };
 
     showDuplicatesBtn.addEventListener('click', openDuplicatesPanel);
     closeDuplicatesPanelBtn.addEventListener('click', closeDuplicatesPanelFn);
-    refreshDuplicatesBtn.addEventListener('click', () => { dupCurrentPage = 1; fetchDuplicatesSummary(); });
+    refreshDuplicatesBtn.addEventListener('click', ()=>{ dupCurrentPage=1; fetchDuplicatesSummary(); });
 
-    // Monitor online/offline status
-    window.addEventListener('online', () => {
-        updateConnectionStatus(true);
-        if (currentRoomId) {
-            showAlert("Интернет-соединение восстановлено", "success");
-            startFetchingHooks();
-        }
-    });
+    window.addEventListener('online',  ()=>{ updateConnectionStatus(true);  if(currentRoomId){showAlert("Соединение восстановлено","success");startFetchingHooks();} });
+    window.addEventListener('offline', ()=>{ updateConnectionStatus(false); showAlert("Потеряно соединение","error"); });
 
-    window.addEventListener('offline', () => {
-        updateConnectionStatus(false);
-        showAlert("Потеряно интернет-соединение", "error");
-    });
-
-    // Initial render
     renderAllWebhooks();
 </script>
 </body>
