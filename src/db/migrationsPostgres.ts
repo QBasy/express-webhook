@@ -1,3 +1,7 @@
+/**
+ * Обычный Postgres и Supabase (managed PostgreSQL).
+ * На Supabase при необходимости включи расширение pgcrypto в SQL Editor, если CREATE EXTENSION из приложения недоступен.
+ */
 import type { Pool } from 'pg';
 import bcrypt from 'bcryptjs';
 import { logger } from '../utils/logger';

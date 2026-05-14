@@ -1,5 +1,6 @@
 import 'dotenv/config';
 
+import dns from 'node:dns';
 import Fastify from 'fastify';
 import cors from '@fastify/cors';
 import jwt from '@fastify/jwt';
@@ -19,7 +20,18 @@ import { authRoutes } from './src/router/authRouter';
 import { adminRoutes } from './src/auth/adminRoutes';
 import { logger } from './src/utils/logger';
 
+/** Render и др. часто без IPv6 egress; Supabase отдаёт AAAA → ENETUNREACH. См. DNS_DEFAULT_RESULT_ORDER в .env.supabase */
+function configureDns(): void {
+    const order = process.env.DNS_DEFAULT_RESULT_ORDER?.trim().toLowerCase();
+    if (order === 'verbatim' || order === 'ipv6first' || order === 'ipv4first') {
+        dns.setDefaultResultOrder(order);
+        return;
+    }
+    dns.setDefaultResultOrder('ipv4first');
+}
+
 async function start() {
+    configureDns();
     const app = Fastify({
         logger: {
             level: process.env.NODE_ENV === 'production' ? 'warn' : 'debug',
