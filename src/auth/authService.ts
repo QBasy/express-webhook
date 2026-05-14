@@ -169,4 +169,9 @@ export class AuthService {
         );
         logger.info(`TTL updated for user ${userId}: ${ttl}s`);
     }
+
+    async deleteUser(userId: string): Promise<boolean> {
+        const result = await this.usersCollection.deleteOne({ _id: new ObjectId(userId) });
+        return result.deletedCount > 0;
+    }
 }

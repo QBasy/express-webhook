@@ -1,5 +1,20 @@
-import { Collection, ObjectId } from 'mongodb';
-import { logger } from '../utils/logger';
+import { Collection, ObjectId } from "mongodb";
+import { logger } from "../utils/logger";
+import type {
+    IDuplicateGroup,
+    IDuplicateGroupHeader,
+    IDuplicateReceipt,
+    ISearchOptions,
+    ISearchResult,
+    IWebhook,
+} from "./webhookSearchUtils";
+import {
+    getDuplicateGroupFromWebhooks,
+    getDuplicateHeadersFromWebhooks,
+    searchWebhooksInList,
+} from "./webhookSearchUtils";
+
+export type { IDuplicateGroup, IDuplicateGroupHeader, IDuplicateReceipt, ISearchOptions, ISearchResult, IWebhook };
 
 export interface WebhookMetadata {
     method: string;
@@ -24,6 +39,14 @@ export interface Webhook {
     expiresAt: Date;
 }
 
+function toIWebhook(w: Webhook): IWebhook {
+    return {
+        receiptId: w.receiptId,
+        body: w.body,
+        timestamp: w.timestamp,
+    };
+}
+
 export class WebhookRepository {
     constructor(private webhooksCollection: Collection) {}
 
@@ -44,7 +67,7 @@ export class WebhookRepository {
             metadata,
             timestamp: now.toISOString(),
             createdAt: now,
-            expiresAt
+            expiresAt,
         });
 
         logger.debug(`Webhook ${receiptId} added to room ${roomId}, expires at ${expiresAt.toISOString()}`);
@@ -52,23 +75,23 @@ export class WebhookRepository {
     }
 
     async getWebhooks(roomId: string): Promise<Webhook[]> {
-        return await this.webhooksCollection
+        return (await this.webhooksCollection
             .find({ roomId })
             .sort({ createdAt: -1 })
-            .toArray() as Webhook[];
+            .toArray()) as Webhook[];
     }
 
     async getWebhook(roomId: string, receiptId: string): Promise<Webhook | null> {
-        return await this.webhooksCollection.findOne({
+        return (await this.webhooksCollection.findOne({
             roomId,
-            receiptId
-        }) as Webhook | null;
+            receiptId,
+        })) as Webhook | null;
     }
 
     async deleteWebhook(roomId: string, receiptId: string): Promise<boolean> {
         const result = await this.webhooksCollection.deleteOne({
             roomId,
-            receiptId
+            receiptId,
         });
 
         if (result.deletedCount > 0) {
@@ -81,5 +104,23 @@ export class WebhookRepository {
     async clearWebhooks(roomId: string): Promise<void> {
         await this.webhooksCollection.deleteMany({ roomId });
         logger.debug(`All webhooks cleared from room ${roomId}`);
+    }
+
+    async getDuplicateHeaders(roomId: string) {
+        const webhooks = await this.getWebhooks(roomId);
+        const light = webhooks.map(toIWebhook);
+        return getDuplicateHeadersFromWebhooks(light);
+    }
+
+    async getDuplicateGroup(roomId: string, bodyHash: string) {
+        const webhooks = await this.getWebhooks(roomId);
+        const light = webhooks.map(toIWebhook);
+        return getDuplicateGroupFromWebhooks(light, bodyHash);
+    }
+
+    async searchWebhooks(roomId: string, opts: ISearchOptions): Promise<ISearchResult> {
+        const webhooks = await this.getWebhooks(roomId);
+        const light = webhooks.map(toIWebhook);
+        return searchWebhooksInList(light, opts);
     }
 }

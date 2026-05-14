@@ -1,12 +1,17 @@
 import 'fastify';
 import '@fastify/jwt';
-import { Db, ObjectId } from 'mongodb';
-import { AuthService } from '../auth/authService';
-import { RoomRepository } from '../repository/roomRepo';
-import { WebhookRepository } from '../repository/webhookRepo';
+import type { Db } from 'mongodb';
+import type { ObjectId } from 'mongodb';
+import type { Pool } from 'pg';
+import type { AuthService } from '../auth/authService';
+import type { AuthServicePostgres } from '../auth/authServicePostgres';
+import type { RoomRepository } from '../repository/roomRepo';
+import type { RoomRepositoryPostgres } from '../repository/roomRepoPostgres';
+import type { WebhookRepository } from '../repository/webhooksRepo';
+import type { WebhookRepositoryPostgres } from '../repository/webhooksRepoPostgres';
 
 export interface User {
-    _id: ObjectId;
+    _id: ObjectId | string;
     username: string;
     email?: string;
     password: string;
@@ -20,12 +25,16 @@ export interface User {
     rejectedAt?: Date;
 }
 
+export type DatabaseBackend = 'mongo' | 'postgres';
+
 declare module 'fastify' {
     interface FastifyInstance {
-        mongo: { db: Db };
-        authService: AuthService;
-        roomRepo: RoomRepository;
-        webhookRepo: WebhookRepository;
+        dbBackend: DatabaseBackend;
+        mongo?: { db: Db };
+        pg?: { pool: Pool };
+        authService: AuthService | AuthServicePostgres;
+        roomRepo: RoomRepository | RoomRepositoryPostgres;
+        webhookRepo: WebhookRepository | WebhookRepositoryPostgres;
         jwt: {
             sign: (payload: any, options?: any) => string;
             verify: (token: string, options?: any) => any;

@@ -2,7 +2,7 @@ import { Collection, ObjectId } from 'mongodb';
 import { logger } from '../utils/logger';
 
 export interface Room {
-    _id?: ObjectId;
+    _id?: ObjectId | string;
     roomId: string;
     userId: string;
     webhookTTL: number;
