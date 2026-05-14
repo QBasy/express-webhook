@@ -1,6 +1,8 @@
 import dns from "node:dns";
+import type { ConnectionOptions } from "node:tls";
 import { URL } from "node:url";
 import { Pool, PoolConfig } from "pg";
+import { logger } from "../utils/logger";
 
 let pool: Pool | null = null;
 
@@ -48,6 +50,17 @@ function parsePostgresUrl(connectionString: string): ParsedConn {
     };
 }
 
+/** Supabase Transaction pooler (Supavisor): порт 6543 — без prepared statements; pg с $1 их использует. */
+function isSupabaseTransactionPool(parsed: ParsedConn): boolean {
+    if (parsed.port !== 6543) {
+        return false;
+    }
+    return (
+        parsed.logicalHost.includes("pooler.supabase.com") ||
+        /\.supabase\.co$/i.test(parsed.logicalHost)
+    );
+}
+
 async function resolveIpv4Address(hostname: string): Promise<string | null> {
     try {
         const results = await dns.promises.lookup(hostname, { all: true, verbatim: true });
@@ -58,18 +71,53 @@ async function resolveIpv4Address(hostname: string): Promise<string | null> {
     }
 }
 
+function isSupabaseSharedPoolerHost(hostname: string): boolean {
+    return /\.pooler\.supabase\.com$/i.test(hostname);
+}
+
+/**
+ * У Supavisor (shared pooler) цепочка часто не совпадает с дефолтным store Node → «self-signed certificate in certificate chain».
+ * Для *.pooler.supabase.com по умолчанию rejectUnauthorized=false (TLS всё равно шифрует). Строго: DATABASE_SSL_STRICT=true.
+ */
+function buildSslConfig(
+    parsed: ParsedConn,
+    useTlsSni: boolean,
+    connectionString: string
+): { ssl: ConnectionOptions | undefined; relaxedForPooler: boolean } {
+    if (!poolSslFromConnectionString(connectionString)) {
+        return { ssl: undefined, relaxedForPooler: false };
+    }
+
+    const pooler = isSupabaseSharedPoolerHost(parsed.logicalHost);
+    const strict =
+        process.env.DATABASE_SSL_STRICT === "true" ||
+        process.env.DATABASE_SSL_REJECT_UNAUTHORIZED === "true";
+
+    let rejectUnauthorized = true;
+    if (pooler && !strict) {
+        rejectUnauthorized = false;
+    }
+    if (process.env.DATABASE_SSL_INSECURE === "true") {
+        rejectUnauthorized = false;
+    }
+
+    const relaxedForPooler = pooler && rejectUnauthorized === false;
+
+    const ssl: ConnectionOptions = {
+        rejectUnauthorized,
+        ...(useTlsSni ? { servername: parsed.logicalHost } : {}),
+    };
+
+    return { ssl, relaxedForPooler };
+}
+
 function poolConfigFromParts(
     parsed: ParsedConn,
     tcpHost: string,
     useTlsSni: boolean,
     connectionStringForSslHint: string
-): PoolConfig {
-    const useSsl = poolSslFromConnectionString(connectionStringForSslHint);
-    const ssl = useSsl
-        ? useTlsSni
-            ? { rejectUnauthorized: true as const, servername: parsed.logicalHost }
-            : { rejectUnauthorized: true as const }
-        : undefined;
+): { cfg: PoolConfig; relaxedForPooler: boolean } {
+    const { ssl, relaxedForPooler } = buildSslConfig(parsed, useTlsSni, connectionStringForSslHint);
 
     const qs = new URLSearchParams(parsed.search.startsWith("?") ? parsed.search.slice(1) : parsed.search);
     const options = qs.get("options") ?? undefined;
@@ -86,15 +134,15 @@ function poolConfigFromParts(
         ...(ssl ? { ssl } : {}),
         ...(options ? { options } : {}),
     };
-    return cfg;
+    return { cfg, relaxedForPooler };
 }
 
 export async function connectPostgres(connectionString?: string): Promise<Pool> {
     const conn = connectionString || process.env.DATABASE_URL;
     if (!conn) {
         throw new Error(
-            "DATABASE_URL is not set. For Supabase: Project Settings → Database → copy the URI.\n" +
-                "On Render use Transaction pooler (port 6543) if direct host has no IPv4, or set DATABASE_HOST_IPV4."
+            "DATABASE_URL is not set. Supabase: Dashboard → Connect → Postgres URI. " +
+                "Для Render без IPv6 используй Session pooler (порт 5432 на *.pooler.supabase.com), см. .env.supabase."
         );
     }
 
@@ -116,17 +164,34 @@ export async function connectPostgres(connectionString?: string): Promise<Pool> 
             throw new Error(
                 `PostgreSQL host "${parsed.logicalHost}" has no IPv4 (A) record. ` +
                     `Render cannot reach IPv6-only hosts (ENETUNREACH).\n\n` +
-                    `Fix (pick one):\n` +
-                    `1) Supabase Dashboard → Database → Connection string → "Transaction pooler" ` +
-                    `(host like aws-0-*.pooler.supabase.com, port 6543, user postgres.<project-ref>).\n` +
-                    `2) Set DATABASE_HOST_IPV4 to the database IPv4 if Supabase shows one.\n` +
-                    `Docs: https://supabase.com/docs/guides/database/connecting-to-postgres`
+                    `Рекомендуется (долгоживущий Node + pg):\n` +
+                    `1) Supabase Dashboard → Connect → Session pooler — порт 5432, хост aws-0-*.pooler.supabase.com, ` +
+                    `пользователь postgres.<project-ref>. Поддерживает IPv4 и prepared statements.\n` +
+                    `2) Transaction pooler (6543) с node-postgres без доработок драйвера не подходит: нет поддержки prepared statements при $1.\n` +
+                    `3) DATABASE_HOST_IPV4 — только если есть явный IPv4.\n` +
+                    `https://supabase.com/docs/guides/database/connecting-to-postgres`
             );
         }
     }
 
-    const cfg = poolConfigFromParts(parsed, tcpHost, useTlsSni, conn);
+    const { cfg, relaxedForPooler } = poolConfigFromParts(parsed, tcpHost, useTlsSni, conn);
     pool = new Pool(cfg);
+
+    if (relaxedForPooler) {
+        logger.warn(
+            "TLS: для хоста *.pooler.supabase.com включён режим без строгой проверки цепочки сертификатов " +
+                "(rejectUnauthorized=false), чтобы Node не падал на «self-signed certificate in certificate chain». " +
+                "Трафик остаётся по TLS. Для строгой проверки задай DATABASE_SSL_STRICT=true и при необходимости CA из дашборда Supabase."
+        );
+    }
+    if (isSupabaseTransactionPool(parsed)) {
+        logger.warn(
+            "DATABASE_URL указывает на Supabase Transaction pooler (порт 6543). " +
+                "В этом режиме нельзя использовать prepared statements; pg@8 использует их для запросов с параметрами ($1). " +
+                "Для Render лучше Session pooler (порт 5432, тот же pooler-хост). " +
+                "Опции вроде preparedStatementCache в Pool для pg 8.16 нет — см. https://supabase.com/docs/guides/database/connecting-to-postgres"
+        );
+    }
 
     const c = await pool.connect();
     try {
