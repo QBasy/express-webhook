@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+
+  <title>SDCS Player</title>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <link
+    href="https://cdn.jsdelivr.net/npm/remixicon/fonts/remixicon.css"
+    rel="stylesheet"
+  />
+
+  <style>
+    * {
+      user-select: none;
+    }
+
+    body {
+      background: #020617;
+      overflow: hidden;
+    }
+
+    .player-gradient {
+      background:
+        linear-gradient(
+          to top,
+          rgba(0,0,0,.85),
+          rgba(0,0,0,.35),
+          transparent
+        );
+    }
+
+    .glass {
+      backdrop-filter: blur(16px);
+      background: rgba(15, 23, 42, 0.45);
+      border: 1px solid rgba(255,255,255,.08);
+    }
+
+    input[type="range"] {
+      appearance: none;
+      height: 4px;
+      border-radius: 999px;
+      background: rgba(255,255,255,.18);
+      overflow: hidden;
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      appearance: none;
+      width: 14px;
+      height: 14px;
+      border-radius: 999px;
+      background: white;
+      box-shadow: -1000px 0 0 1000px white;
+      cursor: pointer;
+    }
+
+    .controls-hidden {
+      opacity: 0;
+      transform: translateY(10px);
+      pointer-events: none;
+    }
+
+    .video-shadow {
+      box-shadow:
+        0 0 0 1px rgba(255,255,255,.06),
+        0 20px 60px rgba(0,0,0,.55);
+    }
+
+    .loader {
+      width: 70px;
+      height: 70px;
+      border: 4px solid rgba(255,255,255,.15);
+      border-top-color: white;
+      border-radius: 50%;
+      animation: spin .9s linear infinite;
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+  </style>
+</head>
+
+<body class="w-screen h-screen flex items-center justify-center p-8">
+
+  <div
+    id="playerContainer"
+    class="relative w-full max-w-7xl rounded-3xl overflow-hidden video-shadow bg-black"
+  >
+
+    <video
+      id="video"
+      class="w-full aspect-video bg-black"
+      preload="metadata"
+      playsinline
+    >
+      <source src="/sdcs/video/stream">
+    </video>
+
+    <div
+      id="loading"
+      class="absolute inset-0 flex items-center justify-center bg-black z-30"
+    >
+      <div class="loader"></div>
+    </div>
+
+    <button
+      id="centerPlay"
+      class="absolute inset-0 z-20 flex items-center justify-center"
+    >
+      <div class="glass rounded-full w-28 h-28 flex items-center justify-center text-white text-6xl transition hover:scale-110">
+        <i class="ri-play-fill ml-2"></i>
+      </div>
+    </button>
+
+    <div
+      id="topBar"
+      class="absolute top-0 left-0 right-0 z-20 p-6 transition-all duration-300"
+    >
+      <div class="flex items-center justify-between">
+
+        <div>
+          <h1 class="text-white text-2xl font-bold tracking-tight">
+            SDCS Cinema
+          </h1>
+
+          <p class="text-zinc-400 text-sm mt-1">
+            Streaming from Fastify
+          </p>
+        </div>
+
+        <div class="glass px-4 py-2 rounded-2xl text-white text-sm flex items-center gap-2">
+          <div class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></div>
+          LIVE DELIVERY
+        </div>
+
+      </div>
+    </div>
+
+    <div
+      id="controls"
+      class="player-gradient absolute bottom-0 left-0 right-0 z-20 p-6 transition-all duration-300"
+    >
+
+      <div class="mb-5">
+
+        <input
+          id="progress"
+          type="range"
+          min="0"
+          max="100"
+          value="0"
+          class="w-full cursor-pointer"
+        />
+
+      </div>
+
+      <div class="flex items-center justify-between">
+
+        <div class="flex items-center gap-5">
+
+          <button
+            id="playPause"
+            class="text-white text-3xl hover:scale-110 transition"
+          >
+            <i class="ri-play-fill"></i>
+          </button>
+
+          <div class="flex items-center gap-3">
+
+            <button
+              id="muteBtn"
+              class="text-white text-2xl"
+            >
+              <i class="ri-volume-up-fill"></i>
+            </button>
+
+            <input
+              id="volume"
+              type="range"
+              min="0"
+              max="1"
+              step="0.01"
+              value="1"
+              class="w-28"
+            />
+
+          </div>
+
+          <div class="text-zinc-300 text-sm font-medium tracking-wide">
+            <span id="currentTime">0:00</span>
+            /
+            <span id="duration">0:00</span>
+          </div>
+
+        </div>
+
+        <div class="flex items-center gap-5">
+
+          <select
+            id="speed"
+            class="glass text-white px-3 py-2 rounded-xl outline-none"
+          >
+            <option value="0.5">0.5x</option>
+            <option value="1" selected>1x</option>
+            <option value="1.25">1.25x</option>
+            <option value="1.5">1.5x</option>
+            <option value="2">2x</option>
+          </select>
+
+          <button
+            id="pip"
+            class="text-white text-2xl"
+          >
+            <i class="ri-picture-in-picture-2-fill"></i>
+          </button>
+
+          <button
+            id="fullscreen"
+            class="text-white text-2xl"
+          >
+            <i class="ri-fullscreen-fill"></i>
+          </button>
+
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+  <script>
+    const video = document.getElementById("video")
+    const controls = document.getElementById("controls")
+    const topBar = document.getElementById("topBar")
+    const playPause = document.getElementById("playPause")
+    const centerPlay = document.getElementById("centerPlay")
+    const progress = document.getElementById("progress")
+    const currentTimeEl = document.getElementById("currentTime")
+    const durationEl = document.getElementById("duration")
+    const volume = document.getElementById("volume")
+    const muteBtn = document.getElementById("muteBtn")
+    const fullscreen = document.getElementById("fullscreen")
+    const loading = document.getElementById("loading")
+    const speed = document.getElementById("speed")
+    const pip = document.getElementById("pip")
+    const container = document.getElementById("playerContainer")
+
+    let hideControlsTimeout
+
+    function formatTime(time) {
+      if (!time || !Number.isFinite(time)) return "0:00"
+
+      const mins = Math.floor(time / 60)
+      const secs = Math.floor(time % 60)
+
+      return `${mins}:${secs.toString().padStart(2, "0")}`
+    }
+
+    function togglePlay() {
+      if (video.paused) {
+        video.play().catch(() => {})
+      } else {
+        video.pause()
+      }
+    }
+
+    function updatePlayState() {
+      playPause.innerHTML = video.paused
+        ? '<i class="ri-play-fill"></i>'
+        : '<i class="ri-pause-fill"></i>'
+
+      centerPlay.style.display =
+        video.paused ? "flex" : "none"
+    }
+
+    function showControls() {
+      controls.classList.remove("controls-hidden")
+      topBar.classList.remove("controls-hidden")
+
+      clearTimeout(hideControlsTimeout)
+
+      if (!video.paused) {
+        hideControlsTimeout = setTimeout(() => {
+          controls.classList.add("controls-hidden")
+          topBar.classList.add("controls-hidden")
+        }, 2500)
+      }
+    }
+
+    video.addEventListener("loadedmetadata", () => {
+      durationEl.textContent = formatTime(video.duration)
+      loading.style.display = "none"
+    })
+
+    video.addEventListener("waiting", () => {
+      loading.style.display = "flex"
+    })
+
+    video.addEventListener("playing", () => {
+      loading.style.display = "none"
+    })
+
+    video.addEventListener("timeupdate", () => {
+      const d = video.duration
+      if (!Number.isFinite(d) || d <= 0) return
+      const percent = (video.currentTime / d) * 100
+      progress.value = String(percent)
+      currentTimeEl.textContent = formatTime(video.currentTime)
+    })
+
+    progress.addEventListener("input", () => {
+      const d = video.duration
+      if (!Number.isFinite(d) || d <= 0) return
+      video.currentTime = (Number(progress.value) / 100) * d
+    })
+
+    volume.addEventListener("input", () => {
+      video.volume = Number(volume.value)
+
+      muteBtn.innerHTML =
+        video.volume === 0
+          ? '<i class="ri-volume-mute-fill"></i>'
+          : '<i class="ri-volume-up-fill"></i>'
+    })
+
+    muteBtn.addEventListener("click", () => {
+      video.muted = !video.muted
+
+      muteBtn.innerHTML = video.muted
+        ? '<i class="ri-volume-mute-fill"></i>'
+        : '<i class="ri-volume-up-fill"></i>'
+    })
+
+    speed.addEventListener("change", () => {
+      video.playbackRate = Number(speed.value)
+    })
+
+    fullscreen.addEventListener("click", async () => {
+      if (!document.fullscreenElement) {
+        await container.requestFullscreen()
+      } else {
+        await document.exitFullscreen()
+      }
+    })
+
+    pip.addEventListener("click", async () => {
+      if (document.pictureInPictureElement) {
+        document.exitPictureInPicture()
+      } else if (document.pictureInPictureEnabled) {
+        await video.requestPictureInPicture()
+      }
+    })
+
+    video.addEventListener("play", updatePlayState)
+    video.addEventListener("pause", updatePlayState)
+
+    playPause.addEventListener("click", (e) => { e.stopPropagation(); togglePlay() })
+    centerPlay.addEventListener("click", (e) => { e.stopPropagation(); togglePlay() })
+    video.addEventListener("click", togglePlay)
+
+    container.addEventListener("mousemove", showControls)
+
+    video.addEventListener("error", () => {
+      loading.innerHTML = '<p class="text-red-400 text-center px-6">Не удалось загрузить видео. Укажите SDCS_VIDEO_FILE (имя файла в папке static) и положите файл в static.</p>'
+      loading.style.display = "flex"
+    })
+
+    showControls()
+  </script>
+
+</body>
+</html>
