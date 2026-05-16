@@ -147,6 +147,18 @@
         .method-OPTIONS { background: #f3e8ff; color: #6b21a8; }
         .method-HEAD { background: #e5e7eb; color: #374151; }
         .method-default { background: #f1f5f9; color: #475569; }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-weight: 500;
+            border-radius: 8px;
+            transition: all 0.15s;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+        .btn:active { transform: scale(0.97); }
     </style>
 </head>
 <body class="bg-gradient-to-br from-gray-50 to-gray-100 min-h-screen flex flex-col">
@@ -291,6 +303,10 @@
                     <i data-lucide="download" class="w-4 h-4"></i>
                     <span>Экспорт JSON</span>
                 </button>
+                <button id="showDuplicatesBtn" type="button" class="w-full bg-orange-500 hover:bg-orange-600 text-white px-4 py-2.5 rounded-lg font-medium transition text-sm flex items-center justify-center gap-2">
+                    <i data-lucide="copy" class="w-4 h-4"></i>
+                    <span>Найти дубликаты</span>
+                </button>
                 <button id="clearHooksBtn" class="w-full bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2.5 rounded-lg font-medium transition text-sm flex items-center justify-center gap-2">
                     <i data-lucide="trash-2" class="w-4 h-4"></i>
                     <span>Очистить все</span>
@@ -299,22 +315,35 @@
         </aside>
 
         <main class="flex-1 p-6 overflow-y-auto">
-            <div class="bg-white p-4 rounded-lg shadow-md mb-6">
-                <div class="flex gap-3 items-center">
-                    <div class="flex-1 relative">
-                        <input id="searchInput" type="text" placeholder="Поиск по содержимому вебхука..."
-                               class="w-full p-3 pl-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition">
-                        <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
-                            <i data-lucide="search" class="w-5 h-5"></i>
+            <div class="bg-white p-4 rounded-xl shadow-md border border-gray-200 mb-6">
+                <div class="flex gap-2 items-start flex-wrap">
+                    <div class="flex-1 relative min-w-[260px]">
+                        <span class="absolute left-3 top-3 text-gray-400 pointer-events-none">
+                            <i data-lucide="search" class="w-4 h-4"></i>
                         </span>
+                        <textarea id="searchInput" rows="2"
+                                  placeholder="Поиск: подстрока (по умолчанию) или вставьте JSON и выберите «Точное JSON»"
+                                  class="w-full py-2.5 pl-10 pr-3 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent resize-y font-mono bg-gray-50 focus:bg-white transition min-h-[2.75rem]"></textarea>
                     </div>
-                    <select id="itemsPerPage" class="p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 text-sm">
+                    <select id="searchMode" class="px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500 bg-gray-50 self-start">
+                        <option value="substring">Подстрока</option>
+                        <option value="exact">Точное JSON</option>
+                    </select>
+                    <button id="searchBtn" type="button" class="btn px-4 py-2.5 bg-green-600 hover:bg-green-700 text-white text-sm self-start shadow-sm">
+                        <i data-lucide="search" class="w-4 h-4"></i>
+                        Искать
+                    </button>
+                    <button id="clearSearchBtn" type="button" class="btn px-3 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-600 text-sm self-start" title="Сбросить поиск">
+                        <i data-lucide="x" class="w-4 h-4"></i>
+                    </button>
+                    <select id="itemsPerPage" class="px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500 bg-gray-50 self-start">
                         <option value="10">10 / страница</option>
                         <option value="25" selected>25 / страница</option>
                         <option value="50">50 / страница</option>
                         <option value="100">100 / страница</option>
                     </select>
                 </div>
+                <div id="searchHint" class="mt-2 text-xs text-gray-500 hidden"></div>
             </div>
 
             <div class="bg-white rounded-lg shadow-md overflow-hidden">
@@ -358,6 +387,45 @@
             </div>
         </div>
     </footer>
+
+    <div id="duplicatesPanel" class="fixed right-0 top-0 h-full w-[min(100%,480px)] max-w-full bg-white shadow-2xl border-l border-gray-200 transform translate-x-full transition-transform duration-300 z-[52] flex flex-col">
+        <div class="px-5 py-4 flex items-center justify-between border-b border-gray-200 shrink-0">
+            <div>
+                <h3 class="text-base font-semibold flex items-center gap-2 text-gray-800">
+                    <i data-lucide="copy" class="w-5 h-5 text-orange-500"></i>
+                    Дубликаты вебхуков
+                </h3>
+                <p id="duplicatesSummary" class="text-xs text-gray-500 mt-0.5">Группировка по телу хука</p>
+            </div>
+            <div class="flex items-center gap-1">
+                <button id="refreshDuplicatesBtn" type="button" class="btn p-1.5 text-gray-400 hover:text-green-700 hover:bg-green-50 rounded-lg" title="Обновить">
+                    <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+                </button>
+                <button id="closeDuplicatesPanel" type="button" class="btn p-1.5 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-lg">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
+            </div>
+        </div>
+        <div class="flex-1 overflow-y-auto p-4 min-h-0">
+            <div id="duplicatesPanelLoading" class="flex items-center justify-center py-10 hidden">
+                <i data-lucide="loader-2" class="w-8 h-8 text-orange-500 animate-spin"></i>
+            </div>
+            <div id="duplicatesList" class="space-y-3"></div>
+            <div id="duplicatesPanelEmpty" class="text-center text-gray-500 py-12 hidden">
+                <i data-lucide="sparkles" class="w-12 h-12 text-gray-300 mx-auto mb-3"></i>
+                <p class="font-medium text-gray-600">Дубликатов не найдено</p>
+                <p class="text-xs mt-1">Все вебхуки в комнате уникальны</p>
+            </div>
+            <div id="duplicatesPanelError" class="text-center text-red-500 py-8 hidden">
+                <i data-lucide="alert-circle" class="w-9 h-9 text-red-400 mx-auto mb-2"></i>
+                Ошибка загрузки
+            </div>
+            <div id="duplicatesPanelNoRoom" class="text-center text-gray-500 py-8 hidden">
+                <i data-lucide="door-open" class="w-9 h-9 text-gray-300 mx-auto mb-2"></i>
+                Сначала откройте комнату
+            </div>
+        </div>
+    </div>
 
     <div id="roomsPanel" class="fixed right-0 top-0 h-full w-96 bg-white shadow-xl border-l border-gray-200 transform translate-x-full transition-transform duration-300 z-50">
         <div class="p-4 flex items-center justify-between border-b">

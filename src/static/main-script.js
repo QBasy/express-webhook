@@ -13,7 +13,16 @@ let reconnectAttempts = 0;
 let forwardEnabled = false;
 let forwardEndpoint = "";
 let roomsPanelOpen = false;
+let duplicatesPanelOpen = false;
 let currentWebhookDetails = null;
+let searchActive = false;
+let serverSearchResults = [];
+let searchMode = "substring";
+const DUP_PAGE_SIZE = 20;
+const DUP_RECEIPTS_PAGE = 100;
+const DUP_BODY_LIMIT = 20000;
+let dupCurrentPage = 1;
+let dupTotalPages = 1;
 
 function initLucideIcons() {
     lucide.createIcons();
@@ -46,6 +55,21 @@ const roomsPanelLoading = document.getElementById("roomsPanelLoading");
 const roomsList = document.getElementById("roomsList");
 const roomsPanelEmpty = document.getElementById("roomsPanelEmpty");
 const roomsPanelError = document.getElementById("roomsPanelError");
+
+const showDuplicatesBtn = document.getElementById("showDuplicatesBtn");
+const duplicatesPanel = document.getElementById("duplicatesPanel");
+const closeDuplicatesPanelBtn = document.getElementById("closeDuplicatesPanel");
+const refreshDuplicatesBtn = document.getElementById("refreshDuplicatesBtn");
+const duplicatesPanelLoading = document.getElementById("duplicatesPanelLoading");
+const duplicatesList = document.getElementById("duplicatesList");
+const duplicatesPanelEmpty = document.getElementById("duplicatesPanelEmpty");
+const duplicatesPanelError = document.getElementById("duplicatesPanelError");
+const duplicatesPanelNoRoom = document.getElementById("duplicatesPanelNoRoom");
+const duplicatesSummary = document.getElementById("duplicatesSummary");
+const searchModeSelect = document.getElementById("searchMode");
+const searchBtn = document.getElementById("searchBtn");
+const clearSearchBtn = document.getElementById("clearSearchBtn");
+const searchHint = document.getElementById("searchHint");
 
 // Initialize
 fakeStatusInput.disabled = false;
@@ -356,53 +380,6 @@ async function updateFakeErrorStatus() {
     }
 }
 
-// Room Management
-document.getElementById("createRoomBtn").addEventListener("click", async () => {
-    const id = roomIdInput.value.trim();
-    if (!id) return showAlert("Введите ID комнаты", "warning");
-
-    try {
-        currentRoomId = id;
-        lastIds.clear();
-        allHooks = [];
-        currentPage = 1;
-
-        const res = await fetch(`${apiBase}/room/${encodeURIComponent(id)}`, { method: "POST", headers: { "Authorization": token } });
-        if (!res.ok) throw new Error("Ошибка создания комнаты");
-
-        const webhookUrl = `${apiBase}/hook/${encodeURIComponent(id)}`;
-        roomStatus.innerHTML = `
-            <div class="font-semibold text-green-700 mb-2 flex items-center gap-2">
-                <i data-lucide="check-circle" class="w-4 h-4"></i>
-                <span>Комната активна</span>
-            </div>
-            <div class="webhook-url-container text-xs break-all bg-white p-2 rounded border border-gray-200 group">
-                <div class="flex items-center justify-between gap-2">
-                    <span class="flex-1">${webhookUrl}</span>
-                    <button onclick="copyUrlToClipboard(event, '${webhookUrl}')"
-                            class="copy-btn-inline text-blue-600 hover:text-blue-800"
-                            title="Копировать URL">
-                        <i data-lucide="copy" class="w-4 h-4"></i>
-                    </button>
-                </div>
-            </div>
-        `;
-
-        await updateFakeErrorStatus();
-
-        document.getElementById('roomStatus').classList.remove('hidden');
-
-        initLucideIcons();
-
-        startFetchingHooks();
-        updateConnectionStatus(true);
-        showAlert("Комната создана успешно", "success");
-    } catch (e) {
-        showAlert("Ошибка: " + e.message, "error");
-        updateConnectionStatus(false);
-    }
-});
-
 window.copyUrlToClipboard = (event, url) => {
     event.stopPropagation();
     copyToClipboardWithFeedback(url, event);
@@ -414,6 +391,7 @@ document.getElementById("closeRoomBtn").addEventListener("click", async () => {
     try {
         await fetch(`${apiBase}/room/${encodeURIComponent(currentRoomId)}`, { method: "DELETE", headers: { "Authorization": token } });
         stopFetchingHooks();
+        closeDuplicatesPanelFn();
         roomStatus.innerHTML = `<div class="text-gray-500 text-sm">Комната закрыта</div>`;
         currentRoomId = null;
         lastIds.clear();
@@ -502,9 +480,65 @@ document.getElementById("exportBtn").addEventListener("click", () => {
 
 // Search and Sort
 searchInput.addEventListener("input", (e) => {
-    searchTerm = e.target.value.toLowerCase();
+    if (searchActive) return;
+    searchTerm = e.target.value.trim().toLowerCase();
     currentPage = 1;
     renderAllWebhooks();
+});
+
+async function runServerSearch() {
+    const raw = searchInput.value.trim();
+    if (!currentRoomId) return showAlert("Сначала откройте комнату", "warning");
+    if (!raw) return showAlert("Введите запрос для поиска", "warning");
+
+    searchMode = searchModeSelect.value === "exact" ? "exact" : "substring";
+    searchHint.classList.remove("hidden");
+    searchHint.className = "mt-2 text-xs text-gray-500";
+    searchHint.textContent = `Ищем (${searchMode === "exact" ? "точное JSON" : "подстрока"})…`;
+
+    try {
+        const res = await fetch(`${apiBase}/hook/${encodeURIComponent(currentRoomId)}/search`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json", "Authorization": token },
+            body: JSON.stringify({ mode: searchMode, query: raw, offset: 0, limit: 500 })
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+            searchHint.className = "mt-2 text-xs text-red-600";
+            searchHint.textContent = "Ошибка: " + (data.error || res.status);
+            return;
+        }
+        searchActive = true;
+        serverSearchResults = data.matches || [];
+        currentPage = 1;
+        const shown = serverSearchResults.length;
+        const total = data.total ?? shown;
+        searchHint.className = "mt-2 text-xs text-gray-600";
+        searchHint.textContent = `Найдено: ${total}${shown < total ? ` (показаны первые ${shown})` : ""}. Режим: ${searchMode === "exact" ? "точное JSON" : "подстрока"}.`;
+        renderAllWebhooks();
+    } catch (err) {
+        searchHint.className = "mt-2 text-xs text-red-600";
+        searchHint.textContent = "Ошибка сети: " + String(err).slice(0, 120);
+    }
+}
+
+function clearSearch() {
+    searchInput.value = "";
+    searchTerm = "";
+    searchActive = false;
+    serverSearchResults = [];
+    searchHint.classList.add("hidden");
+    currentPage = 1;
+    renderAllWebhooks();
+}
+
+searchBtn.addEventListener("click", runServerSearch);
+clearSearchBtn.addEventListener("click", clearSearch);
+searchInput.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
+        runServerSearch();
+    }
 });
 
 sortOrderSelect.addEventListener("change", (e) => {
@@ -598,8 +632,12 @@ function processWebhooks(hooks) {
     });
 
     if (hasNew) {
-        sortAllHooks();
-        renderAllWebhooks();
+        if (searchActive) {
+            webhookCount.textContent = allHooks.length;
+        } else {
+            sortAllHooks();
+            renderAllWebhooks();
+        }
     }
 }
 
@@ -617,24 +655,22 @@ function sortAllHooks() {
 }
 
 function getFilteredHooks() {
-    let filtered = allHooks.filter(hook => {
-        if (!searchTerm) return true;
-        const bodyStr = JSON.stringify(hook.body).toLowerCase();
-        return bodyStr.includes(searchTerm) || hook.receiptId.toString().includes(searchTerm);
-    });
+    const source = searchActive ? serverSearchResults : allHooks;
+    let filtered = source;
+    if (!searchActive && searchTerm) {
+        filtered = source.filter(hook => {
+            const bodyStr = JSON.stringify(hook.body).toLowerCase();
+            return bodyStr.includes(searchTerm) || hook.receiptId.toString().toLowerCase().includes(searchTerm);
+        });
+    }
 
-    filtered.sort((a, b) => {
+    const sorted = [...filtered];
+    sorted.sort((a, b) => {
         const timeA = new Date(a.timestamp).getTime();
         const timeB = new Date(b.timestamp).getTime();
-
-        if (sortOrder === "newest") {
-            return timeB - timeA;
-        } else {
-            return timeA - timeB;
-        }
+        return sortOrder === "newest" ? timeB - timeA : timeA - timeB;
     });
-
-    return filtered;
+    return sorted;
 }
 
 function syntaxHighlight(json) {
@@ -692,11 +728,17 @@ function renderAllWebhooks() {
     currentPageDisplay.textContent = currentPage;
 
     if (paginatedHooks.length === 0) {
+        const emptyTitle = searchActive
+            ? "Ничего не найдено по серверному запросу"
+            : (searchTerm ? "Ничего не найдено" : "Нет вебхуков для отображения");
+        const emptySub = searchActive
+            ? "Измените запрос или сбросьте поиск"
+            : (searchTerm ? "Попробуйте изменить запрос" : "Создайте комнату и отправьте первый вебхук");
         webhooksContainer.innerHTML = `
             <div class="flex flex-col items-center justify-center py-16 text-gray-400">
                 <i data-lucide="inbox" class="w-16 h-16 mb-4 text-gray-300"></i>
-                <p class="text-lg">${searchTerm ? 'Ничего не найдено' : 'Нет вебхуков для отображения'}</p>
-                <p class="text-sm mt-2">${searchTerm ? 'Попробуйте изменить запрос' : 'Создайте комнату и отправьте первый вебхук'}</p>
+                <p class="text-lg">${emptyTitle}</p>
+                <p class="text-sm mt-2">${emptySub}</p>
             </div>
         `;
     } else {
@@ -814,6 +856,242 @@ function escapeJson(obj) {
     return JSON.stringify(obj).replace(/'/g, "\\'").replace(/"/g, "&quot;");
 }
 
+function openDuplicatesPanel() {
+    duplicatesPanelOpen = true;
+    duplicatesPanel.classList.remove("translate-x-full");
+    stopFetchingHooks();
+    dupCurrentPage = 1;
+    fetchDuplicatesSummary();
+}
+
+function closeDuplicatesPanelFn() {
+    duplicatesPanelOpen = false;
+    duplicatesPanel.classList.add("translate-x-full");
+    if (currentRoomId) startFetchingHooks();
+}
+
+function resetDupPanel() {
+    duplicatesList.innerHTML = "";
+    duplicatesPanelEmpty.classList.add("hidden");
+    duplicatesPanelError.classList.add("hidden");
+    duplicatesPanelNoRoom.classList.add("hidden");
+    duplicatesPanelLoading.classList.add("hidden");
+}
+
+async function fetchDuplicatesSummary() {
+    resetDupPanel();
+    if (!currentRoomId) {
+        duplicatesSummary.textContent = "Сначала откройте комнату";
+        duplicatesPanelNoRoom.classList.remove("hidden");
+        return;
+    }
+    duplicatesSummary.textContent = `Сканируем ${currentRoomId}…`;
+    duplicatesPanelLoading.classList.remove("hidden");
+    try {
+        const url = `${apiBase}/hook/${encodeURIComponent(currentRoomId)}/duplicates/summary?page=${dupCurrentPage}&pageSize=${DUP_PAGE_SIZE}`;
+        const res = await fetch(url, { headers: { "Authorization": token } });
+        duplicatesPanelLoading.classList.add("hidden");
+        if (!res.ok) {
+            duplicatesPanelError.classList.remove("hidden");
+            duplicatesSummary.textContent = "Ошибка загрузки";
+            return;
+        }
+        const data = await res.json();
+        const headers = Array.isArray(data.groups) ? data.groups : [];
+        dupTotalPages = data.totalPages || 1;
+        duplicatesSummary.textContent = `Групп: ${data.totalGroups} · в дубликатах: ${data.totalDuplicateWebhooks} из ${data.totalWebhooks}`;
+        if (data.totalGroups === 0) {
+            duplicatesPanelEmpty.classList.remove("hidden");
+            return;
+        }
+        const html = headers.map(h => renderDuplicateHeader(h));
+        if (dupTotalPages > 1) html.push(renderDupPagination(dupCurrentPage, dupTotalPages));
+        duplicatesList.innerHTML = html.join("");
+        initLucideIcons();
+    } catch (err) {
+        duplicatesPanelLoading.classList.add("hidden");
+        duplicatesPanelError.classList.remove("hidden");
+        console.error("fetchDuplicatesSummary", err);
+    }
+}
+
+function renderDuplicateHeader(h) {
+    const preview = String(h.bodyPreview ?? "").replace(/[<>&]/g, c => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;" }[c]));
+    return `
+        <div class="border border-orange-200 rounded-xl bg-orange-50/30 overflow-hidden fade-in" data-hash="${h.bodyHash}">
+            <button type="button" class="w-full px-3 py-2.5 bg-orange-50 border-b border-orange-200 flex items-center justify-between hover:bg-orange-100/70 transition text-left"
+                    onclick="toggleDuplicateGroup('${h.bodyHash}', this)">
+                <div class="flex items-center gap-2 min-w-0">
+                    <span class="px-2 py-0.5 bg-orange-500 text-white text-xs font-bold rounded-lg shrink-0">×${h.count}</span>
+                    <span class="text-xs font-mono text-orange-700 shrink-0">${h.bodyHash}</span>
+                    <span class="text-xs text-gray-600 truncate font-mono">${preview}</span>
+                </div>
+                <i data-lucide="chevron-down" class="w-4 h-4 text-orange-600 ml-2 shrink-0 dup-toggle-arrow transition-transform duration-200"></i>
+            </button>
+            <div class="px-3 py-1.5 text-[11px] text-gray-500 bg-white border-b border-orange-100 flex items-center gap-1">
+                <i data-lucide="clock" class="w-3 h-3 text-gray-400 shrink-0"></i>
+                Первый: #${h.firstReceiptId} (${formatTimestamp(h.firstTimestamp)}) ·
+                Последний: #${h.lastReceiptId} (${formatTimestamp(h.lastTimestamp)})
+            </div>
+            <div class="dup-group-body hidden"></div>
+        </div>`;
+}
+
+function renderDupPagination(page, total) {
+    const prev = page > 1
+        ? `<button type="button" class="btn px-3 py-1.5 bg-white border border-gray-300 hover:bg-gray-50 text-sm" onclick="dupGoToPage(${page - 1})"><i data-lucide="chevron-left" class="w-4 h-4"></i> Назад</button>`
+        : `<button type="button" class="btn px-3 py-1.5 bg-gray-100 border border-gray-200 text-sm text-gray-400" disabled><i data-lucide="chevron-left" class="w-4 h-4"></i> Назад</button>`;
+    const next = page < total
+        ? `<button type="button" class="btn px-3 py-1.5 bg-white border border-gray-300 hover:bg-gray-50 text-sm" onclick="dupGoToPage(${page + 1})">Вперёд <i data-lucide="chevron-right" class="w-4 h-4"></i></button>`
+        : `<button type="button" class="btn px-3 py-1.5 bg-gray-100 border border-gray-200 text-sm text-gray-400" disabled>Вперёд <i data-lucide="chevron-right" class="w-4 h-4"></i></button>`;
+    return `<div class="flex items-center justify-between pt-2">${prev}<span class="text-xs text-gray-500">Стр. ${page} из ${total}</span>${next}</div>`;
+}
+
+window.dupGoToPage = (n) => {
+    dupCurrentPage = n;
+    fetchDuplicatesSummary();
+};
+
+window.toggleDuplicateGroup = async (hash, btn) => {
+    const card = btn.closest("[data-hash]");
+    const body = card.querySelector(".dup-group-body");
+    const arrow = card.querySelector(".dup-toggle-arrow");
+    if (!body.classList.contains("hidden")) {
+        body.classList.add("hidden");
+        arrow?.classList.remove("rotate-180");
+        return;
+    }
+    arrow?.classList.add("rotate-180");
+    if (body.dataset.loaded === "1") {
+        body.classList.remove("hidden");
+        return;
+    }
+    body.classList.remove("hidden");
+    body.innerHTML = `<div class="px-3 py-3 text-xs text-gray-500 flex items-center gap-2"><i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Загрузка…</div>`;
+    initLucideIcons();
+    try {
+        const res = await fetch(
+            `${apiBase}/hook/${encodeURIComponent(currentRoomId)}/duplicates/group/${encodeURIComponent(hash)}?offset=0&limit=${DUP_RECEIPTS_PAGE}`,
+            { headers: { "Authorization": token } }
+        );
+        if (!res.ok) {
+            body.innerHTML = `<div class="px-3 py-3 text-xs text-red-500">Ошибка загрузки группы</div>`;
+            return;
+        }
+        renderGroupBody(body, await res.json(), hash, 0);
+        body.dataset.loaded = "1";
+        initLucideIcons();
+    } catch (err) {
+        body.innerHTML = `<div class="px-3 py-3 text-xs text-red-500">Ошибка: ${String(err).slice(0, 100)}</div>`;
+    }
+};
+
+function renderGroupBody(container, data, hash, offset) {
+    const receipts = data.receipts || [];
+    const total = data.receiptsTotal || receipts.length;
+    const idsHtml = receipts.map(r => `
+            <button type="button" onclick="jumpToWebhook('${r.receiptId}')"
+                    class="px-2 py-0.5 bg-orange-100 hover:bg-orange-200 text-orange-800 text-xs font-mono rounded-lg transition"
+                    title="${r.timestamp ? formatTimestamp(r.timestamp) : ""}">
+                #${r.receiptId}
+            </button>`).join("");
+    const nextOff = offset + receipts.length;
+    const hasMore = nextOff < total;
+    const moreBtn = hasMore
+        ? `<button type="button" class="text-xs text-blue-600 hover:text-blue-800 flex items-center gap-1 mt-2"
+                       onclick="loadMoreReceipts('${hash}',${nextOff},this)">
+                  <i data-lucide="plus-circle" class="w-3.5 h-3.5"></i> Показать ещё (${total - nextOff} осталось)
+               </button>`
+        : "";
+    let bodyJson = "";
+    try {
+        bodyJson = JSON.stringify(data.body, null, 2);
+    } catch {
+        bodyJson = String(data.body);
+    }
+    const trunc = bodyJson.length > DUP_BODY_LIMIT;
+    const forRender = trunc
+        ? bodyJson.slice(0, DUP_BODY_LIMIT) + "\n\n… [тело обрезано, " + (bodyJson.length - DUP_BODY_LIMIT) + " символов скрыто]"
+        : bodyJson;
+    container.innerHTML = `
+            <div class="px-3 py-2 flex flex-wrap items-center gap-1 bg-white border-b border-orange-100">
+                <span class="dup-id-counter text-xs text-gray-500 mr-1 flex items-center gap-1"><i data-lucide="hash" class="w-3 h-3"></i>ID (${receipts.length} из ${total}):</span>
+                <span class="dup-ids-list flex flex-wrap gap-1">${idsHtml}</span>
+            </div>
+            <div class="px-3 py-1 bg-white border-b border-orange-100">${moreBtn}</div>
+            <div class="px-3 py-2 bg-white border-b border-orange-100 flex justify-end">
+                <button type="button" onclick="copyEntireWebhook(${escapeJson(data.body)},event)"
+                        class="btn text-xs text-blue-600 hover:text-blue-800 font-medium">
+                    <i data-lucide="copy" class="w-3.5 h-3.5"></i> Копировать тело
+                </button>
+            </div>
+            <div class="bg-gray-50 p-3 overflow-x-auto max-h-64 overflow-y-auto">
+                <pre class="text-xs font-mono">${syntaxHighlight(forRender)}</pre>
+            </div>`;
+    initLucideIcons();
+}
+
+window.loadMoreReceipts = async (hash, offset, btn) => {
+    btn.disabled = true;
+    btn.innerHTML = '<i data-lucide="loader-2" class="w-3.5 h-3.5 animate-spin inline-block align-middle"></i> Загрузка…';
+    initLucideIcons();
+    try {
+        const res = await fetch(
+            `${apiBase}/hook/${encodeURIComponent(currentRoomId)}/duplicates/group/${encodeURIComponent(hash)}?offset=${offset}&limit=${DUP_RECEIPTS_PAGE}`,
+            { headers: { "Authorization": token } }
+        );
+        if (!res.ok) {
+            btn.textContent = "Ошибка";
+            return;
+        }
+        const d = await res.json();
+        const card = document.querySelector(`[data-hash="${hash}"]`);
+        if (!card) return;
+        const idsList = card.querySelector(".dup-ids-list");
+        const extra = (d.receipts || []).map(r => `
+                <button type="button" onclick="jumpToWebhook('${r.receiptId}')"
+                        class="px-2 py-0.5 bg-orange-100 hover:bg-orange-200 text-orange-800 text-xs font-mono rounded-lg transition">
+                    #${r.receiptId}
+                </button>`).join("");
+        idsList.insertAdjacentHTML("beforeend", extra);
+        const shown = idsList.querySelectorAll("button").length;
+        const counter = card.querySelector(".dup-id-counter");
+        if (counter) {
+            counter.innerHTML = `<i data-lucide="hash" class="w-3 h-3"></i>ID (${shown} из ${d.receiptsTotal}):`;
+        }
+        const nextOff = offset + (d.receipts || []).length;
+        initLucideIcons();
+        if (nextOff >= d.receiptsTotal) {
+            btn.remove();
+        } else {
+            btn.disabled = false;
+            btn.innerHTML = `<i data-lucide="plus-circle" class="w-3.5 h-3.5"></i> Показать ещё (${d.receiptsTotal - nextOff} осталось)`;
+            btn.onclick = () => window.loadMoreReceipts(hash, nextOff, btn);
+            initLucideIcons();
+        }
+    } catch {
+        btn.disabled = false;
+        btn.innerHTML = '<i data-lucide="alert-triangle" class="w-3.5 h-3.5"></i> Ошибка, повторить';
+        initLucideIcons();
+    }
+};
+
+window.jumpToWebhook = (receiptId) => {
+    searchInput.value = "";
+    searchTerm = String(receiptId).toLowerCase();
+    searchActive = false;
+    serverSearchResults = [];
+    searchHint.classList.add("hidden");
+    currentPage = 1;
+    renderAllWebhooks();
+    closeDuplicatesPanelFn();
+    const found = allHooks.find(h => String(h.receiptId) === String(receiptId));
+    showAlert(
+        found ? `Отфильтровано по ID #${receiptId}` : `Хук #${receiptId} ещё не подгружен на фронт`,
+        found ? "success" : "warning"
+    );
+};
+
 function showAlert(message, type) {
     const colors = {
         success: "bg-green-100 text-green-800 border-green-400",
@@ -880,7 +1158,12 @@ async function openRoom(id) {
 
         await updateFakeErrorStatus();
         initLucideIcons();
-        startFetchingHooks();
+        if (duplicatesPanelOpen) {
+            dupCurrentPage = 1;
+            fetchDuplicatesSummary();
+        } else {
+            startFetchingHooks();
+        }
         updateConnectionStatus(true);
         showAlert("Комната создана успешно", "success");
     } catch (e) {
@@ -973,7 +1256,7 @@ window.addEventListener('online', () => {
     updateConnectionStatus(true);
     if (currentRoomId) {
         showAlert("Интернет-соединение восстановлено", "success");
-        startFetchingHooks();
+        if (!duplicatesPanelOpen) startFetchingHooks();
     }
 });
 
@@ -982,11 +1265,22 @@ window.addEventListener('offline', () => {
     showAlert("Потеряно интернет-соединение", "error");
 });
 
-// Close modal on ESC key
+// Close modal / duplicates on ESC
 document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && duplicatesPanelOpen) {
+        closeDuplicatesPanelFn();
+        return;
+    }
     if (e.key === 'Escape' && !webhookModal.classList.contains('hidden')) {
         closeModal();
     }
+});
+
+showDuplicatesBtn.addEventListener("click", openDuplicatesPanel);
+closeDuplicatesPanelBtn.addEventListener("click", closeDuplicatesPanelFn);
+refreshDuplicatesBtn.addEventListener("click", () => {
+    dupCurrentPage = 1;
+    fetchDuplicatesSummary();
 });
 
 renderAllWebhooks();
