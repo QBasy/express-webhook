@@ -2,27 +2,81 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>SDCS Player</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://cdn.jsdelivr.net/npm/remixicon/fonts/remixicon.css" rel="stylesheet" />
   <style>
-    * { user-select: none; }
-    body { background: #020617; overflow: hidden; }
+    *, *::before, *::after { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      height: 100%;
+      background: #020617;
+      overflow: hidden;
+    }
+    body {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: clamp(0.5rem, 2vw, 2rem);
+      user-select: none;
+    }
+
+  .player-shell {
+      position: relative;
+      width: min(100%, 80rem);
+      max-height: calc(100dvh - 1rem);
+      border-radius: clamp(0.75rem, 2vw, 1.5rem);
+      overflow: hidden;
+      background: #000;
+      box-shadow: 0 0 0 1px rgba(255,255,255,.06), 0 20px 60px rgba(0,0,0,.55);
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* РЎС†РµРЅР° 16:9 вЂ” РІСЃРµ РѕРІРµСЂР»РµРё С‚РѕР»СЊРєРѕ РІРЅСѓС‚СЂРё РЅРµС‘ */
+    .video-stage {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 16 / 9;
+      max-height: calc(100dvh - 2rem);
+      background: #000;
+      overflow: hidden;
+      flex: 0 0 auto;
+    }
+
+    #youtube-player {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: auto;
+    }
+
+    #youtube-player iframe {
+      position: absolute !important;
+      inset: 0 !important;
+      width: 100% !important;
+      height: 100% !important;
+      max-width: none !important;
+      border: 0;
+    }
+
     .player-gradient {
-      background: linear-gradient(to top, rgba(0,0,0,.85), rgba(0,0,0,.35), transparent);
+      background: linear-gradient(to top, rgba(0,0,0,.88), rgba(0,0,0,.4), transparent);
     }
     .glass {
       backdrop-filter: blur(16px);
-      background: rgba(15, 23, 42, 0.45);
-      border: 1px solid rgba(255,255,255,.08);
+      background: rgba(15, 23, 42, 0.55);
+      border: 1px solid rgba(255,255,255,.1);
     }
     input[type="range"] {
       appearance: none;
       height: 4px;
       border-radius: 999px;
-      background: rgba(255,255,255,.18);
+      background: rgba(255,255,255,.2);
       overflow: hidden;
+      min-width: 4rem;
     }
     input[type="range"]::-webkit-slider-thumb {
       appearance: none;
@@ -33,94 +87,166 @@
       box-shadow: -1000px 0 0 1000px white;
       cursor: pointer;
     }
-    .controls-hidden {
-      opacity: 0;
-      transform: translateY(10px);
+    .overlay {
+      position: absolute;
+      inset: 0;
+      z-index: 20;
       pointer-events: none;
     }
-    .video-shadow {
-      box-shadow: 0 0 0 1px rgba(255,255,255,.06), 0 20px 60px rgba(0,0,0,.55);
+    .overlay > * { pointer-events: auto; }
+    .overlay.controls-hidden,
+    .overlay.controls-hidden > * {
+      pointer-events: none;
+    }
+    .controls-hidden {
+      opacity: 0;
+      transform: translateY(8px);
+      transition: opacity 0.25s, transform 0.25s;
+    }
+    .top-bar, .bottom-bar {
+      transition: opacity 0.25s, transform 0.25s;
     }
     .loader {
-      width: 70px; height: 70px;
+      width: 56px;
+      height: 56px;
       border: 4px solid rgba(255,255,255,.15);
       border-top-color: white;
       border-radius: 50%;
       animation: spin .9s linear infinite;
     }
     @keyframes spin { to { transform: rotate(360deg); } }
-    #youtube-player iframe {
+
+    #centerPlay {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 0;
+      background: transparent;
+      cursor: pointer;
+      pointer-events: auto;
+      z-index: 25;
+    }
+    #loading {
+      pointer-events: auto;
+      z-index: 30;
+    }
+    #centerPlay.is-hidden {
+      display: none !important;
+      pointer-events: none;
+    }
+
+    /* РџРѕР»РЅРѕСЌРєСЂР°РЅРЅС‹Р№ СЂРµР¶РёРј вЂ” РїР»РµРµСЂ РЅР° РІРµСЃСЊ СЌРєСЂР°РЅ, РІРёРґРµРѕ РїРѕ С†РµРЅС‚СЂСѓ 16:9 */
+    .player-shell:fullscreen,
+    .player-shell:-webkit-full-screen {
+      width: 100vw;
+      height: 100vh;
+      max-height: none;
+      border-radius: 0;
+      padding: 0;
+    }
+    .player-shell:fullscreen .video-stage,
+    .player-shell:-webkit-full-screen .video-stage {
+      flex: 1 1 auto;
       width: 100%;
       height: 100%;
-      border: 0;
+      max-height: none;
+      aspect-ratio: auto;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .player-shell:fullscreen #youtube-player,
+    .player-shell:-webkit-full-screen #youtube-player {
+      position: relative;
+      width: min(100vw, calc(100vh * 16 / 9));
+      height: min(100vh, calc(100vw * 9 / 16));
+      aspect-ratio: 16 / 9;
+    }
+
+    @media (max-width: 640px) {
+      body { padding: 0; }
+      .player-shell {
+        width: 100%;
+        max-height: 100dvh;
+        border-radius: 0;
+      }
+      .video-stage { max-height: 100dvh; }
+      .top-bar { padding: 0.75rem 1rem !important; }
+      .bottom-bar { padding: 0.75rem 1rem !important; }
+      .top-bar h1 { font-size: 1rem !important; }
+      .yt-link span.label { display: none; }
     }
   </style>
 </head>
-<body class="w-screen h-screen flex items-center justify-center p-8">
+<body>
 
-    <div id="playerContainer" class="relative w-full max-w-7xl rounded-3xl overflow-hidden video-shadow bg-black">
+  <div id="playerContainer" class="player-shell">
 
-    <div id="youtube-player" class="w-full aspect-video bg-black"></div>
+        <div id="videoStage" class="video-stage">
+      <div id="youtube-player"></div>
 
-    <div id="loading" class="absolute inset-0 flex items-center justify-center bg-black z-30">
-      <div class="loader"></div>
-    </div>
-
-    <button id="centerPlay" type="button" class="absolute inset-0 z-20 flex items-center justify-center">
-      <div class="glass rounded-full w-28 h-28 flex items-center justify-center text-white text-6xl transition hover:scale-110">
-        <i class="ri-play-fill ml-2"></i>
+      <div id="loading" class="overlay flex items-center justify-center bg-black/80 z-30">
+        <div class="loader"></div>
       </div>
-    </button>
 
-    <div id="topBar" class="absolute top-0 left-0 right-0 z-20 p-6 transition-all duration-300">
-      <div class="flex items-center justify-between">
-        <div>
-          <h1 class="text-white text-2xl font-bold tracking-tight">SDCS Cinema</h1>
-          <p class="text-zinc-400 text-sm mt-1">YouTube</p>
+      <button id="centerPlay" type="button" class="overlay" aria-label="Play">
+        <div class="glass rounded-full w-20 h-20 sm:w-28 sm:h-28 flex items-center justify-center text-white text-5xl sm:text-6xl transition hover:scale-105">
+          <i class="ri-play-fill ml-1"></i>
         </div>
-        <a
-          href="https://www.youtube.com/watch?v=__SDCS_YOUTUBE_VIDEO_ID__"
-          target="_blank"
-          rel="noopener noreferrer"
-          class="glass px-4 py-2 rounded-2xl text-white text-sm flex items-center gap-2 hover:bg-white/10 transition"
-        >
-          <i class="ri-youtube-fill text-red-400"></i>
-          РћС‚РєСЂС‹С‚СЊ РЅР° YouTube
-        </a>
-      </div>
-    </div>
+      </button>
 
-    <div id="controls" class="player-gradient absolute bottom-0 left-0 right-0 z-20 p-6 transition-all duration-300">
-      <div class="mb-5">
-        <input id="progress" type="range" min="0" max="100" value="0" class="w-full cursor-pointer" />
+      <div id="topBar" class="top-bar overlay z-20 flex flex-col justify-start p-4 sm:p-6">
+        <div class="flex items-start justify-between gap-3 w-full">
+          <div class="min-w-0">
+            <h1 class="text-white text-lg sm:text-2xl font-bold tracking-tight truncate">SDCS Cinema</h1>
+            <p class="text-zinc-400 text-xs sm:text-sm mt-0.5">YouTube</p>
+          </div>
+          <a
+            href="https://www.youtube.com/watch?v=__SDCS_YOUTUBE_VIDEO_ID__"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="yt-link glass shrink-0 px-3 py-2 rounded-xl text-white text-xs sm:text-sm flex items-center gap-2 hover:bg-white/10 transition"
+          >
+            <i class="ri-youtube-fill text-red-400 text-lg"></i>
+            <span class="label">Открыть на YouTube</span>
+          </a>
+        </div>
       </div>
-      <div class="flex items-center justify-between flex-wrap gap-4">
-        <div class="flex items-center gap-5">
-          <button id="playPause" type="button" class="text-white text-3xl hover:scale-110 transition">
-            <i class="ri-play-fill"></i>
-          </button>
-          <div class="flex items-center gap-3">
-            <button id="muteBtn" type="button" class="text-white text-2xl">
-              <i class="ri-volume-up-fill"></i>
+
+      <div id="controls" class="bottom-bar overlay z-20 flex flex-col justify-end player-gradient p-4 sm:p-6">
+        <div class="mb-3 sm:mb-4 w-full">
+          <input id="progress" type="range" min="0" max="100" value="0" class="w-full cursor-pointer" />
+        </div>
+        
+        
+        <div class="flex items-center justify-between gap-3 flex-wrap">
+          <div class="flex items-center gap-3 sm:gap-5 min-w-0">
+            <button id="playPause" type="button" class="text-white text-2xl sm:text-3xl hover:scale-110 transition shrink-0" aria-label="Play/Pause">
+              <i class="ri-play-fill"></i>
             </button>
-            <input id="volume" type="range" min="0" max="100" value="100" class="w-28" />
+            <div class="flex items-center gap-2 sm:gap-3">
+              <button id="muteBtn" type="button" class="text-white text-xl sm:text-2xl shrink-0" aria-label="Mute">
+                <i class="ri-volume-up-fill"></i>
+              </button>
+              <input id="volume" type="range" min="0" max="100" value="100" class="w-16 sm:w-28" />
+            </div>
+            <div class="text-zinc-300 text-xs sm:text-sm font-medium tabular-nums whitespace-nowrap">
+              <span id="currentTime">0:00</span> / <span id="duration">0:00</span>
+            </div>
           </div>
-          <div class="text-zinc-300 text-sm font-medium tracking-wide">
-            <span id="currentTime">0:00</span> / <span id="duration">0:00</span>
+          <div class="flex items-center gap-3 sm:gap-5 shrink-0">
+            <select id="speed" class="glass text-white px-2 py-1.5 sm:px-3 sm:py-2 rounded-xl outline-none text-sm">
+              <option value="0.25">0.25x</option>
+              <option value="0.5">0.5x</option>
+              <option value="1" selected>1x</option>
+              <option value="1.25">1.25x</option>
+              <option value="1.5">1.5x</option>
+              <option value="2">2x</option>
+            </select>
+            <button id="fullscreen" type="button" class="text-white text-xl sm:text-2xl" aria-label="Fullscreen">
+              <i class="ri-fullscreen-fill" id="fsIcon"></i>
+            </button>
           </div>
-        </div>
-        <div class="flex items-center gap-5">
-          <select id="speed" class="glass text-white px-3 py-2 rounded-xl outline-none">
-            <option value="0.25">0.25x</option>
-            <option value="0.5">0.5x</option>
-            <option value="1" selected>1x</option>
-            <option value="1.25">1.25x</option>
-            <option value="1.5">1.5x</option>
-            <option value="2">2x</option>
-          </select>
-          <button id="fullscreen" type="button" class="text-white text-2xl">
-            <i class="ri-fullscreen-fill"></i>
-          </button>
         </div>
       </div>
     </div>
@@ -138,10 +264,12 @@
     const durationEl = document.getElementById("duration");
     const volume = document.getElementById("volume");
     const muteBtn = document.getElementById("muteBtn");
-    const fullscreen = document.getElementById("fullscreen");
+    const fullscreenBtn = document.getElementById("fullscreen");
+    const fsIcon = document.getElementById("fsIcon");
     const loading = document.getElementById("loading");
     const speed = document.getElementById("speed");
     const container = document.getElementById("playerContainer");
+    const videoStage = document.getElementById("videoStage");
 
     let player = null;
     let hideControlsTimeout;
@@ -151,7 +279,13 @@
       if (!time || !Number.isFinite(time)) return "0:00";
       const mins = Math.floor(time / 60);
       const secs = Math.floor(time % 60);
-      return `${mins}:${secs.toString().padStart(2, "0")}`;
+      return mins + ":" + String(secs).padStart(2, "0");
+    }
+
+    function setControlsVisible(visible) {
+      const method = visible ? "remove" : "add";
+      controls.classList[method]("controls-hidden");
+      topBar.classList[method]("controls-hidden");
     }
 
     function updatePlayState() {
@@ -159,7 +293,7 @@
       const state = player.getPlayerState();
       const paused = state !== YT.PlayerState.PLAYING && state !== YT.PlayerState.BUFFERING;
       playPause.innerHTML = paused ? '<i class="ri-play-fill"></i>' : '<i class="ri-pause-fill"></i>';
-      centerPlay.style.display = paused ? "flex" : "none";
+      centerPlay.classList.toggle("is-hidden", !paused);
     }
 
     function togglePlay() {
@@ -173,14 +307,10 @@
     }
 
     function showControls() {
-      controls.classList.remove("controls-hidden");
-      topBar.classList.remove("controls-hidden");
+      setControlsVisible(true);
       clearTimeout(hideControlsTimeout);
       if (player && player.getPlayerState() === YT.PlayerState.PLAYING) {
-        hideControlsTimeout = setTimeout(() => {
-          controls.classList.add("controls-hidden");
-          topBar.classList.add("controls-hidden");
-        }, 2500);
+        hideControlsTimeout = setTimeout(() => setControlsVisible(false), 3000);
       }
     }
 
@@ -206,12 +336,23 @@
       }
     }
 
+    function resizePlayer() {
+      if (!player || typeof player.getIframe !== "function") return;
+      const iframe = player.getIframe();
+      if (iframe) {
+        iframe.style.width = "100%";
+        iframe.style.height = "100%";
+      }
+    }
+
     function onPlayerReady() {
       loading.style.display = "none";
+      resizePlayer();
       durationEl.textContent = formatTime(player.getDuration());
       volume.value = String(player.isMuted() ? 0 : player.getVolume());
       updatePlayState();
       startProgressLoop();
+      window.addEventListener("resize", resizePlayer);
     }
 
     function onPlayerStateChange(event) {
@@ -224,26 +365,34 @@
       }
       if (event.data === YT.PlayerState.PLAYING) {
         startProgressLoop();
+        setControlsVisible(false);
       }
       if (event.data === YT.PlayerState.PAUSED || event.data === YT.PlayerState.ENDED) {
         syncProgress();
+        setControlsVisible(true);
       }
     }
 
     function onPlayerError() {
       loading.innerHTML =
-        '<p class="text-red-400 text-center px-6">Не удалось загрузить видео с YouTube. Проверьте SDCS_YOUTUBE_URL или доступность ролика.</p>';
+        '<p class="text-red-400 text-center px-6 text-sm">РќРµ СѓРґР°Р»РѕСЃСЊ Р·Р°РіСЂСѓР·РёС‚СЊ РІРёРґРµРѕ. РџСЂРѕРІРµСЂСЊС‚Рµ SDCS_YOUTUBE_URL.</p>';
       loading.style.display = "flex";
     }
 
     function initYoutubePlayer() {
       player = new YT.Player("youtube-player", {
         videoId: SDCS_YOUTUBE_VIDEO_ID,
+        width: "100%",
+        height: "100%",
         playerVars: {
           autoplay: 0,
+          controls: 0,
           rel: 0,
           modestbranding: 1,
           playsinline: 1,
+          fs: 0,
+          iv_load_policy: 3,
+          disablekb: 0,
           origin: window.location.origin,
         },
         events: {
@@ -300,18 +449,34 @@
       if (player) player.setPlaybackRate(Number(speed.value));
     });
 
-    fullscreen.addEventListener("click", async () => {
-      if (!document.fullscreenElement) {
-        await container.requestFullscreen();
-      } else {
-        await document.exitFullscreen();
+    function updateFsIcon() {
+      const on = !!document.fullscreenElement;
+      fsIcon.className = on ? "ri-fullscreen-exit-fill" : "ri-fullscreen-fill";
+    }
+
+    fullscreenBtn.addEventListener("click", async () => {
+      try {
+        if (!document.fullscreenElement) {
+          await container.requestFullscreen();
+        } else {
+          await document.exitFullscreen();
+        }
+      } catch (err) {
+        console.warn("fullscreen", err);
       }
     });
 
-    container.addEventListener("mousemove", showControls);
+    document.addEventListener("fullscreenchange", () => {
+      updateFsIcon();
+      resizePlayer();
+    });
+
+    videoStage.addEventListener("mousemove", showControls);
+    videoStage.addEventListener("touchstart", showControls, { passive: true });
     window.addEventListener("beforeunload", stopProgressLoop);
-    showControls();
+
+    setControlsVisible(true);
+    updateFsIcon();
   </script>
 </body>
 </html>
-
