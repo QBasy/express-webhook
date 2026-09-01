@@ -1,0 +1,128 @@
+@use '../../styles/variables' as v;
+@use '../../styles/mixins' as m;
+
+.screen {
+  position: relative;
+  min-height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 1rem;
+  background: var(--bg);
+}
+
+.topControls {
+  position: absolute;
+  top: 1.5rem;
+  right: 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.card {
+  @include m.card;
+  @include m.fade-in;
+  box-shadow: var(--shadow-lg);
+  width: 100%;
+  max-width: 26rem;
+  padding: 2.5rem;
+}
+
+.header {
+  text-align: center;
+  margin-bottom: 2rem;
+
+  h1 {
+    margin: 1rem 0 0;
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: var(--text);
+  }
+}
+
+.tagline {
+  margin: 0.4rem 0 0;
+  color: var(--accent);
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  font-size: 0.85rem;
+}
+
+.subtitle {
+  margin: 0.6rem 0 0;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.4rem;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+
+  span {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--text);
+  }
+
+  input {
+    @include m.input-base;
+  }
+}
+
+.passwordRow {
+  position: relative;
+
+  input {
+    padding-right: 3rem;
+  }
+}
+
+.eyeToggle {
+  position: absolute;
+  right: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-muted);
+  display: flex;
+
+  &:hover {
+    color: var(--text);
+  }
+}
+
+.submitBtn {
+  @include m.button-primary;
+  padding: 0.85rem;
+  font-size: 1rem;
+}
+
+.registerHint {
+  margin: 1.5rem 0 0;
+  text-align: center;
+  font-size: 0.9rem;
+  color: var(--text-muted);
+
+  a {
+    color: var(--accent);
+    font-weight: 600;
+    text-decoration: none;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+}

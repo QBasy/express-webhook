@@ -100,11 +100,52 @@ export async function roomRoutes(fastify: FastifyInstance) {
         return reply.status(200).send({ roomId: id, ...current });
     });
 
-    fastify.get('/allRooms', {
-        preHandler: requireAdmin
+    fastify.post('/:id/forward', {
+        preHandler: authenticate
     }, async (request, reply) => {
+        const { id } = request.params as { id: string };
+        const { enabled, url } = request.body as { enabled: boolean; url?: string };
+        const user = request.user as unknown as User;
+
+        const room = await fastify.roomRepo.getRoom(id);
+        if (!room) {
+            return reply.status(404).send({ error: 'Room not found' });
+        }
+
+        if (user.role !== 'admin' && room.userId !== user._id.toString()) {
+            return reply.status(403).send({ error: 'Access denied' });
+        }
+
+        if (enabled) {
+            if (typeof url !== 'string' || url.trim() === '') {
+                return reply.status(400).send({ error: 'url is required to enable forwarding' });
+            }
+            try {
+                const parsed = new URL(url);
+                if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+                    throw new Error('unsupported protocol');
+                }
+            } catch {
+                return reply.status(400).send({ error: 'url must be a valid http(s) URL' });
+            }
+        }
+
+        await fastify.roomRepo.setForwarding(id, enabled, enabled ? url!.trim() : null);
+        const current = await fastify.roomRepo.getForwardingStatus(id);
+
         return reply.status(200).send({
-            rooms: await fastify.roomRepo.getAllRooms()
+            roomId: id,
+            ...current,
+            message: current.enabled ? `Forwarding to ${current.url} enabled` : 'Forwarding disabled',
         });
     });
+
+    fastify.get('/:id/forward', {
+        preHandler: authenticate
+    }, async (request, reply) => {
+        const { id } = request.params as { id: string };
+        const current = await fastify.roomRepo.getForwardingStatus(id);
+        return reply.status(200).send({ roomId: id, ...current });
+    });
+
 }

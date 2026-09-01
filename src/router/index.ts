@@ -1,7 +1,6 @@
 import { FastifyInstance } from "fastify";
 import { roomRoutes } from "./roomRouter";
 import { webhookRoutes } from "./webhookRouter";
-import { sdcsVideoRoutes } from "./sdcsVideoRouter";
 import path from "path";
 import fs from "fs";
 
@@ -18,7 +17,6 @@ function sendStaticFile(reply: any, filePath: string, type: string) {
 export async function registerRoutes(fastify: FastifyInstance) {
     fastify.register(roomRoutes, { prefix: "/room" });
     fastify.register(webhookRoutes, { prefix: "/hook" });
-    await fastify.register(sdcsVideoRoutes);
 
     const htmlPages = [
         "/", "login", "login.html", "register", "register.html", "json-compare.html",

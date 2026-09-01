@@ -36,6 +36,9 @@ const STATEMENTS = [
 
     `CREATE INDEX IF NOT EXISTS rooms_user_id_idx ON rooms (user_id)`,
 
+    `ALTER TABLE rooms ADD COLUMN IF NOT EXISTS forward_enabled BOOLEAN NOT NULL DEFAULT false`,
+    `ALTER TABLE rooms ADD COLUMN IF NOT EXISTS forward_url TEXT`,
+
     `CREATE TABLE IF NOT EXISTS fake_errors (
         room_id TEXT PRIMARY KEY,
         enabled BOOLEAN NOT NULL DEFAULT false,

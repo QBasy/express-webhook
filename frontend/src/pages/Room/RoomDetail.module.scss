@@ -1,0 +1,57 @@
+@use '../../styles/variables' as v;
+@use '../../styles/mixins' as m;
+
+.wrap {
+  max-width: 56rem;
+  margin: 0 auto;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+}
+
+.backBtn {
+  @include m.button-ghost;
+  padding: 0.5rem 0.9rem;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.actionBtn {
+  @include m.button-ghost;
+  padding: 0.5rem 0.9rem;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.85rem;
+}
+
+.dangerBtn {
+  @include m.button-danger;
+  padding: 0.5rem 0.9rem;
+  font-size: 0.85rem;
+}
+
+.infoCard {
+  @include m.card;
+  padding: 0.25rem 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+}

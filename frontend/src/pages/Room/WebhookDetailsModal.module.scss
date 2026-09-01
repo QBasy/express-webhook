@@ -1,0 +1,110 @@
+@use '../../styles/variables' as v;
+
+.infoGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+  padding: 1rem;
+  background: var(--surface-inset);
+  border: 1px solid var(--border);
+  border-radius: v.$radius-md;
+}
+
+.spanTwo {
+  grid-column: 1 / -1;
+}
+
+.label {
+  margin: 0 0 0.3rem;
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.value {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--text);
+}
+
+.mono {
+  font-family: v.$font-mono;
+  font-size: 0.8rem;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  padding: 0.2rem 0.5rem;
+  border-radius: v.$radius-sm;
+  display: inline-block;
+}
+
+.block {
+  display: block;
+  width: 100%;
+  overflow-wrap: anywhere;
+}
+
+.ipRow {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+
+  a {
+    font-size: 0.78rem;
+    color: var(--accent);
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+}
+
+.sectionTitle {
+  margin: 0 0 0.6rem;
+  font-size: 0.95rem;
+  color: var(--text);
+}
+
+.metaRows {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  max-height: 14rem;
+  overflow-y: auto;
+  background: var(--surface-inset);
+  border: 1px solid var(--border);
+  border-radius: v.$radius-sm;
+  padding: 0.5rem;
+}
+
+.metaRow {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  padding: 0.2rem 0;
+}
+
+.metaKey {
+  font-family: v.$font-mono;
+  font-size: 0.75rem;
+  color: var(--info-text);
+  background: var(--info-bg);
+  padding: 0.15rem 0.45rem;
+  border-radius: v.$radius-sm;
+  flex-shrink: 0;
+}
+
+.metaValue {
+  font-family: v.$font-mono;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  word-break: break-all;
+}
+
+.emptyNote {
+  margin: 0;
+  font-size: 0.82rem;
+  color: var(--text-faint);
+  font-style: italic;
+}

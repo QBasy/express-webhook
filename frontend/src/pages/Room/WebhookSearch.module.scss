@@ -1,0 +1,75 @@
+@use '../../styles/variables' as v;
+@use '../../styles/mixins' as m;
+
+.wrap {
+  margin-bottom: 1rem;
+}
+
+.form {
+  @include m.card;
+  padding: 1.1rem;
+  margin-bottom: 1.25rem;
+}
+
+.modeToggle {
+  display: flex;
+  gap: 0.4rem;
+  margin-bottom: 0.9rem;
+}
+
+.mode,
+.modeActive {
+  padding: 0.4rem 0.8rem;
+  border-radius: v.$radius-sm;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.modeActive {
+  background: var(--accent-soft-bg);
+  border-color: var(--accent-soft-text);
+  color: var(--accent-soft-text);
+}
+
+.inputRow {
+  display: flex;
+  gap: 0.5rem;
+
+  input {
+    @include m.input-base;
+    flex: 1;
+  }
+
+  button {
+    @include m.button-primary;
+    padding: 0 1.1rem;
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+}
+
+.count {
+  margin: 0 0 0.75rem;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.empty {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+.list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}

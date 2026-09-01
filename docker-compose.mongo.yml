@@ -1,0 +1,55 @@
+# Legacy stack (MongoDB + nginx). For PostgreSQL use docker-compose.yml
+version: '3.8'
+
+services:
+  mongodb:
+    image: mongo:7
+    container_name: webhook-mongodb
+    restart: always
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD}
+      MONGO_INITDB_DATABASE: webhook_viewer
+    volumes:
+      - mongo_data:/data/db
+      - mongo_config:/data/configdb
+      - ./mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
+    ports:
+      - "127.0.0.1:27017:27017"
+    networks:
+      - webhook-network
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/webhook_viewer --quiet
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
+
+  webhook-app:
+    container_name: webhook-app
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: always
+    environment:
+      - NODE_ENV=production
+      - PORT=6005
+      - DATABASE_BACKEND=mongo
+      - MONGODB_URI=mongodb://webhook_user:${MONGO_USER_PASSWORD}@mongodb:27017/webhook_viewer?authSource=webhook_viewer
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_EXPIRES_IN=${JWT_EXPIRES_IN:-7d}
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    networks:
+      - webhook-network
+    ports:
+      - "6005:6005"
+
+volumes:
+  mongo_data:
+  mongo_config:
+
+networks:
+  webhook-network:
+    driver: bridge

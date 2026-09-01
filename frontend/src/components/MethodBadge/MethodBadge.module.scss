@@ -1,0 +1,47 @@
+@use '../../styles/variables' as v;
+
+.badge {
+  display: inline-block;
+  font-weight: 700;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  padding: 0.2rem 0.55rem;
+  border-radius: v.$radius-sm;
+}
+
+.methodGet {
+  background: var(--info-bg);
+  color: var(--info-text);
+}
+
+.methodPost {
+  background: var(--success-bg);
+  color: var(--success-text);
+}
+
+.methodPut {
+  background: var(--warning-bg);
+  color: var(--warning-text);
+}
+
+.methodPatch {
+  background: var(--method-patch-bg);
+  color: var(--method-patch-text);
+}
+
+.methodDelete {
+  background: var(--error-bg);
+  color: var(--error-text);
+}
+
+.methodOptions {
+  background: var(--method-options-bg);
+  color: var(--method-options-text);
+}
+
+.methodHead,
+.methodDefault {
+  background: var(--method-neutral-bg);
+  color: var(--method-neutral-text);
+}

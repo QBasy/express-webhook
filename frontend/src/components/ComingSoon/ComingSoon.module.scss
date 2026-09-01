@@ -1,0 +1,12 @@
+.wrap {
+  max-width: 32rem;
+  margin: 4rem auto;
+  padding: 2.5rem;
+  text-align: center;
+  color: var(--text-muted);
+
+  h2 {
+    color: var(--text);
+    margin: 1rem 0 0.5rem;
+  }
+}

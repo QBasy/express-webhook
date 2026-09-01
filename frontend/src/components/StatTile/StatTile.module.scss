@@ -1,0 +1,22 @@
+@use '../../styles/variables' as v;
+@use '../../styles/mixins' as m;
+
+.tile {
+  @include m.card;
+  padding: 1rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  min-width: 9rem;
+}
+
+.value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.label {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}

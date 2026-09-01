@@ -1,0 +1,108 @@
+@use '../../styles/variables' as v;
+@use '../../styles/mixins' as m;
+
+.state {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+.list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  @include m.card;
+  overflow: hidden;
+
+  li + li {
+    border-top: 1px solid var(--border);
+  }
+}
+
+.row {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.8rem 1rem;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--text);
+  font-size: 0.85rem;
+  text-align: left;
+  transition: background-color 0.15s ease;
+
+  &:hover {
+    background: var(--surface-hover);
+  }
+}
+
+.preview {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: v.$font-mono;
+  color: var(--text-muted);
+}
+
+.detail {
+  padding: 0 1rem 1rem 2.2rem;
+  border-top: 1px dashed var(--border);
+}
+
+.meta {
+  display: flex;
+  gap: 1.5rem;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  margin: 0.75rem 0;
+}
+
+.receipts {
+  list-style: none;
+  margin: 0.75rem 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+
+  li {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    font-size: 0.78rem;
+    padding: 0.35rem 0.6rem;
+    background: var(--surface-inset);
+    border-radius: v.$radius-sm;
+  }
+}
+
+.receiptId {
+  font-family: v.$font-mono;
+  color: var(--text);
+}
+
+.timestamp {
+  color: var(--text-faint);
+}
+
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  margin-top: 1rem;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+
+  button {
+    @include m.button-ghost;
+    padding: 0.4rem 0.6rem;
+
+    &:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+  }
+}

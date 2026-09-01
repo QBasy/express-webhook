@@ -2,6 +2,29 @@ import {FastifyInstance, FastifyRequest} from "fastify";
 import {logger} from "../utils/logger";
 import {WebhookMetadata} from "../repository/webhooksRepo";
 
+// Пересылаем вебхук на внешний endpoint партнёра, не блокируя ответ отправителю
+// и не давая сбою пересылки повлиять на приём самого вебхука (fire-and-forget).
+function forwardWebhookAsync(url: string, body: unknown, roomId: string): void {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 5000);
+
+    fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+        signal: controller.signal
+    })
+        .then(res => {
+            if (!res.ok) {
+                logger.warn(`Forward for room ${roomId} to ${url} responded with ${res.status}`);
+            }
+        })
+        .catch(err => {
+            logger.warn(`Forward for room ${roomId} to ${url} failed: ${err?.message || err}`);
+        })
+        .finally(() => clearTimeout(timeout));
+}
+
 // Функция для извлечения метаданных из запроса
 function extractMetadata(request: FastifyRequest): WebhookMetadata {
     const headers: Record<string, string | string[]> = {};
@@ -223,6 +246,10 @@ export async function webhookRoutes(fastify: FastifyInstance) {
         await fastify.roomRepo.updateActivity(id);
 
         logger.info(`Webhook received: ${request.method} ${metadata.url} -> receiptId: ${receiptId}`);
+
+        if (room.forwardEnabled && room.forwardUrl) {
+            forwardWebhookAsync(room.forwardUrl, webhook, id);
+        }
 
         return {
             status: "ok",

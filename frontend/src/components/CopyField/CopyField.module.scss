@@ -1,0 +1,75 @@
+@use '../../styles/variables' as v;
+
+.row {
+  display: grid;
+  grid-template-columns: 9rem 1fr auto;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.85rem 1.1rem;
+  border-bottom: 1px solid var(--border);
+  transition: transform 0.2s ease;
+
+  &:last-child {
+    border-bottom: none;
+  }
+
+  // Как оригинальный .webhook-url-container:hover { transform: translateX(2px) }
+  &:hover {
+    transform: translateX(2px);
+
+    .copyBtn {
+      opacity: 1;
+    }
+  }
+
+  @media (max-width: v.$breakpoint-sm) {
+    grid-template-columns: 1fr auto;
+
+    .label {
+      grid-column: 1 / -1;
+    }
+  }
+}
+
+.label {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
+.value {
+  color: var(--text);
+  font-size: 0.9rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mono {
+  font-family: v.$font-mono;
+}
+
+.copyBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.9rem;
+  height: 1.9rem;
+  border-radius: v.$radius-sm;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  flex-shrink: 0;
+  opacity: 0.45;
+  transition: opacity 0.2s ease, background-color 0.15s ease, color 0.15s ease;
+
+  &:hover {
+    opacity: 1;
+    background: var(--surface-hover);
+    color: var(--text);
+  }
+
+  &:focus-visible {
+    opacity: 1;
+  }
+}

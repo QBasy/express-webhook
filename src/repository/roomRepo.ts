@@ -8,6 +8,8 @@ export interface Room {
     webhookTTL: number;
     createdAt: Date;
     lastActivityAt: Date;
+    forwardEnabled?: boolean;
+    forwardUrl?: string | null;
 }
 
 export class RoomRepository {
@@ -81,6 +83,27 @@ export class RoomRepository {
             { roomId },
             { $set: { lastActivityAt: new Date() } }
         );
+    }
+
+    async setForwarding(roomId: string, enabled: boolean, url?: string | null): Promise<void> {
+        await this.roomsCollection.updateOne(
+            { roomId },
+            {
+                $set: {
+                    forwardEnabled: enabled,
+                    forwardUrl: enabled ? (url || null) : (url ?? null)
+                }
+            }
+        );
+        logger.info(`Forwarding for ${roomId}: ${enabled ? `ON -> ${url}` : 'OFF'}`);
+    }
+
+    async getForwardingStatus(roomId: string): Promise<{ enabled: boolean; url: string | null }> {
+        const room = await this.roomsCollection.findOne({ roomId }) as Room | null;
+        return {
+            enabled: Boolean(room?.forwardEnabled),
+            url: room?.forwardUrl ?? null
+        };
     }
 
     async setFakeError(roomId: string, enabled: boolean, statusCode?: number): Promise<void> {

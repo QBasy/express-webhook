@@ -1,0 +1,92 @@
+@use '../../styles/variables' as v;
+
+.wrap {
+  position: relative;
+  background: var(--surface-inset);
+  border: 1px solid var(--border);
+  border-radius: v.$radius-sm;
+}
+
+.copyBtn {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: v.$radius-sm;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: color 0.15s ease, background-color 0.15s ease;
+
+  &:hover {
+    color: var(--text);
+    background: var(--surface-hover);
+  }
+}
+
+.pre {
+  margin: 0;
+  padding: 1rem;
+  padding-right: 2.5rem;
+  overflow: auto;
+  max-height: 24rem;
+  font-size: 0.8rem;
+  line-height: 1.6;
+  color: var(--text);
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-family: v.$font-mono;
+}
+
+.token {
+  border-radius: 3px;
+  transition: background-color 0.2s ease, padding 0.2s ease;
+}
+
+.clickable {
+  cursor: pointer;
+
+  &:hover {
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+}
+
+// Оригинал добавляет padding именно по hover (а не держит его постоянно) —
+// из-за этого соседний текст физически "подвигается" при наведении, а не
+// просто подсвечивается. Это тот самый эффект, который пропал при первом
+// переносе на React и был явно указан пользователем.
+.key {
+  color: var(--info-text);
+
+  &:hover {
+    background: var(--info-bg);
+    padding: 2px 4px;
+  }
+}
+
+.string {
+  color: var(--success-text);
+
+  &:hover {
+    background: var(--success-bg);
+    padding: 2px 4px;
+  }
+}
+
+.number {
+  color: var(--method-patch-text);
+}
+
+.boolean {
+  color: var(--error-text);
+}
+
+.null {
+  color: var(--method-options-text);
+}

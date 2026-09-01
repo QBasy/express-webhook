@@ -1,0 +1,7 @@
+import { ComingSoon } from '../../components/ComingSoon/ComingSoon';
+import { useI18n } from '../../i18n/I18nContext';
+
+export function DocsPage() {
+  const { t } = useI18n();
+  return <ComingSoon title={t.nav.docs} />;
+}

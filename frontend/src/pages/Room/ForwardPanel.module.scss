@@ -1,0 +1,55 @@
+@use '../../styles/variables' as v;
+@use '../../styles/mixins' as m;
+
+.panel {
+  @include m.card;
+  padding: 1.25rem;
+  margin-bottom: 1.5rem;
+}
+
+.heading {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  color: var(--accent);
+  margin-bottom: 0.5rem;
+}
+
+.description {
+  margin: 0 0 1rem;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.controls {
+  display: flex;
+  align-items: flex-end;
+  gap: 1rem;
+  flex-wrap: wrap;
+
+  label {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    flex: 1;
+    min-width: 16rem;
+
+    input {
+      @include m.input-base;
+    }
+  }
+}
+
+.enableBtn {
+  @include m.button-primary;
+  padding: 0.6rem 1.1rem;
+  white-space: nowrap;
+}
+
+.disableBtn {
+  @include m.button-ghost;
+  padding: 0.6rem 1.1rem;
+  white-space: nowrap;
+}

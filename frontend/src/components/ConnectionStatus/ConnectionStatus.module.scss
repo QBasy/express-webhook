@@ -1,0 +1,55 @@
+@use '../../styles/variables' as v;
+@use '../../styles/mixins' as m;
+
+.status {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.35rem 0.75rem;
+  border-radius: v.$radius-pill;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.dot {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.dotGreen {
+  background: var(--success-text);
+}
+
+.dotYellow {
+  background: var(--warning-text);
+}
+
+.dotRed {
+  background: var(--error-text);
+}
+
+.online {
+  background: var(--success-bg);
+  color: var(--success-text);
+
+  .dot {
+    @include m.pulse-dot;
+  }
+}
+
+.reconnecting {
+  background: var(--warning-bg);
+  color: var(--warning-text);
+
+  .dot {
+    @include m.pulse-dot;
+  }
+}
+
+.offline {
+  background: var(--error-bg);
+  color: var(--error-text);
+  @include m.shake;
+}

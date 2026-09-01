@@ -1,0 +1,133 @@
+@use '../../styles/variables' as v;
+@use '../../styles/mixins' as m;
+
+.wrap {
+  max-width: 40rem;
+  margin: 2rem auto;
+
+  h2 {
+    margin: 0;
+    font-size: 1.25rem;
+  }
+}
+
+.titleRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.allRoomsBtn {
+  @include m.button-ghost;
+  padding: 0.5rem 0.9rem;
+  font-size: 0.82rem;
+  flex-shrink: 0;
+}
+
+.empty {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+.list {
+  list-style: none;
+  margin: 0 0 2rem;
+  padding: 0;
+  @include m.card;
+  overflow: hidden;
+
+  li + li {
+    border-top: 1px solid var(--border);
+  }
+
+  button {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.9rem 1.1rem;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    color: var(--text);
+    font-size: 0.9rem;
+    transition: background-color 0.15s ease;
+
+    &:hover {
+      background: var(--surface-hover);
+    }
+  }
+}
+
+.roomId {
+  font-family: v.$font-mono;
+}
+
+.open {
+  color: var(--text-muted);
+  font-size: 0.8rem;
+}
+
+.createForm {
+  @include m.card;
+  padding: 1.25rem;
+
+  h3 {
+    margin: 0 0 1rem;
+    font-size: 1rem;
+  }
+}
+
+.integrationForm {
+  margin-top: 1.25rem;
+}
+
+.integrationDescription {
+  margin: -0.5rem 0 1rem;
+  font-size: 0.82rem;
+  color: var(--text-muted);
+}
+
+.inputRow {
+  display: flex;
+  align-items: stretch;
+  gap: 0.5rem;
+
+  input {
+    @include m.input-base;
+    flex: 1;
+  }
+
+  button {
+    @include m.button-primary;
+    padding: 0 1.1rem;
+    white-space: nowrap;
+  }
+
+  .generateBtn {
+    @include m.button-ghost;
+    padding: 0 0.9rem;
+    flex-shrink: 0;
+  }
+}
+
+.prefix {
+  display: flex;
+  align-items: center;
+  padding: 0 0.75rem;
+  border-radius: v.$radius-sm;
+  background: var(--surface-inset);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  font-family: v.$font-mono;
+  font-size: 0.85rem;
+  white-space: nowrap;
+}
+
+.hint {
+  margin: 0.6rem 0 0;
+  font-size: 0.8rem;
+  color: var(--text-faint);
+}

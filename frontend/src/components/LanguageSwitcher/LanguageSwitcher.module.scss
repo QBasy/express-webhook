@@ -1,0 +1,38 @@
+@use '../../styles/variables' as v;
+
+.switcher {
+  display: inline-flex;
+  padding: 0.2rem;
+  background: var(--surface-inset);
+  border: 1px solid var(--border);
+  border-radius: v.$radius-pill;
+
+  button {
+    border: none;
+    background: transparent;
+    color: var(--text-muted);
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 0.3rem 0.65rem;
+    border-radius: v.$radius-pill;
+    cursor: pointer;
+    transition: background-color 0.15s ease, color 0.15s ease;
+
+    &:hover {
+      color: var(--text);
+    }
+  }
+}
+
+.active {
+  background: var(--accent) !important;
+  color: var(--accent-contrast) !important;
+}
+
+.compact {
+  padding: 0.15rem;
+
+  button {
+    padding: 0.2rem 0.5rem;
+  }
+}

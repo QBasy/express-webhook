@@ -1,0 +1,29 @@
+@keyframes copy-pop {
+  0% {
+    transform: translate(-50%, -50%) scale(0.8);
+    opacity: 0;
+  }
+  50% {
+    transform: translate(-50%, -50%) scale(1.08);
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+  }
+}
+
+.toast {
+  position: fixed;
+  transform: translate(-50%, -50%);
+  background: var(--success-text);
+  color: var(--bg);
+  padding: 0.4rem 0.8rem;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  pointer-events: none;
+  z-index: 999;
+  box-shadow: var(--shadow-md);
+  animation: copy-pop 0.35s ease-out;
+  white-space: nowrap;
+}

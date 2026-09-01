@@ -21,7 +21,8 @@ export class RoomRepositoryPostgres {
     async getRoom(roomId: string): Promise<Room | null> {
         const { rows } = await this.pool.query(
             `SELECT room_id AS "roomId", user_id AS "userId", webhook_ttl AS "webhookTTL",
-                    created_at AS "createdAt", last_activity_at AS "lastActivityAt"
+                    created_at AS "createdAt", last_activity_at AS "lastActivityAt",
+                    forward_enabled AS "forwardEnabled", forward_url AS "forwardUrl"
              FROM rooms WHERE room_id = $1`,
             [roomId]
         );
@@ -33,6 +34,8 @@ export class RoomRepositoryPostgres {
             webhookTTL: r.webhookTTL,
             createdAt: r.createdAt,
             lastActivityAt: r.lastActivityAt,
+            forwardEnabled: r.forwardEnabled,
+            forwardUrl: r.forwardUrl,
         };
     }
 
@@ -74,6 +77,23 @@ export class RoomRepositoryPostgres {
 
     async updateActivity(roomId: string): Promise<void> {
         await this.pool.query(`UPDATE rooms SET last_activity_at = now() WHERE room_id = $1`, [roomId]);
+    }
+
+    async setForwarding(roomId: string, enabled: boolean, url?: string | null): Promise<void> {
+        await this.pool.query(
+            `UPDATE rooms SET forward_enabled = $2, forward_url = $3 WHERE room_id = $1`,
+            [roomId, enabled, enabled ? (url || null) : (url ?? null)]
+        );
+        logger.info(`Forwarding for ${roomId}: ${enabled ? `ON -> ${url}` : 'OFF'}`);
+    }
+
+    async getForwardingStatus(roomId: string): Promise<{ enabled: boolean; url: string | null }> {
+        const { rows } = await this.pool.query(
+            `SELECT forward_enabled AS "forwardEnabled", forward_url AS "forwardUrl" FROM rooms WHERE room_id = $1`,
+            [roomId]
+        );
+        if (!rows[0]) return { enabled: false, url: null };
+        return { enabled: Boolean(rows[0].forwardEnabled), url: rows[0].forwardUrl ?? null };
     }
 
     async setFakeError(roomId: string, enabled: boolean, statusCode?: number): Promise<void> {
