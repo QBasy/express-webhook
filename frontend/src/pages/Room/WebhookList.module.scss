@@ -38,6 +38,23 @@
   cursor: pointer;
 }
 
+.newBadge {
+  @include m.button-ghost;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.45rem 0.9rem;
+  font-size: 0.8rem;
+  color: var(--accent);
+  border-color: var(--accent);
+  background: var(--accent-soft-bg);
+
+  &:hover {
+    background: var(--accent-soft-bg);
+    filter: brightness(1.1);
+  }
+}
+
 .shownOf {
   margin: 0 0 0.6rem;
   font-size: 0.78rem;

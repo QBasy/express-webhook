@@ -6,11 +6,16 @@ import { renderWithProviders } from '../../test/renderWithProviders';
 import { PublicWebhooksPage } from './PublicWebhooksPage';
 import { webhooksApi } from '../../api/webhooks';
 import { ApiError } from '../../api/client';
+import { installMockEventSource, MockEventSource } from '../../test/mockEventSource';
 import type { Webhook } from '../../api/types';
 
 vi.mock('../../api/webhooks', () => ({
   webhooksApi: {
     list: vi.fn(),
+    page: vi.fn(),
+    streamUrl: vi.fn((roomId: string, since?: string) =>
+      since ? `/hook/${roomId}/stream?since=${encodeURIComponent(since)}` : `/hook/${roomId}/stream`
+    ),
     get: vi.fn(),
     remove: vi.fn(),
     clear: vi.fn(),
@@ -22,6 +27,7 @@ vi.mock('../../api/webhooks', () => ({
 }));
 
 const mockedList = vi.mocked(webhooksApi.list);
+const mockedPage = vi.mocked(webhooksApi.page);
 const mockedSearch = vi.mocked(webhooksApi.search);
 
 const webhook: Webhook = {
@@ -52,7 +58,18 @@ function renderPage() {
 
 beforeEach(() => {
   mockedList.mockReset();
+  mockedPage.mockReset();
   mockedSearch.mockReset();
+  installMockEventSource();
+  MockEventSource.reset();
+  mockedPage.mockResolvedValue({
+    roomId: '9903001001',
+    offset: 0,
+    limit: 25,
+    order: 'newest',
+    total: 1,
+    webhooks: [webhook],
+  });
 });
 
 describe('PublicWebhooksPage', () => {

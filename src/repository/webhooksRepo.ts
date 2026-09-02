@@ -39,6 +39,11 @@ export interface Webhook {
     expiresAt: Date;
 }
 
+export interface WebhookPage {
+    webhooks: Webhook[];
+    total: number;
+}
+
 function toIWebhook(w: Webhook): IWebhook {
     return {
         receiptId: w.receiptId,
@@ -50,17 +55,21 @@ function toIWebhook(w: Webhook): IWebhook {
 export class WebhookRepository {
     constructor(private webhooksCollection: Collection) {}
 
+    // Возвращает сохранённый Webhook целиком (а не только receiptId) — чтобы
+    // роутер мог сразу заэмитить его в SSE, не делая лишний getWebhook()
+    // (который на Postgres — это ещё один purgeExpired() + SELECT на каждый
+    // принятый вебхук).
     async addWebhook(
         roomId: string,
         body: any,
         ttlSeconds: number,
         metadata: WebhookMetadata
-    ): Promise<string> {
+    ): Promise<Webhook> {
         const receiptId = new ObjectId().toString();
         const now = new Date();
         const expiresAt = new Date(now.getTime() + ttlSeconds * 1000);
 
-        await this.webhooksCollection.insertOne({
+        const webhook: Webhook = {
             receiptId,
             roomId,
             body,
@@ -68,16 +77,43 @@ export class WebhookRepository {
             timestamp: now.toISOString(),
             createdAt: now,
             expiresAt,
-        });
+        };
+
+        await this.webhooksCollection.insertOne(webhook);
 
         logger.debug(`Webhook ${receiptId} added to room ${roomId}, expires at ${expiresAt.toISOString()}`);
-        return receiptId;
+        return webhook;
     }
 
     async getWebhooks(roomId: string): Promise<Webhook[]> {
         return (await this.webhooksCollection
             .find({ roomId })
             .sort({ createdAt: -1 })
+            .toArray()) as Webhook[];
+    }
+
+    async getWebhooksPage(
+        roomId: string,
+        opts: { offset: number; limit: number; order: "newest" | "oldest" }
+    ): Promise<WebhookPage> {
+        const sortDir = opts.order === "oldest" ? 1 : -1;
+        const [webhooks, total] = await Promise.all([
+            this.webhooksCollection
+                .find({ roomId })
+                .sort({ createdAt: sortDir })
+                .skip(opts.offset)
+                .limit(opts.limit)
+                .toArray() as Promise<Webhook[]>,
+            this.webhooksCollection.countDocuments({ roomId }),
+        ]);
+        return { webhooks, total };
+    }
+
+    // Для догона SSE-подписчиков после реконнекта: всё, что появилось после `since`.
+    async getWebhooksSince(roomId: string, since: Date): Promise<Webhook[]> {
+        return (await this.webhooksCollection
+            .find({ roomId, createdAt: { $gt: since } })
+            .sort({ createdAt: 1 })
             .toArray()) as Webhook[];
     }
 

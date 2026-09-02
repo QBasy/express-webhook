@@ -1,6 +1,24 @@
 import {FastifyInstance, FastifyRequest} from "fastify";
+import {EventEmitter} from "events";
 import {logger} from "../utils/logger";
-import {WebhookMetadata} from "../repository/webhooksRepo";
+import {Webhook, WebhookMetadata} from "../repository/webhooksRepo";
+
+type WebhookStreamEvent =
+    | { type: "webhook"; payload: Webhook }
+    | { type: "deleted"; payload: { receiptId: string } }
+    | { type: "cleared"; payload: Record<string, never> };
+
+// Внутрипроцессный pub/sub для SSE (/hook/:id/stream). Работает только в
+// рамках одного процесса — при горизонтальном масштабировании backend'а
+// (Phase D в docs/RFC-roadmap.md) события, принятые другим инстансом, сюда не
+// попадут; тогда потребуется Redis pub/sub (пакет `redis` уже в зависимостях,
+// но пока не используется). Сегодня деплой однопроцессный, поэтому ок.
+const webhookEvents = new EventEmitter();
+webhookEvents.setMaxListeners(0);
+
+function emitToRoom(roomId: string, event: WebhookStreamEvent): void {
+    webhookEvents.emit(roomId, event);
+}
 
 // Пересылаем вебхук на внешний endpoint партнёра, не блокируя ответ отправителю
 // и не давая сбою пересылки повлиять на приём самого вебхука (fire-and-forget).
@@ -72,6 +90,93 @@ export async function webhookRoutes(fastify: FastifyInstance) {
 
         const webhooks = await fastify.webhookRepo.getWebhooks(id);
         return reply.status(200).send(webhooks);
+    });
+
+    // Настоящая server-side пагинация (в отличие от /all/:id выше, который
+    // всегда отдаёт всю историю комнаты целиком).
+    fastify.get("/:id/page", async (request, reply) => {
+        const { id } = request.params as { id: string };
+        const q = request.query as { offset?: string; limit?: string; order?: string };
+
+        const room = await fastify.roomRepo.getRoom(id);
+        if (!room) {
+            return reply.status(404).send({ error: "Room not found" });
+        }
+
+        const offset = Math.max(0, parseInt(q.offset ?? "0", 10) || 0);
+        const limit = Math.min(500, Math.max(1, parseInt(q.limit ?? "25", 10) || 25));
+        const order: "newest" | "oldest" = q.order === "oldest" ? "oldest" : "newest";
+
+        const { webhooks, total } = await fastify.webhookRepo.getWebhooksPage(id, { offset, limit, order });
+
+        return reply.status(200).send({ roomId: id, offset, limit, order, total, webhooks });
+    });
+
+    // Живое обновление через Server-Sent Events вместо периодического опроса.
+    // `?since=<ISO>` — опциональный догон пропущенных событий после реконнекта
+    // (клиент передаёт таймстемп последнего увиденного вебхука).
+    fastify.get("/:id/stream", async (request, reply) => {
+        const { id } = request.params as { id: string };
+        const q = request.query as { since?: string };
+
+        const room = await fastify.roomRepo.getRoom(id);
+        if (!room) {
+            return reply.status(404).send({ error: "Room not found" });
+        }
+
+        reply.hijack();
+        const raw = reply.raw;
+        raw.writeHead(200, {
+            "Content-Type": "text/event-stream",
+            "Cache-Control": "no-cache, no-transform",
+            "Connection": "keep-alive",
+            // Отключает буферизацию SSE на уровне nginx (см. также
+            // proxy_buffering off в frontend/nginx.conf для /hook).
+            "X-Accel-Buffering": "no",
+        });
+        raw.write(":ok\n\n");
+
+        function writeEvent(type: string, payload: unknown): void {
+            raw.write(`event: ${type}\ndata: ${JSON.stringify(payload)}\n\n`);
+        }
+
+        // Подписываемся ДО догоняющего запроса истории, а не после — иначе
+        // вебхук, принятый ровно в промежутке между открытием потока и
+        // завершением since-запроса, не попал бы ни в догон, ни в live-поток.
+        // Возможный побочный эффект — редкий дубль (событие придёт и из
+        // догона, и живьём); дедуп на клиенте (см. useWebhookFeed) это
+        // переживает, а потерянное событие — нет.
+        const seenReceiptIds = new Set<string>();
+
+        function onRoomEvent(event: WebhookStreamEvent): void {
+            if (event.type === "webhook") {
+                seenReceiptIds.add(event.payload.receiptId);
+            }
+            writeEvent(event.type, event.payload);
+        }
+
+        webhookEvents.on(id, onRoomEvent);
+
+        if (q.since) {
+            const since = new Date(q.since);
+            if (!Number.isNaN(since.getTime())) {
+                const missed = await fastify.webhookRepo.getWebhooksSince(id, since);
+                for (const webhook of missed) {
+                    if (!seenReceiptIds.has(webhook.receiptId)) {
+                        writeEvent("webhook", webhook);
+                    }
+                }
+            }
+        }
+
+        const heartbeat = setInterval(() => {
+            raw.write(":heartbeat\n\n");
+        }, 15000);
+
+        request.raw.on("close", () => {
+            clearInterval(heartbeat);
+            webhookEvents.off(id, onRoomEvent);
+        });
     });
 
     // Сводка дубликатов (до двухсегментного `/:room_id/:webhook_id`)
@@ -188,6 +293,7 @@ export async function webhookRoutes(fastify: FastifyInstance) {
         }
 
         await fastify.webhookRepo.clearWebhooks(id);
+        emitToRoom(id, { type: "cleared", payload: {} });
         return { status: "cleared" };
     });
 
@@ -236,14 +342,17 @@ export async function webhookRoutes(fastify: FastifyInstance) {
 
         const webhook = request.body || {};
 
-        const receiptId = await fastify.webhookRepo.addWebhook(
+        const stored = await fastify.webhookRepo.addWebhook(
             id,
             webhook,
             room.webhookTTL,
             metadata
         );
+        const receiptId = stored.receiptId;
 
         await fastify.roomRepo.updateActivity(id);
+
+        emitToRoom(id, { type: "webhook", payload: stored });
 
         logger.info(`Webhook received: ${request.method} ${metadata.url} -> receiptId: ${receiptId}`);
 
@@ -278,6 +387,7 @@ export async function webhookRoutes(fastify: FastifyInstance) {
 
         const deleted = await fastify.webhookRepo.deleteWebhook(room_id, webhook_id);
         if (deleted) {
+            emitToRoom(room_id, { type: "deleted", payload: { receiptId: webhook_id } });
             logger.info(`Webhook ${webhook_id} deleted from room ${room_id}`);
             return reply.status(200).send({
                 status: "deleted",

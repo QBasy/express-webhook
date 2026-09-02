@@ -135,7 +135,9 @@ const ru = {
       shownOf: (shown: number, total: number) => `Показано ${shown} из ${total}`,
       deleted: 'Вебхук удалён',
       deleteError: 'Ошибка удаления',
+      downloadError: 'Не удалось скачать',
       notFound: 'Комната не найдена или была закрыта',
+      newAvailable: (n: number) => `Новые (${n}) — показать`,
     },
     details: {
       title: 'Подробности',
@@ -352,7 +354,9 @@ const en: typeof ru = {
       shownOf: (shown: number, total: number) => `Showing ${shown} of ${total}`,
       deleted: 'Webhook deleted',
       deleteError: 'Delete failed',
+      downloadError: 'Download failed',
       notFound: 'Room not found or has been closed',
+      newAvailable: (n: number) => `New (${n}) — show`,
     },
     details: {
       title: 'Details',

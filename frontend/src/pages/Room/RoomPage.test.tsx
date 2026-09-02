@@ -2,6 +2,7 @@ import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { renderWithProviders } from '../../test/renderWithProviders';
+import { installMockEventSource, MockEventSource } from '../../test/mockEventSource';
 import { RoomPage } from './RoomPage';
 import { roomsApi } from '../../api/rooms';
 import { webhooksApi } from '../../api/webhooks';
@@ -34,6 +35,10 @@ vi.mock('../../api/rooms', () => ({
 vi.mock('../../api/webhooks', () => ({
   webhooksApi: {
     list: vi.fn(),
+    page: vi.fn(),
+    streamUrl: vi.fn((roomId: string, since?: string) =>
+      since ? `/hook/${roomId}/stream?since=${encodeURIComponent(since)}` : `/hook/${roomId}/stream`
+    ),
     get: vi.fn(),
     remove: vi.fn(),
     clear: vi.fn(),
@@ -48,6 +53,7 @@ const mockedMyRooms = vi.mocked(roomsApi.myRooms);
 const mockedCreate = vi.mocked(roomsApi.create);
 const mockedClose = vi.mocked(roomsApi.close);
 const mockedList = vi.mocked(webhooksApi.list);
+const mockedPage = vi.mocked(webhooksApi.page);
 const mockedSendTest = vi.mocked(webhooksApi.sendTest);
 const mockedDuplicatesSummary = vi.mocked(webhooksApi.duplicatesSummary);
 const mockedMe = vi.mocked(authApi.me);
@@ -77,6 +83,14 @@ const room: Room = {
 
 function stubRoomStats() {
   mockedList.mockResolvedValue([]);
+  mockedPage.mockResolvedValue({
+    roomId: room.roomId,
+    offset: 0,
+    limit: 25,
+    order: 'newest',
+    total: 0,
+    webhooks: [],
+  });
   mockedDuplicatesSummary.mockResolvedValue({
     roomId: room.roomId,
     page: 1,
@@ -94,11 +108,14 @@ beforeEach(() => {
   mockedCreate.mockReset();
   mockedClose.mockReset();
   mockedList.mockReset();
+  mockedPage.mockReset();
   mockedSendTest.mockReset();
   mockedDuplicatesSummary.mockReset();
   mockedGetForwarding.mockReset();
   mockedMe.mockReset();
   vi.spyOn(window, 'confirm').mockReturnValue(true);
+  installMockEventSource();
+  MockEventSource.reset();
 });
 
 describe('RoomPage', () => {

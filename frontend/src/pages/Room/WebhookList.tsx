@@ -1,10 +1,10 @@
-import { useEffect, useMemo, useRef, useState, type MouseEvent } from 'react';
-import { CaretLeft, CaretRight, Check, Clock, Copy, DownloadSimple, Trash } from '@phosphor-icons/react';
+import { useEffect, useRef, useState, type MouseEvent } from 'react';
+import { ArrowClockwise, CaretLeft, CaretRight, Check, Clock, Copy, DownloadSimple, Trash } from '@phosphor-icons/react';
 import { webhooksApi } from '../../api/webhooks';
 import type { Webhook } from '../../api/types';
 import { useI18n } from '../../i18n/I18nContext';
 import { useClipboard } from '../../hooks/useClipboard';
-import { useWebhookFeed } from '../../hooks/useWebhookFeed';
+import { useWebhookFeed, type SortOrder } from '../../hooks/useWebhookFeed';
 import { useToast } from '../../toast/ToastContext';
 import { JsonView } from '../../components/JsonView/JsonView';
 import { MethodBadge } from '../../components/MethodBadge/MethodBadge';
@@ -13,32 +13,43 @@ import { ConnectionStatus } from '../../components/ConnectionStatus/ConnectionSt
 import { WebhookDetailsModal } from './WebhookDetailsModal';
 import styles from './WebhookList.module.scss';
 
-type SortOrder = 'newest' | 'oldest';
-
 const ITEMS_PER_PAGE_OPTIONS = [10, 25, 50, 100] as const;
 
 export function WebhookList({
   roomId,
   reloadKey,
   readOnly = false,
+  live = true,
 }: {
   roomId: string;
   reloadKey: number;
   readOnly?: boolean;
+  live?: boolean;
 }) {
   const { t } = useI18n();
   const { showToast } = useToast();
-  const { webhooks, isOnline, reconnectAttempts, notFound } = useWebhookFeed(roomId, reloadKey);
   const [detailsId, setDetailsId] = useState<string | null>(null);
   const [sortOrder, setSortOrder] = useState<SortOrder>('newest');
   const [itemsPerPage, setItemsPerPage] = useState<number>(25);
   const [currentPage, setCurrentPage] = useState(1);
-  const [removedIds, setRemovedIds] = useState<Set<string>>(new Set());
   const wasOnlineRef = useRef(true);
 
   useEffect(() => {
-    setRemovedIds(new Set());
-  }, [roomId, reloadKey]);
+    setCurrentPage(1);
+  }, [roomId, reloadKey, sortOrder, itemsPerPage]);
+
+  const offset = (currentPage - 1) * itemsPerPage;
+  const { webhooks, total, isOnline, reconnectAttempts, notFound, newCount, removeLocal, refresh } = useWebhookFeed(
+    roomId,
+    reloadKey,
+    { offset, limit: itemsPerPage, order: sortOrder, live }
+  );
+
+  const totalPages = Math.max(1, Math.ceil(total / itemsPerPage));
+
+  useEffect(() => {
+    if (currentPage > totalPages) setCurrentPage(totalPages);
+  }, [currentPage, totalPages]);
 
   // Тост при восстановлении соединения — как оригинальный showAlert("Соединение
   // восстановлено") внутри attemptReconnect. О потере связи отдельно не сообщаем:
@@ -51,16 +62,12 @@ export function WebhookList({
     wasOnlineRef.current = isOnline;
   }, [isOnline, showToast, t]);
 
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [roomId, sortOrder, itemsPerPage]);
-
   async function handleDelete(receiptId: string) {
     try {
       await webhooksApi.remove(roomId, receiptId);
-      // Оптимистично убираем из вида сразу, не дожидаясь следующего опроса
-      // (как оригинальный allHooks.filter(...) + renderAllWebhooks()).
-      setRemovedIds((prev) => new Set(prev).add(receiptId));
+      // Оптимистично убираем из вида сразу, не дожидаясь SSE-эха собственного
+      // удаления (как оригинальный allHooks.filter(...) + renderAllWebhooks()).
+      removeLocal(receiptId);
       setDetailsId((prev) => (prev === receiptId ? null : prev));
       showToast(t.room.list.deleted, 'success');
     } catch {
@@ -68,31 +75,29 @@ export function WebhookList({
     }
   }
 
-  function handleDownload() {
-    const blob = new Blob([JSON.stringify(webhooks, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `webhooks_${roomId}_${Date.now()}.json`;
-    link.click();
-    URL.revokeObjectURL(url);
+  async function handleDownload() {
+    try {
+      const all = await webhooksApi.list(roomId);
+      const blob = new Blob([JSON.stringify(all, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `webhooks_${roomId}_${Date.now()}.json`;
+      link.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      showToast(t.room.list.downloadError, 'error');
+    }
   }
 
-  const sorted = useMemo(() => {
-    if (!webhooks) return [];
-    const list = webhooks.filter((w) => !removedIds.has(w.receiptId));
-    list.sort((a, b) => {
-      const timeA = new Date(a.timestamp).getTime();
-      const timeB = new Date(b.timestamp).getTime();
-      return sortOrder === 'newest' ? timeB - timeA : timeA - timeB;
-    });
-    return list;
-  }, [webhooks, sortOrder, removedIds]);
-
-  const totalPages = Math.max(1, Math.ceil(sorted.length / itemsPerPage));
-  const safePage = Math.min(currentPage, totalPages);
-  const startIdx = (safePage - 1) * itemsPerPage;
-  const paginated = sorted.slice(startIdx, startIdx + itemsPerPage);
+  function handleShowNew() {
+    if (currentPage !== 1 || sortOrder !== 'newest') {
+      setSortOrder('newest');
+      setCurrentPage(1);
+    } else {
+      refresh();
+    }
+  }
 
   if (notFound) {
     return <p className={styles.state}>{t.room.list.notFound}</p>;
@@ -102,7 +107,7 @@ export function WebhookList({
     return <p className={styles.state}>{t.common.loading}</p>;
   }
 
-  const detailsWebhook = webhooks.find((w) => w.receiptId === detailsId && !removedIds.has(w.receiptId)) ?? null;
+  const detailsWebhook = webhooks.find((w) => w.receiptId === detailsId) ?? null;
 
   return (
     <div>
@@ -110,6 +115,12 @@ export function WebhookList({
         <ConnectionStatus isOnline={isOnline} reconnectAttempts={reconnectAttempts} />
 
         <div className={styles.toolbarControls}>
+          {newCount > 0 && (
+            <button type="button" className={styles.newBadge} onClick={handleShowNew}>
+              <ArrowClockwise size={14} /> {t.room.list.newAvailable(newCount)}
+            </button>
+          )}
+
           <select
             className={styles.select}
             value={sortOrder}
@@ -139,14 +150,14 @@ export function WebhookList({
         </div>
       </div>
 
-      {sorted.length === 0 ? (
+      {total === 0 ? (
         <p className={styles.state}>{t.room.list.empty}</p>
       ) : (
         <>
-          <p className={styles.shownOf}>{t.room.list.shownOf(paginated.length, sorted.length)}</p>
+          <p className={styles.shownOf}>{t.room.list.shownOf(webhooks.length, total)}</p>
 
           <ul className={styles.list}>
-            {paginated.map((webhook) => (
+            {webhooks.map((webhook) => (
               <WebhookCard
                 key={webhook.receiptId}
                 webhook={webhook}
@@ -157,7 +168,7 @@ export function WebhookList({
             ))}
           </ul>
 
-          <Pagination page={safePage} totalPages={totalPages} onChange={setCurrentPage} />
+          <Pagination page={currentPage} totalPages={totalPages} onChange={setCurrentPage} />
         </>
       )}
 

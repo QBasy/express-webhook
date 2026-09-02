@@ -1,86 +1,91 @@
 @use './styles/variables' as v;
 
+// Палитра — под фирменные цвета GREEN-API (зелёный #3b9702 + их
+// тёмная/светлая темы), см. переданные .dark-theme/.default-theme.
+// Взяты не все переменные оттуда — только то, что реально нужно текущей
+// системе токенов ниже; остальное (message-queue-*, wa-type-* и т.п. —
+// специфика их кабинета) не переносилось.
 :root,
 [data-theme='dark'] {
-  --bg: #0d0f11;
-  --surface: #17191c;
-  --surface-alt: #131518;
-  --surface-hover: #202327;
-  --surface-inset: #1c1f22;
-  --border: #2a2d31;
+  --bg: #1a1a1a;
+  --surface: #1f2223;
+  --surface-alt: #1d1e1f;
+  --surface-hover: #262a2b;
+  --surface-inset: #1d1e1f;
+  --border: #313131;
 
-  --text: #e7e9ea;
-  --text-muted: #9aa0a6;
-  --text-faint: #6b7178;
+  --text: #ffffff;
+  --text-muted: rgba(255, 255, 255, 0.65);
+  --text-faint: rgba(255, 255, 255, 0.45);
 
-  --accent: #3fae29;
-  --accent-hover: #4dc133;
+  --accent: #3b9702;
+  --accent-hover: #62ff67;
   --accent-contrast: #ffffff;
-  --accent-ring: rgba(63, 174, 41, 0.25);
-  --accent-soft-bg: #16321a;
-  --accent-soft-text: #7bd968;
+  --accent-ring: rgba(59, 151, 2, 0.4);
+  --accent-soft-bg: #264500;
+  --accent-soft-text: #79e463;
 
-  --success-bg: #123420;
-  --success-text: #4ade80;
-  --success-border: #1e5631;
+  --success-bg: #264500;
+  --success-text: #3b9702;
+  --success-border: #2b5c05;
 
-  --error-bg: #3a1a1a;
-  --error-text: #f87171;
+  --error-bg: #3a1315;
+  --error-text: #ff3535;
   --error-border: #5c2626;
 
-  --warning-bg: #332a11;
-  --warning-text: #facc15;
-  --warning-border: #55461a;
+  --warning-bg: #3a2410;
+  --warning-text: #ff6600;
+  --warning-border: #5c3a1a;
 
-  --info-bg: #14263d;
-  --info-text: #60a5fa;
+  --info-bg: #10233a;
+  --info-text: #1890ff;
   --info-border: #1f3a5c;
 
   --method-patch-bg: #201f3d;
   --method-patch-text: #a5b4fc;
   --method-options-bg: #2a1f3d;
   --method-options-text: #c4b5fd;
-  --method-neutral-bg: #202327;
-  --method-neutral-text: #9aa0a6;
+  --method-neutral-bg: #262a2b;
+  --method-neutral-text: rgba(255, 255, 255, 0.65);
 
-  --shadow-md: 0 10px 25px -5px rgba(0, 0, 0, 0.45);
-  --shadow-lg: 0 20px 25px -5px rgba(0, 0, 0, 0.55);
+  --shadow-md: 0 10px 25px -5px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
 }
 
 [data-theme='light'] {
-  --bg: #f5f6f7;
+  --bg: #f0f2f5;
   --surface: #ffffff;
-  --surface-alt: #ffffff;
-  --surface-hover: #f0f1f2;
-  --surface-inset: #f7f8f9;
-  --border: #e3e5e8;
+  --surface-alt: #fafafa;
+  --surface-hover: #e8eaed;
+  --surface-inset: #fafafa;
+  --border: #d9d9d9;
 
-  --text: #1f2328;
-  --text-muted: #6a7178;
-  --text-faint: #9aa0a6;
+  --text: rgba(0, 0, 0, 0.88);
+  --text-muted: rgba(0, 0, 0, 0.55);
+  --text-faint: rgba(0, 0, 0, 0.45);
 
-  --accent: #2e8b3d;
-  --accent-hover: #26742f;
+  --accent: #3b9702;
+  --accent-hover: #2f7a02;
   --accent-contrast: #ffffff;
-  --accent-ring: rgba(46, 139, 61, 0.15);
-  --accent-soft-bg: #dcf7dc;
-  --accent-soft-text: #1e6b2b;
+  --accent-ring: rgba(59, 151, 2, 0.2);
+  --accent-soft-bg: #eeffe3;
+  --accent-soft-text: #3b9702;
 
-  --success-bg: #dcfce7;
-  --success-text: #15803d;
-  --success-border: #86efac;
+  --success-bg: #eeffe3;
+  --success-text: #3b9702;
+  --success-border: #b8daa3;
 
-  --error-bg: #fee2e2;
-  --error-text: #b91c1c;
-  --error-border: #fca5a5;
+  --error-bg: #f8d4d6;
+  --error-text: #d1242f;
+  --error-border: #eeb3b6;
 
-  --warning-bg: #fef9c3;
-  --warning-text: #854d0e;
-  --warning-border: #fde047;
+  --warning-bg: #fff1e0;
+  --warning-text: #ff9100;
+  --warning-border: #ffcc99;
 
-  --info-bg: #dbeafe;
-  --info-text: #1e40af;
-  --info-border: #93c5fd;
+  --info-bg: #e6f4ff;
+  --info-text: #1890ff;
+  --info-border: #91caff;
 
   --method-patch-bg: #e0e7ff;
   --method-patch-text: #3730a3;

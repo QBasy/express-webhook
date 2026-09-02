@@ -1,7 +1,7 @@
 import type { Pool } from 'pg';
 import { randomUUID } from 'crypto';
 import { logger } from '../utils/logger';
-import type { Webhook, WebhookMetadata } from './webhooksRepo';
+import type { Webhook, WebhookMetadata, WebhookPage } from './webhooksRepo';
 import type { ISearchOptions, ISearchResult, IWebhook } from './webhookSearchUtils';
 import {
     getDuplicateGroupFromWebhooks,
@@ -16,16 +16,21 @@ export class WebhookRepositoryPostgres {
         await this.pool.query(`DELETE FROM webhooks WHERE room_id = $1 AND expires_at < now()`, [roomId]);
     }
 
+    // Возвращает сохранённый Webhook целиком (а не только receiptId) — чтобы
+    // роутер мог сразу заэмитить его в SSE без лишнего getWebhook(), который
+    // здесь означает ещё один purgeExpired() + SELECT на каждый принятый
+    // вебхук — под нагрузкой это реально бьёт по пулу соединений.
     async addWebhook(
         roomId: string,
         body: unknown,
         ttlSeconds: number,
         metadata: WebhookMetadata
-    ): Promise<string> {
+    ): Promise<Webhook> {
         await this.purgeExpired(roomId);
         const receiptId = randomUUID();
         const now = new Date();
         const expiresAt = new Date(now.getTime() + ttlSeconds * 1000);
+        const normalizedBody = body ?? {};
 
         await this.pool.query(
             `INSERT INTO webhooks (receipt_id, room_id, body, metadata, timestamp_iso, created_at, expires_at)
@@ -33,7 +38,7 @@ export class WebhookRepositoryPostgres {
             [
                 receiptId,
                 roomId,
-                JSON.stringify(body ?? {}),
+                JSON.stringify(normalizedBody),
                 JSON.stringify(metadata),
                 now.toISOString(),
                 now,
@@ -42,7 +47,16 @@ export class WebhookRepositoryPostgres {
         );
 
         logger.debug(`Webhook ${receiptId} added to room ${roomId}, expires at ${expiresAt.toISOString()}`);
-        return receiptId;
+
+        return {
+            receiptId,
+            roomId,
+            body: normalizedBody,
+            metadata,
+            timestamp: now.toISOString(),
+            createdAt: now,
+            expiresAt,
+        };
     }
 
     async getWebhooks(roomId: string): Promise<Webhook[]> {
@@ -52,6 +66,53 @@ export class WebhookRepositoryPostgres {
                     timestamp_iso AS "timestamp", created_at AS "createdAt", expires_at AS "expiresAt"
              FROM webhooks WHERE room_id = $1 ORDER BY created_at DESC`,
             [roomId]
+        );
+        return rows.map((r: any) => ({
+            receiptId: r.receiptId,
+            roomId: r.roomId,
+            body: r.body,
+            metadata: r.metadata,
+            timestamp: r.timestamp,
+            createdAt: r.createdAt,
+            expiresAt: r.expiresAt,
+        }));
+    }
+
+    async getWebhooksPage(
+        roomId: string,
+        opts: { offset: number; limit: number; order: 'newest' | 'oldest' }
+    ): Promise<WebhookPage> {
+        await this.purgeExpired(roomId);
+        const direction = opts.order === 'oldest' ? 'ASC' : 'DESC';
+        const [{ rows }, countResult] = await Promise.all([
+            this.pool.query(
+                `SELECT receipt_id AS "receiptId", room_id AS "roomId", body, metadata,
+                        timestamp_iso AS "timestamp", created_at AS "createdAt", expires_at AS "expiresAt"
+                 FROM webhooks WHERE room_id = $1 ORDER BY created_at ${direction} LIMIT $2 OFFSET $3`,
+                [roomId, opts.limit, opts.offset]
+            ),
+            this.pool.query(`SELECT COUNT(*)::int AS total FROM webhooks WHERE room_id = $1`, [roomId]),
+        ]);
+        const webhooks = rows.map((r: any) => ({
+            receiptId: r.receiptId,
+            roomId: r.roomId,
+            body: r.body,
+            metadata: r.metadata,
+            timestamp: r.timestamp,
+            createdAt: r.createdAt,
+            expiresAt: r.expiresAt,
+        }));
+        return { webhooks, total: countResult.rows[0]?.total ?? 0 };
+    }
+
+    // Для догона SSE-подписчиков после реконнекта: всё, что появилось после `since`.
+    async getWebhooksSince(roomId: string, since: Date): Promise<Webhook[]> {
+        await this.purgeExpired(roomId);
+        const { rows } = await this.pool.query(
+            `SELECT receipt_id AS "receiptId", room_id AS "roomId", body, metadata,
+                    timestamp_iso AS "timestamp", created_at AS "createdAt", expires_at AS "expiresAt"
+             FROM webhooks WHERE room_id = $1 AND created_at > $2 ORDER BY created_at ASC`,
+            [roomId, since]
         );
         return rows.map((r: any) => ({
             receiptId: r.receiptId,
