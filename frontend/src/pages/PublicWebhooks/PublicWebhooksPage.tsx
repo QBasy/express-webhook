@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useSearchParams } from 'react-router-dom';
 import { ArrowSquareOut, Prohibit } from '@phosphor-icons/react';
 import { webhooksApi } from '../../api/webhooks';
 import { ApiError } from '../../api/client';
@@ -20,9 +20,17 @@ import styles from './PublicWebhooksPage.module.scss';
 // публичным, новых прав тут не появляется.
 export function PublicWebhooksPage() {
   const { roomId = '' } = useParams<{ roomId: string }>();
+  const [searchParams] = useSearchParams();
   const { t } = useI18n();
   const [activeTab, setActiveTab] = useState('list');
   const [notFound, setNotFound] = useState(false);
+
+  // ?live=0 отключает SSE для этого встраивания — используется только
+  // инструментом тестирования нескольких одновременных iframe-превью
+  // (IframeTestPage): у обычного одиночного embed'а параметра нет, и он
+  // остаётся живым по умолчанию, как и раньше.
+  const liveParam = searchParams.get('live');
+  const live = liveParam !== '0' && liveParam !== 'false';
 
   // Разовая проверка при заходе — решает, показывать ли вкладки вообще, или
   // сразу отдать понятный экран "не найдено". WebhookList дальше сам
@@ -54,7 +62,7 @@ export function PublicWebhooksPage() {
   }
 
   const tabs: TabItem[] = [
-    { key: 'list', label: t.room.tabs.list, content: <WebhookList roomId={roomId} reloadKey={0} readOnly /> },
+    { key: 'list', label: t.room.tabs.list, content: <WebhookList roomId={roomId} reloadKey={0} readOnly live={live} /> },
     { key: 'search', label: t.room.tabs.search, content: <WebhookSearch roomId={roomId} /> },
   ];
 

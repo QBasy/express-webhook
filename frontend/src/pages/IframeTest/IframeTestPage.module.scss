@@ -58,6 +58,28 @@
   border-radius: v.$radius-lg;
 }
 
+.hint {
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  margin: 0 0 1.25rem;
+}
+
+.liveBtn {
+  @include m.button-ghost;
+  padding: 0.15rem 0.55rem;
+  font-size: 0.7rem;
+  margin-left: auto;
+}
+
+.liveDot {
+  width: 0.45rem;
+  height: 0.45rem;
+  border-radius: 50%;
+  background: var(--success-text);
+  flex-shrink: 0;
+  @include m.pulse-dot;
+}
+
 .grid {
   display: flex;
   flex-wrap: wrap;
