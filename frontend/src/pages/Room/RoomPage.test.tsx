@@ -48,6 +48,7 @@ const mockedMyRooms = vi.mocked(roomsApi.myRooms);
 const mockedCreate = vi.mocked(roomsApi.create);
 const mockedClose = vi.mocked(roomsApi.close);
 const mockedList = vi.mocked(webhooksApi.list);
+const mockedSendTest = vi.mocked(webhooksApi.sendTest);
 const mockedDuplicatesSummary = vi.mocked(webhooksApi.duplicatesSummary);
 const mockedMe = vi.mocked(authApi.me);
 const mockedGetFakeError = vi.mocked(roomsApi.getFakeError);
@@ -93,6 +94,7 @@ beforeEach(() => {
   mockedCreate.mockReset();
   mockedClose.mockReset();
   mockedList.mockReset();
+  mockedSendTest.mockReset();
   mockedDuplicatesSummary.mockReset();
   mockedGetForwarding.mockReset();
   mockedMe.mockReset();
@@ -182,5 +184,22 @@ describe('RoomPage', () => {
     await screen.findByText('Webhook URL');
 
     expect(await screen.findByRole('tab', { name: 'Дубли' })).toBeInTheDocument();
+  });
+
+  it('sends a test webhook and shows a confirmation toast', async () => {
+    mockedMyRooms.mockResolvedValue({ rooms: [room] });
+    mockedSendTest.mockResolvedValue({ status: 'ok' });
+    stubRoomStats();
+
+    renderWithProviders(<RoomPage />);
+    const user = userEvent.setup();
+
+    await user.click(await screen.findByText('test_room_1'));
+    await screen.findByText('Webhook URL');
+
+    await user.click(screen.getByRole('button', { name: /отправить тест/i }));
+
+    expect(mockedSendTest).toHaveBeenCalledWith(room.roomId);
+    expect(await screen.findByText('Тестовый вебхук отправлен')).toBeInTheDocument();
   });
 });

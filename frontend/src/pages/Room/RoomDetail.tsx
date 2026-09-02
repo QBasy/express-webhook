@@ -79,6 +79,8 @@ export function RoomDetail({ room, onBack, onClosed }: Props) {
   }
 
   const webhookUrl = `${window.location.origin}/hook/${room.roomId}`;
+  const publicViewUrl = `${window.location.origin}/webhooks/${room.roomId}`;
+  const iframeSnippet = `<iframe src="${publicViewUrl}" style="width:100%;height:480px;border:0" title="${t.room.fields.publicViewLabel}"></iframe>`;
 
   const tabs: TabItem[] = [
     { key: 'list', label: t.room.tabs.list, content: <WebhookList roomId={room.roomId} reloadKey={reloadKey} /> },
@@ -114,6 +116,8 @@ export function RoomDetail({ room, onBack, onClosed }: Props) {
       <div className={styles.infoCard}>
         <CopyField label={t.room.fields.webhookUrl} value={webhookUrl} />
         <CopyField label={t.room.fields.roomId} value={room.roomId} />
+        <CopyField label={t.room.fields.publicViewLabel} value={publicViewUrl} />
+        <CopyField label={t.room.fields.iframeSnippetLabel} value={iframeSnippet} />
       </div>
 
       <div className={styles.stats}>

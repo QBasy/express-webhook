@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { webhooksApi } from '../api/webhooks';
+import { ApiError } from '../api/client';
 import type { Webhook } from '../api/types';
 
 const POLL_INTERVAL_MS = 2000;
@@ -9,6 +10,7 @@ export interface WebhookFeed {
   webhooks: Webhook[] | null;
   isOnline: boolean;
   reconnectAttempts: number;
+  notFound: boolean;
 }
 
 // Живое обновление списка вебхуков — как в оригинальном main-script.js
@@ -19,6 +21,7 @@ export function useWebhookFeed(roomId: string, reloadKey: number): WebhookFeed {
   const [webhooks, setWebhooks] = useState<Webhook[] | null>(null);
   const [isOnline, setIsOnline] = useState(true);
   const [reconnectAttempts, setReconnectAttempts] = useState(0);
+  const [notFound, setNotFound] = useState(false);
   const wasOfflineRef = useRef(false);
 
   useEffect(() => {
@@ -36,8 +39,16 @@ export function useWebhookFeed(roomId: string, reloadKey: number): WebhookFeed {
         setReconnectAttempts(0);
         wasOfflineRef.current = false;
         timeoutId = setTimeout(poll, POLL_INTERVAL_MS);
-      } catch {
+      } catch (err) {
         if (cancelled) return;
+        // 404 значит комнаты не существует (или её закрыли) — это не обрыв связи,
+        // повторные попытки тут бессмысленны и только спамят сервер запросами.
+        if (err instanceof ApiError && err.status === 404) {
+          setNotFound(true);
+          setIsOnline(true);
+          setReconnectAttempts(0);
+          return;
+        }
         setIsOnline(false);
         wasOfflineRef.current = true;
         attempts += 1;
@@ -50,6 +61,7 @@ export function useWebhookFeed(roomId: string, reloadKey: number): WebhookFeed {
     setWebhooks(null);
     setIsOnline(true);
     setReconnectAttempts(0);
+    setNotFound(false);
     poll();
 
     return () => {
@@ -58,5 +70,5 @@ export function useWebhookFeed(roomId: string, reloadKey: number): WebhookFeed {
     };
   }, [roomId, reloadKey]);
 
-  return { webhooks, isOnline, reconnectAttempts };
+  return { webhooks, isOnline, reconnectAttempts, notFound };
 }

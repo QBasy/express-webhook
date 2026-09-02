@@ -18,6 +18,7 @@ import { WebhookRepositoryPostgres } from './src/repository/webhooksRepoPostgres
 import { registerRoutes } from './src/router';
 import { authRoutes } from './src/router/authRouter';
 import { adminRoutes } from './src/auth/adminRoutes';
+import { integrationRoutes } from './src/router/integrationRouter';
 import { logger } from './src/utils/logger';
 
 /** Render и др. часто без IPv6 egress; Supabase отдаёт AAAA → ENETUNREACH. См. DNS_DEFAULT_RESULT_ORDER в .env.supabase */
@@ -119,6 +120,7 @@ async function start() {
 
         await app.register(authRoutes, { prefix: '/auth' });
         await app.register(adminRoutes, { prefix: '/admin' });
+        await app.register(integrationRoutes, { prefix: '/integration' });
         await app.register(registerRoutes);
 
         const signals = ['SIGINT', 'SIGTERM'] as const;

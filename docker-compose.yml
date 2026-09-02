@@ -36,6 +36,8 @@ services:
       DATABASE_URL: postgresql://${POSTGRES_USER:-webhook}:${POSTGRES_PASSWORD:-webhook}@postgres:5432/${POSTGRES_DB:-webhook_viewer}
       JWT_SECRET: ${JWT_SECRET:-dev-jwt-secret-change-me-in-production}
       JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
+      INTEGRATION_API_KEY: ${INTEGRATION_API_KEY:-}
+      INTEGRATION_TRUSTED_HOSTS: ${INTEGRATION_TRUSTED_HOSTS:-}
     depends_on:
       postgres:
         condition: service_healthy

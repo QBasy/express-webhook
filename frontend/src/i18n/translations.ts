@@ -102,6 +102,8 @@ const ru = {
       ttl: 'TTL',
       ttlSave: 'Сохранить TTL',
       ttlUnit: 'сек',
+      publicViewLabel: 'Публичная ссылка',
+      iframeSnippetLabel: 'Код для iframe',
     },
     tabs: {
       list: 'Вебхуки',
@@ -133,6 +135,7 @@ const ru = {
       shownOf: (shown: number, total: number) => `Показано ${shown} из ${total}`,
       deleted: 'Вебхук удалён',
       deleteError: 'Ошибка удаления',
+      notFound: 'Комната не найдена или была закрыта',
     },
     details: {
       title: 'Подробности',
@@ -196,6 +199,16 @@ const ru = {
     },
     sendTest: 'Отправить тест',
     testSent: 'Тестовый вебхук отправлен',
+  },
+  publicWebhooks: {
+    title: 'Вебхуки',
+    roomLabel: 'Комната',
+    empty: 'Вебхуки ещё не поступали',
+    notFoundTitle: 'Комната не найдена',
+    notFoundSubtitle: 'Проверьте ссылку или обратитесь к тому, кто её выдал',
+    openOnSite: 'Открыть на сайте',
+    loginLink: 'Войти в аккаунт',
+    poweredBy: 'Webhook Viewer — GREEN-API QA TEAM',
   },
   comingSoon: {
     description: 'Страница ещё переносится с текущей статической версии на React.',
@@ -306,6 +319,8 @@ const en: typeof ru = {
       ttl: 'TTL',
       ttlSave: 'Save TTL',
       ttlUnit: 'sec',
+      publicViewLabel: 'Public link',
+      iframeSnippetLabel: 'Iframe embed code',
     },
     tabs: {
       list: 'Webhooks',
@@ -337,6 +352,7 @@ const en: typeof ru = {
       shownOf: (shown: number, total: number) => `Showing ${shown} of ${total}`,
       deleted: 'Webhook deleted',
       deleteError: 'Delete failed',
+      notFound: 'Room not found or has been closed',
     },
     details: {
       title: 'Details',
@@ -400,6 +416,16 @@ const en: typeof ru = {
     },
     sendTest: 'Send test',
     testSent: 'Test webhook sent',
+  },
+  publicWebhooks: {
+    title: 'Webhooks',
+    roomLabel: 'Room',
+    empty: 'No webhooks received yet',
+    notFoundTitle: 'Room not found',
+    notFoundSubtitle: 'Check the link or contact whoever gave it to you',
+    openOnSite: 'Open on the site',
+    loginLink: 'Log in',
+    poweredBy: 'Webhook Viewer — GREEN-API QA TEAM',
   },
   comingSoon: {
     description: 'This page is still being ported from the current static version to React.',

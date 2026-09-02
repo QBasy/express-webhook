@@ -17,10 +17,18 @@ type SortOrder = 'newest' | 'oldest';
 
 const ITEMS_PER_PAGE_OPTIONS = [10, 25, 50, 100] as const;
 
-export function WebhookList({ roomId, reloadKey }: { roomId: string; reloadKey: number }) {
+export function WebhookList({
+  roomId,
+  reloadKey,
+  readOnly = false,
+}: {
+  roomId: string;
+  reloadKey: number;
+  readOnly?: boolean;
+}) {
   const { t } = useI18n();
   const { showToast } = useToast();
-  const { webhooks, isOnline, reconnectAttempts } = useWebhookFeed(roomId, reloadKey);
+  const { webhooks, isOnline, reconnectAttempts, notFound } = useWebhookFeed(roomId, reloadKey);
   const [detailsId, setDetailsId] = useState<string | null>(null);
   const [sortOrder, setSortOrder] = useState<SortOrder>('newest');
   const [itemsPerPage, setItemsPerPage] = useState<number>(25);
@@ -86,6 +94,10 @@ export function WebhookList({ roomId, reloadKey }: { roomId: string; reloadKey: 
   const startIdx = (safePage - 1) * itemsPerPage;
   const paginated = sorted.slice(startIdx, startIdx + itemsPerPage);
 
+  if (notFound) {
+    return <p className={styles.state}>{t.room.list.notFound}</p>;
+  }
+
   if (webhooks === null) {
     return <p className={styles.state}>{t.common.loading}</p>;
   }
@@ -138,6 +150,7 @@ export function WebhookList({ roomId, reloadKey }: { roomId: string; reloadKey: 
               <WebhookCard
                 key={webhook.receiptId}
                 webhook={webhook}
+                readOnly={readOnly}
                 onOpenDetails={() => setDetailsId(webhook.receiptId)}
                 onDelete={() => handleDelete(webhook.receiptId)}
               />
@@ -213,10 +226,12 @@ function buildPageList(current: number, total: number): Array<number | '...'> {
 
 function WebhookCard({
   webhook,
+  readOnly,
   onOpenDetails,
   onDelete,
 }: {
   webhook: Webhook;
+  readOnly: boolean;
   onOpenDetails: () => void;
   onDelete: () => void;
 }) {
@@ -247,10 +262,12 @@ function WebhookCard({
             {copied ? <Check size={15} weight="bold" /> : <Copy size={15} />}
             {t.common.copy}
           </button>
-          <button type="button" className={`${styles.actionBtn} ${styles.deleteBtn}`} onClick={onDelete}>
-            <Trash size={15} />
-            {t.room.list.delete}
-          </button>
+          {!readOnly && (
+            <button type="button" className={`${styles.actionBtn} ${styles.deleteBtn}`} onClick={onDelete}>
+              <Trash size={15} />
+              {t.room.list.delete}
+            </button>
+          )}
         </div>
       </div>
 

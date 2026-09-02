@@ -43,7 +43,46 @@ beforeEach(() => {
   mockedRemove.mockReset();
 });
 
+function makeWebhooks(count: number): Webhook[] {
+  return Array.from({ length: count }, (_, i) => ({
+    ...webhook,
+    receiptId: `r${i + 1}`,
+    timestamp: new Date(2026, 0, 1, 0, i).toISOString(),
+  }));
+}
+
 describe('WebhookList', () => {
+  it('paginates results 25 per page and can navigate to the next page', async () => {
+    mockedList.mockResolvedValue(makeWebhooks(30));
+
+    renderWithProviders(<WebhookList roomId="room1" reloadKey={0} />);
+
+    await screen.findByRole('button', { name: /ID: r30/i });
+    expect(screen.queryByRole('button', { name: /ID: r1$/i })).not.toBeInTheDocument();
+
+    const user = userEvent.setup();
+    await user.click(screen.getByRole('button', { name: /вперёд/i }));
+
+    expect(await screen.findByRole('button', { name: /ID: r1$/i })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /ID: r30/i })).not.toBeInTheDocument();
+  });
+
+  it('sorts newest first by default and re-sorts when switched to oldest first', async () => {
+    mockedList.mockResolvedValue(makeWebhooks(3));
+
+    renderWithProviders(<WebhookList roomId="room1" reloadKey={0} />);
+    await screen.findByRole('button', { name: /ID: r3/i });
+
+    let ids = screen.getAllByRole('button', { name: /^ID: r\d$/ }).map((el) => el.textContent);
+    expect(ids).toEqual(['ID: r3', 'ID: r2', 'ID: r1']);
+
+    const user = userEvent.setup();
+    await user.selectOptions(screen.getByLabelText('Сначала новые'), 'oldest');
+
+    ids = screen.getAllByRole('button', { name: /^ID: r\d$/ }).map((el) => el.textContent);
+    expect(ids).toEqual(['ID: r1', 'ID: r2', 'ID: r3']);
+  });
+
   it('always shows the webhook body inline, without needing to expand a row', async () => {
     mockedList.mockResolvedValue([webhook]);
 
